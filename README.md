@@ -3,6 +3,8 @@
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators.
 The adaptor emulator is complete in that it handles all known messages from the NABU.
 
+`This is a work in progress, and may contain bugs, issues, poor code, etc.`
+
 ## Known Issues
 
 - It can only load PAK files from the official recreation currently, 
