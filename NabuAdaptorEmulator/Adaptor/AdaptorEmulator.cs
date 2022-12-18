@@ -280,9 +280,14 @@ public abstract class AdaptorEmulator : NabuEmulator
     #region Adaptor Loop
     public async Task Emulate(CancellationToken cancel)
     {
-        Log("Waiting for NABU");
+        
         while (cancel.IsCancellationRequested is false)
         {
+            if (Serial.Connected is false) {
+                await Task.Delay(1000, cancel);
+                continue;
+            }
+            Log("Waiting for NABU");
             try
             {
                 byte incoming = Recv();
@@ -309,7 +314,7 @@ public abstract class AdaptorEmulator : NabuEmulator
                     case 0x1C:
                         continue; // also unknown
                     case 0x1E:
-                        Log($"NABU: 1E, Adaptor: {nameof(Messages.End)}"); //and this
+                        Log($"NABU: 1E, Adaptor: {nameof(Messages.End)}");
                         Send(Messages.End);
                         continue;
                     case Messages.Wait:

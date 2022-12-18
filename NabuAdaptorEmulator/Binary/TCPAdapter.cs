@@ -37,10 +37,11 @@ public class TCPAdapter : BinaryAdapter
                 Logger.LogWarning("Connection Failed");
                 return;
             }
+
             attempts++;
             try
             {
-                Client.Connect("127.0.0.1", Settings.Port);
+                Client.Connect(IPAddress.Loopback, Settings.Port);
             }
             catch
             {

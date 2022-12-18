@@ -2,7 +2,7 @@
 
 public interface IBinaryAdapter
 {
-
+    bool Connected { get; }
     void Open();
     void Close();
     byte Recv();
