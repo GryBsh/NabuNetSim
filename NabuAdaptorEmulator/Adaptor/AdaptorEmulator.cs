@@ -348,7 +348,7 @@ public abstract class AdaptorEmulator : NabuEmulator
                         continue;
                 }
             }
-            catch (TimeoutException ex)
+            catch (TimeoutException)
             {
                 Trace("Timeout expired.");
             }
