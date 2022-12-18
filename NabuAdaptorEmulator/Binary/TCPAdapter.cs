@@ -32,9 +32,10 @@ public class TCPAdapter : BinaryAdapter
         Logger.LogInformation("Attempting Connection to Emulator");
         while (Client.Connected is false)
         {
-            if (attempts < Settings.ConnectionAttempts)
+            if (attempts > Settings.ConnectionAttempts)
             {
                 Logger.LogWarning("Connection Failed");
+                return;
             }
             attempts++;
             try
