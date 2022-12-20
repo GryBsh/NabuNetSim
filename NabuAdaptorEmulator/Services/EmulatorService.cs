@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Binary;
 
 namespace Nabu.Services;
 
@@ -24,34 +25,32 @@ public class EmulatorService : BackgroundService
         TCP = tcp;
     }
 
+    
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        var services = new List<NabuService>();
+        Task serial = Task.CompletedTask, 
+             tcp = Task.CompletedTask;
 
-        if (Settings.Serial)
+        while (stopping.IsCancellationRequested is false)
         {
-            Logger.LogInformation("Serial enabled");
-            var service = NabuService.From(
-                Serial.Emulate,
-                stopping,
-                () => Serial.Open(),
-                () => Serial.Close()
-            );
-            services.Add(service);
-        }
-        if (Settings.TCP)
-        {
-            Logger.LogInformation("TCP enabled");
-            var service = NabuService.From(
-                TCP.Emulate,
-                stopping,
-                () => TCP.Open(),
-                () => TCP.Close()
-            );
-            services.Add(service);
-        }
+            if (stopping.IsCancellationRequested is false && Settings.Serial && serial.IsCompleted)
+                serial = NabuService.From(
+                    Serial.Emulate,
+                    stopping,
+                    () => Serial.Open(),
+                    () => Serial.Close()
+                );
 
-        await Task.WhenAll(services.Select(s => s.Task).ToArray());
+            if (stopping.IsCancellationRequested is false && Settings.TCP && tcp.IsCompleted)
+                tcp = NabuService.From(
+                    TCP.Emulate,
+                    stopping,
+                    () => TCP.Open(),
+                    () => TCP.Close()
+                );
+
+            Thread.Sleep(1000);
+        }
     }
 }
 

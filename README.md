@@ -58,6 +58,7 @@ This is the standard dotnet logging section.
 - RetroNET Chaters (in no particular order):
   - Sark
   - Nath (The legend who decrypted NPAK files)
+  - Brijohn
   - Worm
   - Hans
   - Guidol

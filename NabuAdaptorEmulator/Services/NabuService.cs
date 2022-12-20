@@ -78,7 +78,5 @@ public sealed class NabuService
         );
     }
 
-    public TaskAwaiter<NabuService> GetAwaiter()
-        => Task.ContinueWith(t => this).GetAwaiter();
-
+    public static implicit operator Task(NabuService service) => service.Task;
 }

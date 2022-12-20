@@ -7,7 +7,7 @@ namespace Nabu.Binary;
 
 public class TCPAdapter : BinaryAdapter
 {
-    TcpClient? Client;
+   
     Socket? Socket;
     
     readonly TCPAdapterSettings Settings;
@@ -20,6 +20,8 @@ public class TCPAdapter : BinaryAdapter
         
     }
 
+    public override bool Connected => Socket?.Connected is true || Socket?.Available > 0;
+
     public override void Open()
     {
         if (Socket is not null && Socket.IsBound) return;
@@ -27,34 +29,24 @@ public class TCPAdapter : BinaryAdapter
             Socket.Dispose();
             Socket = null;
         }
-        Client = new TcpClient();
-        int attempts = 0;
-        Logger.LogInformation("Attempting Connection to Emulator");
-        while (Client.Connected is false)
-        {
-            if (attempts > Settings.ConnectionAttempts)
-            {
-                Logger.LogWarning("Connection Failed");
-                return;
-            }
 
-            attempts++;
+        Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        
+        while (Socket.Connected is false)
             try
             {
-                Client.Connect(IPAddress.Loopback, Settings.Port);
+                Socket.Connect(new IPEndPoint(IPAddress.Loopback, Settings.Port));
             }
             catch
             {
                 Thread.Sleep(1000);
             }
-        }
+        Stream = new NetworkStream(Socket);
         Logger.LogInformation("Connected to Emulator");
-        Stream = Client.GetStream();
     }
 
     public override void Close()
     {
-        
         Socket?.Close();
         Socket?.Dispose();
     }

@@ -282,21 +282,27 @@ public abstract class AdaptorEmulator : NabuEmulator
     {
         
         while (cancel.IsCancellationRequested is false)
-        {
-            if (Serial.Connected is false) {
-                await Task.Delay(1000, cancel);
-                continue;
-            }
-            Log("Waiting for NABU");
+        {            
             try
             {
+                if (Serial.Connected is false) {
+                    await Task.Delay(1000, cancel);
+                    continue;
+                }
+                Log("Waiting for NABU");
                 byte incoming = Recv();
 
                 switch (incoming)
                 {
                     #region Messages
                     case 0:
-                        continue; // I have never seen these messages
+                        // Disconnected?
+                        if (Serial.Connected is false)
+                        {
+                            Log("Disconnected.");
+                            break;
+                        }
+                        continue;
                     case 0xFF:
                         continue; // They were in DKG's code, so I've kept them
                     case 0xEF:
@@ -355,10 +361,12 @@ public abstract class AdaptorEmulator : NabuEmulator
             catch (Exception ex)
             {
                 Error(ex.Message);
+                return;
             }
             
             GC.Collect();
         }
+        GC.Collect();
     }
     #endregion
 

@@ -16,7 +16,7 @@ public class SerialAdapter : BinaryAdapter
     {
         Settings = settings;
     }
-
+    public override bool Connected => Serial?.IsOpen is true;
     public override void Open()
     {
         if (Serial is not null && Serial.IsOpen) { return; }
