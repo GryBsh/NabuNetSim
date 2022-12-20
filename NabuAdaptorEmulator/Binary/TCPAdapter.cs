@@ -20,7 +20,7 @@ public class TCPAdapter : BinaryAdapter
         
     }
 
-    public override bool Connected => Socket?.Connected is true || Socket?.Available > 0;
+    public override bool Connected => Socket?.Connected is true;
 
     public override void Open()
     {
@@ -47,7 +47,13 @@ public class TCPAdapter : BinaryAdapter
 
     public override void Close()
     {
+        Stream?.Close();
+        Stream?.Dispose();
+        Stream = null;
+        
         Socket?.Close();
         Socket?.Dispose();
+        Socket = null;
+
     }
 }

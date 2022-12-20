@@ -296,13 +296,7 @@ public abstract class AdaptorEmulator : NabuEmulator
                 {
                     #region Messages
                     case 0:
-                        // Disconnected?
-                        if (Serial.Connected is false)
-                        {
-                            Log("Disconnected.");
-                            break;
-                        }
-                        continue;
+                        goto END;
                     case 0xFF:
                         continue; // They were in DKG's code, so I've kept them
                     case 0xEF:
@@ -366,6 +360,8 @@ public abstract class AdaptorEmulator : NabuEmulator
             
             GC.Collect();
         }
+        
+        END:
         GC.Collect();
     }
     #endregion

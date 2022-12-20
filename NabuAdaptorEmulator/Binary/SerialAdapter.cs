@@ -50,5 +50,6 @@ public class SerialAdapter : BinaryAdapter
     {
         Serial?.Close();
         Serial?.Dispose();
+        Serial = null;
     }
 }

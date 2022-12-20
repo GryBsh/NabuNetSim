@@ -28,29 +28,30 @@ public class EmulatorService : BackgroundService
     
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        Task serial = Task.CompletedTask, 
-             tcp = Task.CompletedTask;
+        await Task.Run(() => {
+            Task serial = Task.CompletedTask, 
+                tcp = Task.CompletedTask;
 
-        while (stopping.IsCancellationRequested is false)
-        {
-            if (stopping.IsCancellationRequested is false && Settings.Serial && serial.IsCompleted)
-                serial = NabuService.From(
-                    Serial.Emulate,
-                    stopping,
-                    () => Serial.Open(),
-                    () => Serial.Close()
-                );
+            while (stopping.IsCancellationRequested is false)
+            {
+                Thread.Sleep(1000);
+                if (Settings.Serial && serial.IsCompleted)
+                    serial = NabuService.From(
+                        Serial.Emulate,
+                        stopping,
+                        () => Serial.Open(),
+                        () => Serial.Close()
+                    );
 
-            if (stopping.IsCancellationRequested is false && Settings.TCP && tcp.IsCompleted)
-                tcp = NabuService.From(
-                    TCP.Emulate,
-                    stopping,
-                    () => TCP.Open(),
-                    () => TCP.Close()
-                );
-
-            Thread.Sleep(1000);
-        }
+                if (Settings.TCP && tcp.IsCompleted)
+                    tcp = NabuService.From(
+                        TCP.Emulate,
+                        stopping,
+                        () => TCP.Open(),
+                        () => TCP.Close()
+                    );
+            }
+        }, stopping);
     }
 }
 

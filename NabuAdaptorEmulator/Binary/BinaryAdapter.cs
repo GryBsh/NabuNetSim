@@ -7,9 +7,7 @@ public abstract class BinaryAdapter : IBinaryAdapter
     protected Stream? Stream { get; set; }
     protected readonly ILogger Logger;
     public virtual bool Connected => Stream is not null;
-    public BinaryAdapter(
-        ILogger logger
-    )
+    public BinaryAdapter(ILogger logger)
     {
         Logger = logger;
     }
