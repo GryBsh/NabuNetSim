@@ -43,6 +43,7 @@ This is the standard dotnet logging section.
 - DJ Sures: for his tireless work on the official recreation
 - Leo Binkowski: for stealing all that stuff from NABU and preserving it
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
+- York University: for their recreation efforts, they are both numerous and awesome
 - RetroNET Chaters (in no particular order):
   - Sark
   - Nath (The legend who decrypted NPAK files)
