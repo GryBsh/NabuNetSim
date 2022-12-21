@@ -5,7 +5,6 @@ internal static class Constants
     // Sizes
     public const int MaxSegmentSize = 65536;
     public const int MaxPacketSize = 1024;
-    
     public const short MaxPayloadSize = 991;
     public const short HeaderSize = 16;
     public const short FooterSize = 2;

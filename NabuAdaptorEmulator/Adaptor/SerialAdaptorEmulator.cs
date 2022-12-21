@@ -9,12 +9,11 @@ public class SerialAdaptorEmulator : AdaptorEmulator
     public SerialAdaptorEmulator(
         NetworkEmulator network, 
         ILogger<SerialAdaptorEmulator> logger, 
-        AdaptorSettings settings,
-        SerialAdapterSettings adapterSettings
+        AdaptorSettings settings
     ) : base(
         network, 
         logger, 
         settings, 
-        new SerialAdapter(adapterSettings, logger)
+        new SerialAdapter(settings, logger)
     ) {}
 }

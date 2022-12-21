@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Nabu.Adaptor;
 using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
@@ -10,9 +11,9 @@ public class TCPAdapter : BinaryAdapter
    
     Socket? Socket;
     
-    readonly TCPAdapterSettings Settings;
+    readonly AdaptorSettings Settings;
     public TCPAdapter(
-        TCPAdapterSettings settings,
+        AdaptorSettings settings,
         ILogger logger
     ) : base(logger)
     {
@@ -30,12 +31,22 @@ public class TCPAdapter : BinaryAdapter
             Socket = null;
         }
 
-        Socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+        if (!int.TryParse(Settings.Port, out int port)) {
+            return;
+        };
+
+        Socket = new Socket(
+            AddressFamily.InterNetwork, 
+            SocketType.Stream, 
+            ProtocolType.Tcp
+        );
         
         while (Socket.Connected is false)
             try
             {
-                Socket.Connect(new IPEndPoint(IPAddress.Loopback, Settings.Port));
+                Socket.Connect(
+                    new IPEndPoint(IPAddress.Loopback, port)
+                );
             }
             catch
             {

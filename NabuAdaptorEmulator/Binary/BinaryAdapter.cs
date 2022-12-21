@@ -25,7 +25,11 @@ public abstract class BinaryAdapter : IBinaryAdapter
         {
             Stream?.Read(bytes, i, 1);
         }
-        Logger.LogTrace($"RCVD: {Format(bytes)}");
+        
+        //#if DEBUG
+        //Logger.LogTrace($"RCVD: {Format(bytes)}");
+        //#endif
+
         Logger.LogDebug($"RCVD: {bytes.Length} bytes");
         return bytes;
     }

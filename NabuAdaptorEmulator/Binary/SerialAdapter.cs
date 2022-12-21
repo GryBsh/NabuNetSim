@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Nabu.Adaptor;
 using System.Diagnostics;
 using System.IO.Ports;
 using System.Text;
@@ -8,9 +9,9 @@ namespace Nabu.Binary;
 public class SerialAdapter : BinaryAdapter
 {
     SerialPort? Serial;
-    readonly SerialAdapterSettings Settings;
+    readonly AdaptorSettings Settings;
     public SerialAdapter(
-        SerialAdapterSettings settings,
+        AdaptorSettings settings,
         ILogger logger
     ) : base(logger)
     {
@@ -28,9 +29,9 @@ public class SerialAdapter : BinaryAdapter
         Serial = new(
             Settings.Port,
             Settings.BaudRate,
-            Settings.Partity,
-            Settings.DataBits,
-            Settings.StopBits
+            Parity.None,
+            8,
+            StopBits.Two
         ){
             Handshake = Handshake.None,
             RtsEnable = true,

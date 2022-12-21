@@ -2,22 +2,15 @@
 using Nabu.Binary;
 using Nabu.Network;
 using Nabu.Services;
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
-using System.Security.Principal;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.Adaptor;
 
 public abstract class AdaptorEmulator : NabuEmulator
 {
-    readonly IBinaryAdapter Serial;
+    readonly IBinaryAdapter Adapter;
     readonly AdaptorSettings Settings;
-    readonly AdaptorState State;
+    AdaptorState State;
     readonly NetworkEmulator Network;
     public AdaptorEmulator(
         NetworkEmulator network,
@@ -27,56 +20,56 @@ public abstract class AdaptorEmulator : NabuEmulator
     ) : base(logger)
     {
         Network = network;
-        Serial = serial;
+        Adapter = serial;
         Settings = settings;
-        State = new()
-        {
-            Channel = settings.Channel,
-            ChannelKnown = !settings.ChannelPrompt
-        };
+        State = new();
         
     }
 
     #region Communication
-    public void Open()
+    public void Open(AdaptorSettings settings)
     {
-       Serial.Open();
-       Task.Run(Network.PreLoad);
+        State = new(){
+            Channel = settings.AdapterChannel,
+            ChannelKnown = !settings.ChannelPrompt
+        };
+        Adapter.Open();
+        Network.SetState(settings);
     }
 
     public void Close()
     {
-        Serial.Close();
+        Adapter.Close();
     }
 
     public byte Recv()
     {
-        return Serial.Recv();
+        return Adapter.Recv();
     }
 
     public (bool, byte) Recv(byte byt)
     {
-        return Serial.Recv(byt);
+        return Adapter.Recv(byt);
     }
 
     public byte[] Recv(int length = 1)
     {
-        return Serial.Recv(length);
+        return Adapter.Recv(length);
     }
 
     public (bool, byte[]) Recv(params byte[] bytes)
     {
-        return Serial.Recv(bytes);
+        return Adapter.Recv(bytes);
     }
 
     public void Send(params byte[] bytes)
     {
-        Serial.Send(bytes);
+        Adapter.Send(bytes);
     }
 
     public void Send(byte[] buffer, int bytes)
     {
-        Serial.Send(buffer, bytes);
+        Adapter.Send(buffer, bytes);
     }
     #endregion
 
@@ -97,7 +90,7 @@ public abstract class AdaptorEmulator : NabuEmulator
     void ChannelChange()
     {
 
-        short data = Tools.PackShort(Serial.Recv(2));
+        short data = Tools.PackShort(Adapter.Recv(2));
         if (data < 0x100)
         {
             State.Channel = data;
@@ -285,7 +278,7 @@ public abstract class AdaptorEmulator : NabuEmulator
         {            
             try
             {
-                if (Serial.Connected is false) {
+                if (Adapter.Connected is false) {
                     await Task.Delay(1000, cancel);
                     continue;
                 }

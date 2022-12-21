@@ -4,6 +4,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
+using Nabu.Adaptor;
 
 namespace Nabu.Services;
 
@@ -28,8 +29,9 @@ public sealed class NabuService
 
     public static NabuService From(
         Func<CancellationToken, Task> action,
+        AdaptorSettings settings,
         CancellationToken? token = null,
-        Action? onStart = null,
+        Action<AdaptorSettings>? onStart = null,
         Action? onStop = null
     )
     {
@@ -41,7 +43,7 @@ public sealed class NabuService
 
         async Task task()
         {
-            await Task.Run(() => onStart?.Invoke());
+            await Task.Run(() => onStart?.Invoke(settings));
             await action(source.Token);
             await Task.Run(() => onStop?.Invoke());
         }
@@ -54,8 +56,9 @@ public sealed class NabuService
 
     public static NabuService From(
         Action<CancellationToken> action,
+        AdaptorSettings settings,
         CancellationToken? token = null,
-        Action? onStart = null,
+        Action<AdaptorSettings>? onStart = null,
         Action? onStop = null
     )
     {
@@ -67,7 +70,7 @@ public sealed class NabuService
 
         void task()
         {
-            onStart?.Invoke();
+            onStart?.Invoke(settings);
             action(source.Token);
             onStop?.Invoke();
         }

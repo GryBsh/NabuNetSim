@@ -2,22 +2,22 @@
 
 public static partial class Tools
 {
-    public static byte[] SetLength(int length, params byte[] bytes)
+    public static T[] SetLength<T>(int length, T[] items, T fill)
     {
-        if (bytes.Length == length) return bytes;
+        if (items.Length == length) return items;
 
-        var buffer = new byte[length];
+        var result = new T[length];
         for (int i = 0; i < length; i++)
         {
-            if (bytes.Length > i)
+            if (items.Length > i)
             {
-                buffer[i] = bytes[i];
+                result[i] = items[i];
             }
             else
             {
-                buffer[i] = 0x00;
+                result[i] = fill;
             }
         }
-        return buffer;
+        return result;
     }
 }

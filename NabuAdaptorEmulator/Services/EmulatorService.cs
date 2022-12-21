@@ -1,55 +1,71 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 using Nabu.Binary;
+using Nabu.Network;
 
 namespace Nabu.Services;
 
 public class EmulatorService : BackgroundService
 {
     readonly ILogger Logger;
-    readonly SerialAdaptorEmulator Serial;
-    readonly TCPAdaptorEmulator TCP;
-    readonly ServiceSettings Settings;
+    readonly AdaptorSettings[] DefinedAdapters;
+    private readonly IServiceProvider ServiceProvider;
 
     public EmulatorService(
         ILogger<EmulatorService> logger,
-        ServiceSettings settings,
-        SerialAdaptorEmulator adaptor,
-        TCPAdaptorEmulator tcp
+        Settings settings,
+        IServiceProvider serviceProvider
     )
     {
         Logger = logger;
-        Settings = settings;
-        Serial = adaptor;
-        TCP = tcp;
+        DefinedAdapters = settings.Adaptors ?? Array.Empty<AdaptorSettings>();
+        ServiceProvider = serviceProvider;
     }
 
     
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         await Task.Run(() => {
-            Task serial = Task.CompletedTask, 
-                tcp = Task.CompletedTask;
+            Task[] services = Tools.SetLength(
+                DefinedAdapters.Length, 
+                Array.Empty<Task>(), 
+                Task.CompletedTask
+            );
 
             while (stopping.IsCancellationRequested is false)
             {
+                for (int index = 0; index < DefinedAdapters.Length; index++)
+                {
+                    if (services[index] == Task.CompletedTask)
+                    {
+                        var settings = DefinedAdapters[index];
+                        AdaptorEmulator adaptor = settings.Type switch {
+                            AdaptorType.Serial => new SerialAdaptorEmulator(
+                                ServiceProvider.GetRequiredService<NetworkEmulator>(),
+                                ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
+                                settings
+                            ),
+                            AdaptorType.TCP => new TCPAdaptorEmulator(
+                                ServiceProvider.GetRequiredService<NetworkEmulator>(),
+                                ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
+                                settings
+                            ),
+                            _ => throw new NotImplementedException()
+                        };
+                        
+                        services[index] = NabuService.From(
+                            adaptor.Emulate,
+                            settings,
+                            stopping,
+                            adaptor.Open,
+                            adaptor.Close
+                        );         
+                    }
+                }
+               
                 Thread.Sleep(1000);
-                if (Settings.Serial && serial.IsCompleted)
-                    serial = NabuService.From(
-                        Serial.Emulate,
-                        stopping,
-                        () => Serial.Open(),
-                        () => Serial.Close()
-                    );
-
-                if (Settings.TCP && tcp.IsCompleted)
-                    tcp = NabuService.From(
-                        TCP.Emulate,
-                        stopping,
-                        () => TCP.Open(),
-                        () => TCP.Close()
-                    );
             }
         }, stopping);
     }

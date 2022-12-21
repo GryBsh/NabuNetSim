@@ -9,13 +9,12 @@ public class TCPAdaptorEmulator : AdaptorEmulator
     public TCPAdaptorEmulator(
         NetworkEmulator network,
         ILogger<TCPAdaptorEmulator> logger,
-        AdaptorSettings settings,
-        TCPAdapterSettings adapterSettings
+        AdaptorSettings settings
     ) : base(
         network,
         logger,
         settings,
-        new TCPAdapter(adapterSettings, logger)
+        new TCPAdapter(settings, logger)
     )
     { }
 }

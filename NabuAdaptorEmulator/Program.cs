@@ -36,12 +36,10 @@ builder.ConfigureServices(
             return settings;
         }
 
-        AddSettings<ServiceSettings>(context, services, "Services");
-        AddSettings<SerialAdapterSettings>(context, services, "Serial");
-        AddSettings<TCPAdapterSettings>(context, services, "TCP");
-        AddSettings<AdaptorSettings>(context, services, "Adaptor");
-        AddSettings<NetworkSettings>(context, services, "Network");
-        AddSettings<ChannelSources>(context, services, "Sources");
+        
+
+        var settings = AddSettings<Settings>(context, services, "Settings");
+        services.AddSingleton(settings.Sources);
 
         services.AddLogging(
             logging =>
@@ -57,9 +55,9 @@ builder.ConfigureServices(
         );
 
         services.AddHttpClient();
-        services.AddSingleton<SerialAdaptorEmulator>();
-        services.AddSingleton<TCPAdaptorEmulator>();
-        services.AddSingleton<NetworkEmulator>();
+        services.AddTransient<SerialAdaptorEmulator>();
+        services.AddTransient<TCPAdaptorEmulator>();
+        services.AddTransient<NetworkEmulator>();
         services.AddHostedService<EmulatorService>();
     }
 );

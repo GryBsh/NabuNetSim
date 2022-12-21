@@ -4,7 +4,7 @@ public static partial class Tools
 {
     public static int PackInt(byte[] buffer) 
     {
-        buffer = SetLength(4, buffer);
+        buffer = SetLength<byte>(4, buffer, 0x00);
         int r = 0;
         r |= buffer[0] << 0;
         r |= buffer[1] << 8;
@@ -15,7 +15,7 @@ public static partial class Tools
 
     public static short PackShort(byte[] buffer)
     {
-        buffer = SetLength(2, buffer);
+        buffer = SetLength<byte>(2, buffer, 0x00);
         int r = 0;
         r |= buffer[0] << 0;
         r |= buffer[1] << 8;
