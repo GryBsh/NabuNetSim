@@ -353,8 +353,9 @@ public abstract class AdaptorEmulator : NabuEmulator
             
             GC.Collect();
         }
-        
-        END:
+
+    END:
+        Log("Ending Adaptor Loop");
         GC.Collect();
     }
     #endregion

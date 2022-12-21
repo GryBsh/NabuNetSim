@@ -38,7 +38,7 @@ public class EmulatorService : BackgroundService
             {
                 for (int index = 0; index < DefinedAdapters.Length; index++)
                 {
-                    if (services[index] == Task.CompletedTask)
+                    if (services[index].IsCompleted)
                     {
                         var settings = DefinedAdapters[index];
                         AdaptorEmulator adaptor = settings.Type switch {
