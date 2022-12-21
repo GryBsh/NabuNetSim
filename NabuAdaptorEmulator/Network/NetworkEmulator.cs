@@ -54,7 +54,7 @@ public class NetworkEmulator : NabuEmulator
                 var files = Directory.GetFiles(source.PakRoot, "*.npak");
                 if (files.Length > 0) {
                     yield return new(
-                        Path.GetFileName(source.PakRoot), 
+                        nameof(source.PakRoot), 
                         sourceName, 
                         source.Type, 
                         source.PakRoot, 
