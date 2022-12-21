@@ -4,12 +4,6 @@ using System.Text.RegularExpressions;
 
 namespace Nabu.Adaptor;
 
-public enum AdaptorMode
-{
-    LocalSerial = 0,
-    RemoteSerial
-}
-
 public class AdaptorState
 {
 

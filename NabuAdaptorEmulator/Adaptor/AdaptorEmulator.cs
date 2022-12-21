@@ -355,7 +355,7 @@ public abstract class AdaptorEmulator : NabuEmulator
         }
 
     END:
-        Log("Ending Adaptor Loop");
+        Log("Disconnected");
         GC.Collect();
     }
     #endregion

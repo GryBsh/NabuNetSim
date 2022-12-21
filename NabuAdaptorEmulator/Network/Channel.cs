@@ -15,6 +15,7 @@ public enum ImageType
     Nabu,
     Pak
 }
+
 public record Channel(
     string Name, 
     string Source, 

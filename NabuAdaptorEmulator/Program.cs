@@ -4,19 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 using Nabu.Network;
-using Nabu.Binary;
 using Nabu.Services;
-
-/*
-        --Serial:Port="NAME/PATH"
-        Sets the serial port
-
-        --Network:Source="NAME"
-        Sets the source
-
-        --Network:Channel="NAME"
-        Sets the channel        
-*/
 
 var builder = Host.CreateDefaultBuilder(args);
 
@@ -35,8 +23,6 @@ builder.ConfigureServices(
             services.AddSingleton(settings);
             return settings;
         }
-
-        
 
         var settings = AddSettings<Settings>(context, services, "Settings");
         services.AddSingleton(settings.Sources);

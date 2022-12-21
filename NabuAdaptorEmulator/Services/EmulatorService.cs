@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
-using Nabu.Binary;
 using Nabu.Network;
 
 namespace Nabu.Services;
