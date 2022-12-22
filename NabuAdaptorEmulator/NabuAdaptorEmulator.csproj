@@ -7,7 +7,6 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Nabu</RootNamespace>
     <AssemblyName>nnae</AssemblyName>
-	<PublishSingleFile>true</PublishSingleFile>
   </PropertyGroup>
 
   <ItemGroup>

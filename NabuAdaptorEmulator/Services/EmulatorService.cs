@@ -9,7 +9,7 @@ namespace Nabu.Services;
 public class EmulatorService : BackgroundService
 {
     readonly ILogger Logger;
-    readonly AdaptorSettings[] DefinedAdapters;
+    readonly AdaptorSettings[] DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
 
     public EmulatorService(
@@ -19,7 +19,7 @@ public class EmulatorService : BackgroundService
     )
     {
         Logger = logger;
-        DefinedAdapters = settings.Adaptors ?? Array.Empty<AdaptorSettings>();
+        DefinedAdaptors = settings.Adaptors ?? Array.Empty<AdaptorSettings>();
         ServiceProvider = serviceProvider;
     }
 
@@ -27,19 +27,31 @@ public class EmulatorService : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         await Task.Run(() => {
+
+            // We are going to keep track of the services that were defined
+            // so if they stop, we can restart them
             Task[] services = Tools.SetLength(
-                DefinedAdapters.Length, 
+                DefinedAdaptors.Length, 
                 Array.Empty<Task>(), 
                 Task.CompletedTask
             );
 
+            Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
+            foreach (var adaptor in DefinedAdaptors)
+            {
+                Logger.LogInformation($"Adaptor: {adaptor.Type} On: {adaptor.Port}");
+            }
+
+            // Until the host tells us to stop
             while (stopping.IsCancellationRequested is false)
             {
-                for (int index = 0; index < DefinedAdapters.Length; index++)
+                for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
+                    // Is this service stopped?
                     if (services[index].IsCompleted)
                     {
-                        var settings = DefinedAdapters[index];
+                        // If so, restart it
+                        var settings = DefinedAdaptors[index];
                         AdaptorEmulator adaptor = settings.Type switch {
                             AdaptorType.Serial => new SerialAdaptorEmulator(
                                 ServiceProvider.GetRequiredService<NetworkEmulator>(),
@@ -50,7 +62,7 @@ public class EmulatorService : BackgroundService
                                 ServiceProvider.GetRequiredService<NetworkEmulator>(),
                                 ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
                                 settings
-                            ),
+                            ), // Those are all the types supported so far
                             _ => throw new NotImplementedException()
                         };
                         
@@ -60,11 +72,11 @@ public class EmulatorService : BackgroundService
                             stopping,
                             adaptor.Open,
                             adaptor.Close
-                        );         
+                        ); // wrap the operations in a service         
                     }
                 }
                
-                Thread.Sleep(1000);
+                Thread.Sleep(1000); // Lazy Wait, we don't care how long it takes to resume
             }
         }, stopping);
     }

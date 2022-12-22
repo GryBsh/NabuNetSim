@@ -38,12 +38,19 @@ public class SerialAdapter : BinaryAdapter
             DtrEnable = true,
             ReadTimeout = 60000,
         };
-        Serial.Open();
-        if (Serial.IsOpen)
-            Stream = Serial.BaseStream;
-        else
-            throw new Exception($"Failed open {Settings.Port}");
-
+        
+        while (Serial.IsOpen is false)
+            try
+            {
+                Serial.Open();
+            }
+            catch ( Exception ex ) 
+            {
+                Logger.LogError(ex, ex.Message);
+                Thread.Sleep(5000);
+            }
+        
+        Stream = Serial.BaseStream;
         Logger.LogInformation($"Listening on {Settings.Port}");
     }
 

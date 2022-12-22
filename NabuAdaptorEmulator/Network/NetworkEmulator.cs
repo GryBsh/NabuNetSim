@@ -28,9 +28,9 @@ public class NetworkEmulator : NabuEmulator
         var filename = Tools.PakName(segment);
         url = $"{url}/{filename}.npak";
         var npak = await Http.GetByteArrayAsync(url);
-        Trace($"NPAK Length: {npak.Length}");
+        //Trace($"NPAK Length: {npak.Length}");
         npak = Tools.Unpack(npak);
-        Trace($"Segment Length: {npak.Length}");
+        //Trace($"Segment Length: {npak.Length}");
         return npak;
     }
     async Task<byte[]> FileGetPakBytes(string path, int segment)
@@ -46,21 +46,67 @@ public class NetworkEmulator : NabuEmulator
     #endregion
     
     #region Channel List
+    
+    IEnumerable<Channel> GetLocalPakChannels(string sourceName, string root) {
+        var folders = Directory.GetDirectories(root);
+        foreach (var folder in folders)
+        {
+            var files = Directory.GetFiles(folder, "*.npak");
+            if (files.Length > 0) {
+                yield return new(
+                    folder.Split(Path.DirectorySeparatorChar)[^1], 
+                    sourceName, 
+                    ChannelSourceType.Folder, 
+                    folder, 
+                    ChannelType.LocalPak
+                );                    
+            } 
+        }
+    }
+
+    IEnumerable<Channel>GetChannelsFromList(string sourceName, ChannelSource source, string list) {
+        var parts =
+                list.Split('\n')
+                    .Select(l => l.Split(';')
+                                    .Select(s => s.Trim())
+                                    .ToArray()
+                    );
+
+        foreach (var line in parts)
+        {
+            var name = line[^1];
+            var path = line[0];
+            
+            if (name is null || path is null)
+            {
+                Warning($"Invalid from Source {sourceName}: Channel: {name}, Path: {path}");
+                continue;
+            }
+            var isNabuFile = path.ToLower().EndsWith(".nabu");
+            var root = isNabuFile ? source.NabuRoot : source.PakRoot;
+            var isRemote = (root ?? string.Empty).ToLower().StartsWith("http");
+            var pathSeperator = isRemote ? '/' : Path.DirectorySeparatorChar;
+            var realPath = $"{root}{pathSeperator}{path}";
+            var type = isRemote && isNabuFile ?
+                            ChannelType.RemoteNabu :
+                        isRemote ?
+                            ChannelType.RemotePak :
+                        isNabuFile ?
+                            ChannelType.LocalNabu :
+                            ChannelType.LocalPak;
+
+            yield return new(name, sourceName, source.Type, realPath, type);
+        }
+    }
+
     async IAsyncEnumerable<Channel> GetChannelList(string sourceName, ChannelSource source)
     {
         if (source.Type is ChannelSourceType.Folder) {
             if (source.NabuRoot is null && source.PakRoot is null) yield break;
             if (source.PakRoot is not null){
-                var files = Directory.GetFiles(source.PakRoot, "*.npak");
-                if (files.Length > 0) {
-                    yield return new(
-                        nameof(source.PakRoot), 
-                        sourceName, 
-                        source.Type, 
-                        source.PakRoot, 
-                        ChannelType.LocalPak
-                    );                    
-                } 
+                foreach (var channel in GetLocalPakChannels(sourceName, source.PakRoot)) {
+                    yield return channel;
+                }
             }
 
             if (source.NabuRoot is not null) {
@@ -89,41 +135,12 @@ public class NetworkEmulator : NabuEmulator
                 yield break;
             }
 
-            var parts =
-                list.Split('\n')
-                    .Select(l => l.Split(';')
-                                    .Select(s => s.Trim())
-                                    .ToArray()
-                    );
-
-            foreach (var line in parts)
-            {
-                var name = line[^1];
-                var path = line[0];
-                var lowerPath = path.ToLowerInvariant();
-
-                if (name is null || path is null)
-                {
-                    Warning($"Invalid from Source {sourceName}: Channel: {name}, Path: {path}");
-                    continue;
-                }
-                var isNabuFile = path.ToLower().EndsWith(".nabu");
-                var root = isNabuFile ? source.NabuRoot : source.PakRoot;
-                var isRemote = (root ?? string.Empty).ToLower().StartsWith("http");
-                var pathSeperator = isRemote ? '/' : Path.DirectorySeparatorChar;
-                var realPath = $"{root}{pathSeperator}{path}";
-                var type = isRemote && isNabuFile ?
-                                ChannelType.RemoteNabu :
-                            isRemote ?
-                                ChannelType.RemotePak :
-                            isNabuFile ?
-                                ChannelType.LocalNabu :
-                                ChannelType.LocalPak;
-
-                yield return new(name, sourceName, source.Type, realPath, type);
+            foreach (var channel in GetChannelsFromList(sourceName, source, list)) {
+                yield return channel;
             }
         }
     }
+    
     async Task<bool> ChangeChannelList()
     {
         Log($"Refresh Channel List from Source: {State.Source}");
@@ -143,8 +160,9 @@ public class NetworkEmulator : NabuEmulator
         Log($"Refreshed ({State.Channels.Count} Channels)");
         return true;
     }
-
-    public void SetState(AdaptorSettings settings) {
+    #endregion
+    
+     public void SetState(AdaptorSettings settings) {
         Log($"Source: {settings.Source}, Channel: {settings.Channel}");
         State.Source = settings.Source;
         State.Channel = settings.Channel;
@@ -152,8 +170,6 @@ public class NetworkEmulator : NabuEmulator
         Task.Run(ChangeChannelList);
     }
 
-    #endregion
-    
     public async Task<(ImageType, byte[])> Request(int segment)
     {
         if (State.Source is null || State.Channel is null)
@@ -162,6 +178,7 @@ public class NetworkEmulator : NabuEmulator
             return (ImageType.None, Array.Empty<byte>());
         }
         if (State.HasChannels is false) {
+            State.ClearCache();
             if (!await ChangeChannelList())
             {
                 Warning("No Channel List");

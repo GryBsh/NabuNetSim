@@ -133,18 +133,26 @@ public abstract class AdaptorEmulator : NabuEmulator
             return;
         }
         if (type == ImageType.Nabu)
-            await Task.Run(() => PreparePacket(packet, segment, segmentData));
+            await Task.Run(() => SliceAndSendFromRaw(packet, segment, segmentData));
         else
-            await Task.Run(() => SlicePacket(packet, segmentData));
+            await Task.Run(() => SliceAndSendFromPak(packet, segmentData));
     }
     #endregion
 
     #region Packet Format
-
-    void SlicePacket(short packet, byte[] buffer)
+    /// <summary>
+    ///     Slices a packet from the given pre-prepared segment pak
+    /// </summary>
+    void SliceAndSendFromPak(short packet, byte[] buffer)
     {
         int length = Constants.TotalPayloadSize;
         int offset = (packet * length) + ((2 * packet) + 2);
+        if (offset >= buffer.Length)
+        {
+            Error($"Packet Start {offset} is beyond the end of the buffer");
+            Send(Messages.Unauthorized);
+            return;
+        }
         if (offset + length >= buffer.Length)
         {
             length = buffer.Length - offset;
@@ -158,7 +166,14 @@ public abstract class AdaptorEmulator : NabuEmulator
         SendPacket(message);
     }
 
-    void PreparePacket(
+    /// <summary>
+    ///     Slices the given packet the given buffer of program data
+    ///     and creates the packet header and footer structures around it
+    /// </summary>
+    /// <param name="packet"></param>
+    /// <param name="segment"></param>
+    /// <param name="buffer"></param>
+    void SliceAndSendFromRaw(
         short packet,
         int segment,
         byte[] buffer)
@@ -205,21 +220,25 @@ public abstract class AdaptorEmulator : NabuEmulator
         message[idx++] = (byte)(packet >> 8 & 0xFF);            //Packet # MSB
         message[idx++] = (byte)(offset >> 8 & 0xFF);            //Offset MSB
         message[idx++] = (byte)(offset >> 0 & 0xFF);            //Offset LSB
-        // Data
-        for (int i = offset; i <= lastIndex; i++)
-        {
-            message[idx++] = buffer[i];                         //DATA
-        }
+
+        buffer[offset..lastIndex].CopyTo(message, idx);         //DATA
+        idx += length;
+        
         //CRC Footer
         var crc = GenerateCRC(message[0..idx]);
-        message[idx++] = (byte)(crc >> 8 & 0xFF ^ 0xFF);    //CRC MSB
-        message[idx++] = (byte)(crc >> 0 & 0xFF ^ 0xFF);    //CRC LSB
+        message[idx++] = (byte)(crc >> 8 & 0xFF ^ 0xFF);        //CRC MSB
+        message[idx++] = (byte)(crc >> 0 & 0xFF ^ 0xFF);        //CRC LSB
 
         Debug("Sending Packet");
         SendPacket(message);
         if (lastPacket) GC.Collect();
     }
 
+    /// <summary>
+    /// Generates the 2 CRC bytes for a given packet buffer
+    /// </summary>
+    /// <param name="buffer">the contents of the packet</param>
+    /// <returns>2 CRC bytes packed into a short</returns>
     short GenerateCRC(byte[] buffer)
     {
         short crc = -1; // 0xFFFF
@@ -234,12 +253,35 @@ public abstract class AdaptorEmulator : NabuEmulator
     #endregion
 
     #region Send Packet
+    /// <summary>
+    ///     Escapes the Escape bytes in the packet with Escape.
+    /// </summary>
+    IEnumerable<byte> EscapeBytes(IEnumerable<byte> sequence)
+    {
+        foreach (byte b in sequence)
+        {
+            if (b == Messages.Escape)
+            {
+                yield return Messages.Escape;
+                yield return b;
+            }
+            else
+                yield return b;
+        }
+    }
+
+    /// <Summary>
+    ///     Send the time packet to the device
+    /// </summary>
     void SendTimePacket()
     {
         byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
-        PreparePacket(0, Messages.TimeSegment, buffer);
+        SliceAndSendFromRaw(0, Messages.TimeSegment, buffer);
     }
 
+    /// <summary>
+    ///     Send a packet to the device
+    /// </summary>
     void SendPacket(byte[] buffer, bool escape = true)
     {
         if (buffer.Length > Constants.MaxPacketSize)
@@ -253,19 +295,30 @@ public abstract class AdaptorEmulator : NabuEmulator
         Recv(Messages.ACK);
 
         Log($"Sending Packet, {buffer.Length} bytes");
-        var timer = Stopwatch.StartNew();
+        //var timer = Stopwatch.StartNew();
+        var start = DateTime.Now;
         if (escape)
             buffer = EscapeBytes(buffer).ToArray();
         Send(buffer);
-        timer.Stop();
-
+        //timer.Stop();
+        var stop = DateTime.Now;
         Send(Messages.End);                      //Epilog
         Task.Run(() =>
         {
-            var rate = $"{buffer.Length * 8 / 1000 / (timer.Elapsed.TotalMilliseconds / 1000):0.00}";
-            if (rate is not "0.00") State.LastRate = rate;
-            else rate = State.LastRate;
-            Trace($"{rate} Kbps");
+            var elapsed = stop - start;
+            var rate = ((buffer.Length * 8) / elapsed.TotalMilliseconds);
+            rate =  ( buffer.Length < 100 ?
+                            rate * 100 :          
+                            rate * 1000
+                    ) / 1024;
+            var unit = "KBps";
+            if (rate > 1024)
+            {
+                rate = rate / 1024;
+                unit = "MBps";
+            }
+            
+            Log($"Transfer Rate: {rate:0.00} {unit}");
         });
     }
     #endregion

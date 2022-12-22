@@ -12,21 +12,10 @@ var builder = Host.CreateDefaultBuilder(args);
 builder.ConfigureServices(
     (context, services) =>
     {
-        T AddSettings<T>(
-            HostBuilderContext context,
-            IServiceCollection services,
-            string section
-        ) where T : class, new()
-        {
-            T settings = new();
-            context.Configuration.Bind(section, settings);
-            services.AddSingleton(settings);
-            return settings;
-        }
-
-        var settings = AddSettings<Settings>(context, services, "Settings");
+        var settings = new Settings();
+        context.Configuration.Bind("Settings", settings);
+        services.AddSingleton(settings);
         services.AddSingleton(settings.Sources);
-
         services.AddLogging(
             logging =>
 
