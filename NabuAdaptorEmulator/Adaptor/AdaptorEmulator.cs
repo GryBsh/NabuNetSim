@@ -348,7 +348,7 @@ public abstract class AdaptorEmulator : NabuEmulator
             catch (Exception ex)
             {
                 Error(ex.Message);
-                return;
+                goto END;
             }
             
             GC.Collect();
