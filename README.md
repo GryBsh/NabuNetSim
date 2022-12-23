@@ -23,7 +23,7 @@ Can be set via command line arguments, in the usual dotnet way.
   - NabuRoot: the root for NABU files
   - PakRoot: the root for PAK files (* NabuRetroNet only)
 
-### Adaptors
+### Adaptors (Any number you'd like)
 
 - Type: Serial or TCP
 - Port: Either a name or path for Serial OR a number for TCP

@@ -1,0 +1,55 @@
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: Release-Package Binaries
+
+on:
+  release:
+    types:
+      - created
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      linux_arch: x64 arm arm64
+      win_arch: x64 arm arm64
+      macos_arch: x64 .11.0-arm64
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+    - name: Restore dependencies
+      run: dotnet restore
+    - name: Build
+      run: dotnet build --no-restore
+    - name: Package Linux
+      run: |
+        for arch in $linux_arch; 
+        do
+          dotnet publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o bin/linux/$arch -c release
+          zip -r nnae-linux-$arch.zip bin/linux/$arch
+        done
+    - name: Package Windows
+      run: |
+        for arch in $win_arch; 
+        do
+          dotnet publish -r win-$arch -p:PublishSingleFile=true --self-contained true -o bin/win/$arch -c release
+          zip -r nnae-win-$arch.zip bin/win/$arch
+        done
+    - name: Package MacOS
+      run: |
+        for arch in $win_arch; 
+        do
+          dotnet publish -r osx.11-$arch -p:PublishSingleFile=true --self-contained true -o bin/macos/$arch -c release
+          zip -r nnae-macos-$arch.zip bin/macos/$arch
+        done
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: *.zip
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    

@@ -6,11 +6,12 @@ using System.Net.Sockets;
 
 namespace Nabu.Binary;
 
+
 public class TCPAdapter : BinaryAdapter
 {
    
     Socket? Socket;
-    
+    const int DefaultPort = 5816;
     readonly AdaptorSettings Settings;
     public TCPAdapter(
         AdaptorSettings settings,
@@ -32,7 +33,7 @@ public class TCPAdapter : BinaryAdapter
         }
 
         if (!int.TryParse(Settings.Port, out int port)) {
-            return;
+            port = DefaultPort;
         };
 
         Socket = new Socket(

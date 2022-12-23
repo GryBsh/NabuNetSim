@@ -2,6 +2,7 @@
 using Nabu.Binary;
 using Nabu.Network;
 using Nabu.Services;
+using System;
 using System.Diagnostics;
 
 namespace Nabu.Adaptor;
@@ -9,26 +10,27 @@ namespace Nabu.Adaptor;
 public abstract class AdaptorEmulator : NabuEmulator
 {
     readonly IBinaryAdapter Adapter;
-    readonly AdaptorSettings Settings;
+    AdaptorSettings? Settings;
     AdaptorState State;
     readonly NetworkEmulator Network;
     public AdaptorEmulator(
         NetworkEmulator network,
         ILogger logger,
-        AdaptorSettings settings,
+        
         IBinaryAdapter serial
     ) : base(logger)
     {
         Network = network;
         Adapter = serial;
-        Settings = settings;
+        //Settings = settings;
         State = new();
         
     }
 
     #region Communication
-    public void Open(AdaptorSettings settings)
+    public virtual void Open(AdaptorSettings settings)
     {
+        Settings = settings;
         State = new(){
             Channel = settings.AdapterChannel,
             ChannelKnown = !settings.ChannelPrompt
@@ -76,7 +78,7 @@ public abstract class AdaptorEmulator : NabuEmulator
     #region Channel Status / Change
     void ChannelStatus()
     {
-        if (!State.ChannelKnown)
+        if (State.ChannelKnown is false)
         {
             Log("Adaptor: Requesting Channel Code");
             Send(Messages.RequestChannelCode);
@@ -239,7 +241,7 @@ public abstract class AdaptorEmulator : NabuEmulator
     /// </summary>
     /// <param name="buffer">the contents of the packet</param>
     /// <returns>2 CRC bytes packed into a short</returns>
-    short GenerateCRC(byte[] buffer)
+    static short GenerateCRC(byte[] buffer)
     {
         short crc = -1; // 0xFFFF
         foreach (var byt in buffer)
@@ -256,7 +258,7 @@ public abstract class AdaptorEmulator : NabuEmulator
     /// <summary>
     ///     Escapes the Escape bytes in the packet with Escape.
     /// </summary>
-    IEnumerable<byte> EscapeBytes(IEnumerable<byte> sequence)
+    static IEnumerable<byte> EscapeBytes(IEnumerable<byte> sequence)
     {
         foreach (byte b in sequence)
         {
@@ -295,20 +297,21 @@ public abstract class AdaptorEmulator : NabuEmulator
         Recv(Messages.ACK);
 
         Log($"Sending Packet, {buffer.Length} bytes");
-        //var timer = Stopwatch.StartNew();
-        var start = DateTime.Now;
         if (escape)
             buffer = EscapeBytes(buffer).ToArray();
+        var start = DateTime.Now;
         Send(buffer);
-        //timer.Stop();
         var stop = DateTime.Now;
         Send(Messages.End);                      //Epilog
-        Task.Run(() =>
-        {
+        Task.Run(TransferRatePrinter(start, stop, buffer.Length));
+    }
+
+    Action TransferRatePrinter(DateTime start, DateTime stop, int length)
+        => () => {
             var elapsed = stop - start;
-            var rate = ((buffer.Length * 8) / elapsed.TotalMilliseconds);
-            rate =  ( buffer.Length < 100 ?
-                            rate * 100 :          
+            var rate = ((length * 8) / elapsed.TotalMilliseconds);
+            rate = (length < 100 ?
+                            rate * 100 :
                             rate * 1000
                     ) / 1024;
             var unit = "KBps";
@@ -317,16 +320,15 @@ public abstract class AdaptorEmulator : NabuEmulator
                 rate = rate / 1024;
                 unit = "MBps";
             }
-            
             Log($"Transfer Rate: {rate:0.00} {unit}");
-        });
-    }
+        };
+
     #endregion
 
     #region Adaptor Loop
     public async Task Emulate(CancellationToken cancel)
     {
-        
+        Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {            
             try
@@ -335,13 +337,14 @@ public abstract class AdaptorEmulator : NabuEmulator
                     await Task.Delay(1000, cancel);
                     continue;
                 }
-                Log("Waiting for NABU");
+               
                 byte incoming = Recv();
 
                 switch (incoming)
                 {
                     #region Messages
                     case 0:
+                        if (GetType() == typeof(StreamAdaptorEmulator)) continue;
                         goto END;
                     case 0xFF:
                         continue; // They were in DKG's code, so I've kept them

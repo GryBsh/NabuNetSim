@@ -13,6 +13,7 @@ public record AdaptorSettings()
 {
     public AdaptorType Type { get; set; } = AdaptorType.Unknown;
     public string Port {get; set;} = string.Empty;
+    public string LocalPort { get; set;} = string.Empty;
     public bool Enabled {get; set;} = false;
     public bool ChannelPrompt { get; set; } = false;
     public short AdapterChannel { get; set; } = 0x0000;

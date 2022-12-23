@@ -37,13 +37,13 @@ public sealed class NabuService
 
         async Task task()
         {
-            await Task.Run(() => onStart?.Invoke(settings));
+            await Task.Run(() => onStart?.Invoke(settings), source.Token);
             await action(source.Token);
-            await Task.Run(() => onStop?.Invoke());
+            await Task.Run(() => onStop?.Invoke(), source.Token);
         }
 
         return new(
-            task(),
+            Task.Run(task, source.Token),
             source
         );
     }
@@ -70,7 +70,7 @@ public sealed class NabuService
         }
 
         return new(
-            Task.Run(task),
+            Task.Run(task, source.Token),
             source
         );
     }

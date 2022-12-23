@@ -13,7 +13,6 @@ public class SerialAdaptorEmulator : AdaptorEmulator
     ) : base(
         network, 
         logger, 
-        settings, 
         new SerialAdapter(settings, logger)
     ) {}
 }

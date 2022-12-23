@@ -4,17 +4,18 @@ using Nabu.Network;
 
 namespace Nabu.Adaptor;
 
-
-public class TCPAdaptorEmulator : AdaptorEmulator
+public class StreamAdaptorEmulator : AdaptorEmulator
 {
-    public TCPAdaptorEmulator(
+    public StreamAdaptorEmulator(
         NetworkEmulator network,
-        ILogger<TCPAdaptorEmulator> logger,
-        AdaptorSettings settings
+        ILogger<StreamAdaptorEmulator> logger,
+        Stream stream
     ) : base(
         network,
         logger,
-        new TCPAdapter(settings, logger)
+        new StreamAdapter(stream, logger)
     )
     { }
 }
+
+
