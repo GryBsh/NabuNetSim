@@ -5,7 +5,7 @@ using System;
 
 namespace Nabu.Network;
 
-public class NetworkEmulator : NabuEmulator
+public class NetworkEmulator : NabuService
 {
     readonly HttpClient Http;
     //readonly AdaptorSettings Settings;

@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 namespace Nabu.Adaptor;
 
-public abstract class AdaptorEmulator : NabuEmulator
+public abstract class AdaptorEmulator : NabuService
 {
     readonly IBinaryAdapter Adapter;
     AdaptorSettings? Settings;
@@ -135,7 +135,7 @@ public abstract class AdaptorEmulator : NabuEmulator
             return;
         }
         if (type == ImageType.Nabu)
-            await Task.Run(() => SliceAndSendFromRaw(packet, segment, segmentData));
+            await Task.Run(() => SliceAndSendRaw(packet, segment, segmentData));
         else
             await Task.Run(() => SliceAndSendFromPak(packet, segmentData));
     }
@@ -175,7 +175,7 @@ public abstract class AdaptorEmulator : NabuEmulator
     /// <param name="packet"></param>
     /// <param name="segment"></param>
     /// <param name="buffer"></param>
-    void SliceAndSendFromRaw(
+    void SliceAndSendRaw(
         short packet,
         int segment,
         byte[] buffer)
@@ -277,8 +277,20 @@ public abstract class AdaptorEmulator : NabuEmulator
     /// </summary>
     void SendTimePacket()
     {
-        byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
-        SliceAndSendFromRaw(0, Messages.TimeSegment, buffer);
+        //byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
+        var now = DateTime.Now;
+        byte[] buffer = {
+            0x02,
+            0x02,
+            0x02,
+            0x54,               //Year: 84 
+            (byte)now.Month,    //Month
+            (byte)now.Day,      //Day
+            (byte)now.Hour,     //Hour
+            (byte)now.Minute,   //Minute
+            (byte)now.Second    //Second
+        };
+        SliceAndSendRaw(0, Messages.TimeSegment, buffer);
     }
 
     /// <summary>
@@ -344,7 +356,6 @@ public abstract class AdaptorEmulator : NabuEmulator
                 {
                     #region Messages
                     case 0:
-                        if (GetType() == typeof(StreamAdaptorEmulator)) continue;
                         goto END;
                     case 0xFF:
                         continue; // They were in DKG's code, so I've kept them

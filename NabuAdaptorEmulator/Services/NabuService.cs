@@ -1,79 +1,23 @@
-﻿using Nabu.Adaptor;
+﻿using Microsoft.Extensions.Logging;
 
 namespace Nabu.Services;
 
-public sealed class NabuService
+public abstract class NabuService
 {
-    readonly CancellationTokenSource TokenSource;
-    public Task Task { get; }
-    public CancellationToken CancellationToken => TokenSource.Token;
+    protected ILogger Logger;
 
-    private NabuService(Task task, CancellationTokenSource source)
+    public NabuService(ILogger logger)
     {
-        Task = task;
-        TokenSource = source;
+        Logger = logger;
     }
 
-    public void Cancel()
-    {
-        if (TokenSource.IsCancellationRequested is false &&
-            Task.IsCompleted is false
-        ) TokenSource.Cancel();
-    }
+    protected static string Format(params byte[] bytes) => Tools.Format(bytes);
+    
+    protected void Log(string message)     => Logger.LogInformation(message);
+    protected void Debug(string message)   => Logger.LogDebug(message);
+    protected void Trace(string message)   => Logger.LogTrace(message);
+    protected void Warning(string message) => Logger.LogWarning(message);
+    protected void Error(string message)   => Logger.LogError(message);
 
-    public static NabuService From(
-        Func<CancellationToken, Task> action,
-        AdaptorSettings settings,
-        CancellationToken? token = null,
-        Action<AdaptorSettings>? onStart = null,
-        Action? onStop = null
-    )
-    {
-        var source = token is null ?
-            new CancellationTokenSource() :
-            CancellationTokenSource.CreateLinkedTokenSource(
-                (CancellationToken)token
-            );
 
-        async Task task()
-        {
-            await Task.Run(() => onStart?.Invoke(settings), source.Token);
-            await action(source.Token);
-            await Task.Run(() => onStop?.Invoke(), source.Token);
-        }
-
-        return new(
-            Task.Run(task, source.Token),
-            source
-        );
-    }
-
-    public static NabuService From(
-        Action<CancellationToken> action,
-        AdaptorSettings settings,
-        CancellationToken? token = null,
-        Action<AdaptorSettings>? onStart = null,
-        Action? onStop = null
-    )
-    {
-        var source = token is null ?
-                     new CancellationTokenSource() :
-                     CancellationTokenSource.CreateLinkedTokenSource(
-                        (CancellationToken)token
-                     );
-
-        void task()
-        {
-            onStart?.Invoke(settings);
-            action(source.Token);
-            onStop?.Invoke();
-        }
-
-        return new(
-            Task.Run(task, source.Token),
-            source
-        );
-    }
-
-    public static implicit operator Task(NabuService service) => service.Task;
 }

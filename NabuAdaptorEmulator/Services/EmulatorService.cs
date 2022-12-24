@@ -30,7 +30,7 @@ public class EmulatorService : BackgroundService
             ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
             settings
         );
-        return NabuService.From(
+        return NabuServiceTask.From(
             adaptor.Emulate,
             settings,
             stopping,
@@ -46,7 +46,7 @@ public class EmulatorService : BackgroundService
             ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
             settings
         );
-        return NabuService.From(
+        return NabuServiceTask.From(
             adaptor.Emulate,
             settings,
             stopping,
@@ -66,7 +66,7 @@ public class EmulatorService : BackgroundService
                 DefinedAdaptors.Length, 
                 Array.Empty<Task>(), 
                 Task.CompletedTask
-            );
+            );            
 
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
             foreach (var adaptor in DefinedAdaptors)
@@ -90,7 +90,7 @@ public class EmulatorService : BackgroundService
                             AdaptorType.Serial => Serial(settings, stopping),
                             AdaptorType.TCP => TCP(settings, stopping),
                             _ => throw new NotImplementedException()
-                        }; // wrap the operations in a service         
+                        };      
                     }
                 }
                
