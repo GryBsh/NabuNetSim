@@ -32,8 +32,8 @@ public abstract class AdaptorEmulator : NabuService
     {
         Settings = settings;
         State = new(){
-            Channel = settings.AdapterChannel,
-            ChannelKnown = !settings.ChannelPrompt
+            //Channel = settings.AdapterChannel,
+            
         };
         Adapter.Open();
         Network.SetState(settings);
@@ -76,9 +76,13 @@ public abstract class AdaptorEmulator : NabuService
     #endregion
 
     #region Channel Status / Change
+
+
+
     void ChannelStatus()
     {
-        if (State.ChannelKnown is false)
+        short data = Tools.PackShort(Adapter.Recv(1));
+        if (data is 0 or < 0 or > 0x100)
         {
             Log("Adaptor: Requesting Channel Code");
             Send(Messages.RequestChannelCode);
@@ -93,15 +97,14 @@ public abstract class AdaptorEmulator : NabuService
     {
 
         short data = Tools.PackShort(Adapter.Recv(2));
-        if (data < 0x100)
+        if (data is > 0 and < 0x100)
         {
             State.Channel = data;
-            State.ChannelKnown = true;
         }
         else
         {
             State.Channel = 0;
-            State.ChannelKnown = false;
+            //State.ChannelKnown = false;
             return;
         }
         Send(Messages.Confirmed);
@@ -361,10 +364,10 @@ public abstract class AdaptorEmulator : NabuService
                         continue; // They were in DKG's code, so I've kept them
                     case 0xEF:
                         continue; // I have not seen enough packets to know why.
-                    case Messages.ChannelStatus:
-                        Log("NABU: Channel Status?");
-                        ChannelStatus();
-                        continue;
+                    //case Messages.ChannelStatus:
+                    //    Log("NABU: Channel Status?");
+                    //    ChannelStatus();
+                    //    continue;
                     case Messages.Ready:
                         Log($"NABU: {nameof(Messages.Ready)}, Adaptor: {nameof(Messages.Confirmed)}");
                         Send(Messages.Confirmed);
@@ -373,20 +376,25 @@ public abstract class AdaptorEmulator : NabuService
                         continue; // So I defer to his expertise
                     case 0x1C:
                         continue; // also unknown
-                    case 0x1E:
+                    case Messages.Done:
                         Log($"NABU: 1E, Adaptor: {nameof(Messages.End)}");
                         Send(Messages.End);
                         continue;
-                    case Messages.Wait:
-                        Log($"NABU: Wait, Adaptor: {nameof(Messages.ACK)}");
+                    case 0x80:
+                        Log("NABU: Reset Segment Handler, NA: ACK DONE");
+                        Send(Messages.Initialized);
+                        continue;
+                    case Messages.Reset:
+                        Log($"NABU: {nameof(Messages.Reset)}, Adaptor: {nameof(Messages.ACK)}");
                         Send(Messages.ACK);
                         continue;
-                    case Messages.StartingUp:
-                        Log($"NABU: {nameof(Messages.StartingUp)}, Adaptor: {nameof(Messages.ACK)}");
+                    case Messages.GetStatus:
+                        Log($"NABU: {nameof(Messages.GetStatus)}, Adaptor: {nameof(Messages.ACK)}");
                         Send(Messages.ACK);
+                        ChannelStatus();
                         continue;
-                    case Messages.Initialize:
-                        Log($"NABU: {nameof(Messages.Initialize)}, Adaptor: {nameof(Messages.Initialized)}");
+                    case Messages.SetStatus:
+                        Log($"NABU: {nameof(Messages.SetStatus)}, Adaptor: {nameof(Messages.Initialized)}");
                         Send(Messages.Initialized);
                         continue;
                     case Messages.PacketRequest:
@@ -404,7 +412,7 @@ public abstract class AdaptorEmulator : NabuService
                     #endregion
 
                     default:
-                        Trace($"UNEXPECTED: {incoming}");
+                        Log($"UNEXPECTED: {incoming}");
                         continue;
                 }
             }

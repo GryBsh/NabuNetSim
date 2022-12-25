@@ -23,6 +23,7 @@ public class NetworkEmulator : NabuService
     }
 
     #region PAK
+
     async Task<byte[]> HttpGetPakBytes(string url, int segment)
     {
         var filename = Tools.PakName(segment);
@@ -53,8 +54,10 @@ public class NetworkEmulator : NabuService
         {
             var files = Directory.GetFiles(folder, "*.npak");
             if (files.Length > 0) {
+                var name = folder.Split(Path.DirectorySeparatorChar)[^1];
                 yield return new(
-                    folder.Split(Path.DirectorySeparatorChar)[^1], 
+                    name,
+                    name,
                     sourceName, 
                     ChannelSourceType.Folder, 
                     folder, 
@@ -70,7 +73,7 @@ public class NetworkEmulator : NabuService
                     .Select(l => l.Split(';')
                                     .Select(s => s.Trim())
                                     .ToArray()
-                    );
+                    ).Where(arr => arr.Length == 2);
 
         foreach (var line in parts)
         {
@@ -95,7 +98,7 @@ public class NetworkEmulator : NabuService
                             ChannelType.LocalNabu :
                             ChannelType.LocalPak;
 
-            yield return new(name, sourceName, source.Type, realPath, type);
+            yield return new(name, path, sourceName, source.Type, realPath, type);
         }
     }
 
@@ -114,7 +117,7 @@ public class NetworkEmulator : NabuService
                 foreach (var file in files)
                 {
                     var name = file.Split('.')[0].Split(Path.DirectorySeparatorChar)[^1];
-                    yield return new(name, sourceName, source.Type, file, ChannelType.LocalNabu);
+                    yield return new(name, name, sourceName, source.Type, file, ChannelType.LocalNabu);
                 }
             }
         }
@@ -154,7 +157,7 @@ public class NetworkEmulator : NabuService
         State.Channels.Clear();
         await foreach (var channel in GetChannelList(State.Source, source))
         {
-            Trace($"Adding {channel.Name} from {channel.Source}");
+            Log($"Adding {channel.DisplayName} from {channel.Source}");
             State.Channels.Add(channel.Name, channel);
         }
         Log($"Refreshed ({State.Channels.Count} Channels)");

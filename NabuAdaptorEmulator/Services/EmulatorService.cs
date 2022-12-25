@@ -84,6 +84,8 @@ public class EmulatorService : BackgroundService
                     {
                         // If so, restart it
                         var settings = DefinedAdaptors[index];
+                        if (settings.Enabled is false) //but not if it's disabled
+                            continue;
 
                         services[index] = settings.Type switch
                         {

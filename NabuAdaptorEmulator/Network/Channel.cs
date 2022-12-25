@@ -17,7 +17,8 @@ public enum ImageType
 }
 
 public record Channel(
-    string Name, 
+    string DisplayName, 
+    string Name,
     string Source, 
     ChannelSourceType SourceType,
     string Path, 

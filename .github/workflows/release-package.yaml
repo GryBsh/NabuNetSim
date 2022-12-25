@@ -29,6 +29,9 @@ jobs:
         for arch in $linux_arch; 
         do
           dotnet publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o bin/linux/$arch -c release
+          cp -r Assets/PAKs bin/linux/$arch
+          mkdir bin/linux/$arch/NABUs
+          cp -f Assets/Config/appsettings.linux.json bin/linux/$arch/appsettings.json
           zip -r nnae-linux-$arch.zip bin/linux/$arch
         done
     - name: Package Windows
@@ -36,14 +39,23 @@ jobs:
         for arch in $win_arch; 
         do
           dotnet publish -r win-$arch -p:PublishSingleFile=true --self-contained true -o bin/win/$arch -c release
+          cp -r Assets/PAKs bin/win/$arch
+          mkdir bin/win/$arch/NABUs
+          cp -f Assets/Config/appsettings.win.json bin/win/$arch/appsettings.json
           zip -r nnae-win-$arch.zip bin/win/$arch
         done
     - name: Package MacOS
       run: |
-       
         dotnet publish -r osx-x64 -p:PublishSingleFile=true --self-contained true -o bin/macos/x64 -c release
+        cp -r Assets/PAKs bin/macos/x64
+        mkdir bin/macos/x64/NABUs
+        cp -f Assets/Config/appsettings.macos.json bin/macos/x64/appsettings.json
         zip -r nnae-macos-x64.zip bin/macos/x64
+
         dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o bin/macos/arm64 -c release
+        cp -r Assets/PAKs bin/macos/arm64
+        mkdir bin/macos/arm64/NABUs
+        cp -f Assets/Config/appsettings.macos.json bin/macos/arm64/appsettings.json
         zip -r nnae-macos-arm64.zip bin/macos/arm64
         
     - name: Release
