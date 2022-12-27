@@ -32,6 +32,7 @@ jobs:
           cp -r Assets/PAKs bin/linux/$arch
           mkdir bin/linux/$arch/NABUs
           cp -f Assets/Config/appsettings.linux.json bin/linux/$arch/appsettings.json
+          cp -f README.md bin/linux/$arch
           zip -r nnae-linux-$arch.zip bin/linux/$arch
         done
     - name: Package Windows
@@ -42,6 +43,7 @@ jobs:
           cp -r Assets/PAKs bin/win/$arch
           mkdir bin/win/$arch/NABUs
           cp -f Assets/Config/appsettings.win.json bin/win/$arch/appsettings.json
+          cp -f README.md bin/win/$arch
           zip -r nnae-win-$arch.zip bin/win/$arch
         done
     - name: Package MacOS
@@ -50,12 +52,14 @@ jobs:
         cp -r Assets/PAKs bin/macos/x64
         mkdir bin/macos/x64/NABUs
         cp -f Assets/Config/appsettings.macos.json bin/macos/x64/appsettings.json
+        cp -f README.md bin/macos/x64
         zip -r nnae-macos-x64.zip bin/macos/x64
 
         dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o bin/macos/arm64 -c release
         cp -r Assets/PAKs bin/macos/arm64
         mkdir bin/macos/arm64/NABUs
         cp -f Assets/Config/appsettings.macos.json bin/macos/arm64/appsettings.json
+        cp -f README.md bin/macos/arm64
         zip -r nnae-macos-arm64.zip bin/macos/arm64
         
     - name: Release

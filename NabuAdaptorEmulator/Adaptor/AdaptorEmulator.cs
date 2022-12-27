@@ -127,12 +127,12 @@ public abstract class AdaptorEmulator : NabuService
     #region Packet Request
     async Task PacketRequest()
     {
-        short packet = Recv();
-        int segment = Tools.PackInt(Recv(3));
-        Log($"NPC: Packet: {packet:x04}, Segment: {Tools.FormatTriple(segment)}, NA: {nameof(Messages.Confirmed)}");
+        short segment = Recv();
+        int pak = Tools.PackInt(Recv(3));
+        Log($"NPC: Segment: {segment:x04}, PAK: {Tools.FormatTriple(pak)}, NA: {nameof(Messages.Confirmed)}");
         Send(Messages.Confirmed);
-        if (packet == 0x00 &&
-            segment == Messages.TimePak
+        if (segment == 0x00 &&
+            pak == Messages.TimePak
         )
         {
             Log("NPC: What Time it is?");
@@ -141,17 +141,17 @@ public abstract class AdaptorEmulator : NabuService
         }
 
         // Network Emulator
-        var (type, segmentData) = await Network.Request(segment);
+        var (type, segmentData) = await Network.Request(pak);
         if (type is ImageType.None)
         {
             Error("No Image Found or Error");
-            Send(Messages.Unauthorized);
+            Send(ServiceStatus.Unauthorized);
             return;
         }
         if (type == ImageType.Nabu)
-            await Task.Run(() => SliceAndSendRaw(packet, segment, segmentData));
+            await Task.Run(() => SliceAndSendRaw(segment, pak, segmentData));
         else
-            await Task.Run(() => SliceAndSendFromPak(packet, segmentData));
+            await Task.Run(() => SliceAndSendFromPak(segment, segmentData));
     }
     #endregion
 
@@ -166,7 +166,7 @@ public abstract class AdaptorEmulator : NabuService
         if (offset >= buffer.Length)
         {
             Error($"Packet Start {offset} is beyond the end of the buffer");
-            Send(Messages.Unauthorized);
+            Send(ServiceStatus.Unauthorized);
             return;
         }
         if (offset + length >= buffer.Length)
@@ -198,7 +198,7 @@ public abstract class AdaptorEmulator : NabuService
         if (offset >= buffer.Length)
         {
             Error($"Packet Start {offset} is beyond the end of the buffer");
-            Send(Messages.Unauthorized);
+            Send(ServiceStatus.Unauthorized);
             return;
         }
 
@@ -296,7 +296,7 @@ public abstract class AdaptorEmulator : NabuService
         byte[] buffer = {
             0x02,
             0x02,
-            0x02,
+            (byte)(now.DayOfWeek + 1),
             0x54,               //Year: 84 
             (byte)now.Month,    //Month 
             (byte)now.Day,      //Day
@@ -315,11 +315,11 @@ public abstract class AdaptorEmulator : NabuService
         if (buffer.Length > Constants.MaxPacketSize)
         {
             Error("Packet too large");
-            Send(Messages.Unauthorized);
+            Send(ServiceStatus.Unauthorized);
             return;
         }
-        Log($"NA: {nameof(Messages.Authorized)}, NPC: {nameof(Messages.ACK)}");
-        Send(Messages.Authorized);               //Prolog
+        Log($"NA: {nameof(ServiceStatus.Authorized)}, NPC: {nameof(Messages.ACK)}");
+        Send(ServiceStatus.Authorized);               //Prolog
         Recv(Messages.ACK);
 
         Log($"NA: Sending Packet, {buffer.Length} bytes");
