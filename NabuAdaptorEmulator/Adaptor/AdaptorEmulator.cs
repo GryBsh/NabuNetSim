@@ -32,8 +32,7 @@ public abstract class AdaptorEmulator : NabuService
     {
         Settings = settings;
         State = new(){
-            //Channel = settings.AdapterChannel,
-            
+            Channel = settings.AdapterChannel
         };
         Adapter.Open();
         Network.SetState(settings);
@@ -77,25 +76,38 @@ public abstract class AdaptorEmulator : NabuService
 
     #region Channel Status / Change
 
-
-
-    void ChannelStatus()
+    void GetStatus() 
     {
         short data = Tools.PackShort(Adapter.Recv(1));
-        if (data is 0 or < 0 or > 0x100)
+        
+        switch (data)
         {
-            Log("Adaptor: Requesting Channel Code");
-            Send(Messages.RequestChannelCode);
-            return;
+            case AdaptorStatus.Signal: // <- NA Channel Lock Status
+                if (State.ChannelKnown)
+                {
+                    Log($"NPC: {nameof(AdaptorStatus.Signal)}? NA: {nameof(Status.SignalLock)}");
+                    Send(Status.SignalLock);
+                    Send(Messages.Finished);
+                }
+                else {
+                    Log($"NPC: {nameof(AdaptorStatus.Signal)}? NA: {nameof(Status.NoSignal)}");
+                    Send(Status.NoSignal);
+                    Send(Messages.Finished);
+                }
+                break;
+            case 0x1E: // <-- NPC Program/DOS Loaded
+                Log($"NPC: 1E? NA: {nameof(Messages.Finished)}");
+                Send(Messages.Finished);
+                break;
+            default:
+                Log($"Unsupported Status: {data:X02}");
+                break;
         }
 
-        Log($"Adaptor: Channel Code Set: {State.Channel:X04}");
-        Send(Messages.ConfirmChannelCode);
     }
 
     void ChannelChange()
     {
-
         short data = Tools.PackShort(Adapter.Recv(2));
         if (data is > 0 and < 0x100)
         {
@@ -117,14 +129,13 @@ public abstract class AdaptorEmulator : NabuService
     {
         short packet = Recv();
         int segment = Tools.PackInt(Recv(3));
-        Log($"Packet: {packet:x04}, Segment: {Tools.FormatTriple(segment)}");
-        Log($"Adaptor: {nameof(Messages.Confirmed)}");
+        Log($"NPC: Packet: {packet:x04}, Segment: {Tools.FormatTriple(segment)}, NA: {nameof(Messages.Confirmed)}");
         Send(Messages.Confirmed);
         if (packet == 0x00 &&
-            segment == Messages.TimeSegment
+            segment == Messages.TimePak
         )
         {
-            Log("NABU: Time?");
+            Log("NPC: What Time it is?");
             SendTimePacket();
             return;
         }
@@ -148,10 +159,10 @@ public abstract class AdaptorEmulator : NabuService
     /// <summary>
     ///     Slices a packet from the given pre-prepared segment pak
     /// </summary>
-    void SliceAndSendFromPak(short packet, byte[] buffer)
+    void SliceAndSendFromPak(short segment, byte[] buffer)
     {
         int length = Constants.TotalPayloadSize;
-        int offset = (packet * length) + ((2 * packet) + 2);
+        int offset = (segment * length) + ((2 * segment) + 2);
         if (offset >= buffer.Length)
         {
             Error($"Packet Start {offset} is beyond the end of the buffer");
@@ -165,7 +176,7 @@ public abstract class AdaptorEmulator : NabuService
         var message = buffer.Skip(offset).Take(length).ToArray();
 
         Debug("Sending Packet from PAK");
-        var crc = GenerateCRC(message[0..(length - 2)]);
+        var crc = GenerateCRC(message[0..^2]);
         message[^2] = (byte)(crc >> 8 & 0xFF ^ 0xFF);    //CRC MSB
         message[^1] = (byte)(crc >> 0 & 0xFF ^ 0xFF);    //CRC LSB
         SendPacket(message);
@@ -175,15 +186,15 @@ public abstract class AdaptorEmulator : NabuService
     ///     Slices the given packet the given buffer of program data
     ///     and creates the packet header and footer structures around it
     /// </summary>
-    /// <param name="packet"></param>
     /// <param name="segment"></param>
+    /// <param name="pak"></param>
     /// <param name="buffer"></param>
     void SliceAndSendRaw(
-        short packet,
-        int segment,
+        short segment,
+        int pak,
         byte[] buffer)
     {
-        int offset = packet * Constants.MaxPayloadSize;
+        int offset = segment * Constants.MaxPayloadSize;
         if (offset >= buffer.Length)
         {
             Error($"Packet Start {offset} is beyond the end of the buffer");
@@ -206,10 +217,10 @@ public abstract class AdaptorEmulator : NabuService
         var message = new byte[packetSize];
         int idx = 0;
         // 16 bytes of header
-        message[idx++] = (byte)(segment >> 16 & 0xFF);          //Segment MSB   
-        message[idx++] = (byte)(segment >> 8 & 0xFF);           //              
-        message[idx++] = (byte)(segment >> 0 & 0xFF);           //Segment LSB   
-        message[idx++] = (byte)(packet & 0xff);                 //Packet LSB    
+        message[idx++] = (byte)(pak >> 16 & 0xFF);              //Pak MSB   
+        message[idx++] = (byte)(pak >> 8 & 0xFF);               //              
+        message[idx++] = (byte)(pak >> 0 & 0xFF);               //Pak LSB   
+        message[idx++] = (byte)(segment & 0xff);                //Segment LSB    
         message[idx++] = 0x01;                                  //Owner         
         message[idx++] = 0x7F;                                  //Tier MSB      
         message[idx++] = 0xFF;
@@ -219,10 +230,10 @@ public abstract class AdaptorEmulator : NabuService
         message[idx++] = 0x80;                                  //Mystery Byte
         message[idx++] = (byte)(                                //Packet Type
                             (lastPacket ? 0x10 : 0x00) |        //bit 4 (0x10) marks End of Segment
-                            (packet == 0 ? 0xA1 : 0x20)
+                            (segment == 0 ? 0xA1 : 0x20)
                          );
-        message[idx++] = (byte)(packet >> 0 & 0xFF);            //Packet # LSB
-        message[idx++] = (byte)(packet >> 8 & 0xFF);            //Packet # MSB
+        message[idx++] = (byte)(segment >> 0 & 0xFF);           //Segment # LSB
+        message[idx++] = (byte)(segment >> 8 & 0xFF);           //Segment # MSB
         message[idx++] = (byte)(offset >> 8 & 0xFF);            //Offset MSB
         message[idx++] = (byte)(offset >> 0 & 0xFF);            //Offset LSB
 
@@ -287,13 +298,13 @@ public abstract class AdaptorEmulator : NabuService
             0x02,
             0x02,
             0x54,               //Year: 84 
-            (byte)now.Month,    //Month
+            (byte)now.Month,    //Month 
             (byte)now.Day,      //Day
             (byte)now.Hour,     //Hour
             (byte)now.Minute,   //Minute
             (byte)now.Second    //Second
         };
-        SliceAndSendRaw(0, Messages.TimeSegment, buffer);
+        SliceAndSendRaw(0, Messages.TimePak, buffer);
     }
 
     /// <summary>
@@ -307,17 +318,17 @@ public abstract class AdaptorEmulator : NabuService
             Send(Messages.Unauthorized);
             return;
         }
-
+        Log($"NA: {nameof(Messages.Authorized)}, NPC: {nameof(Messages.ACK)}");
         Send(Messages.Authorized);               //Prolog
         Recv(Messages.ACK);
 
-        Log($"Sending Packet, {buffer.Length} bytes");
+        Log($"NA: Sending Packet, {buffer.Length} bytes");
         if (escape)
             buffer = EscapeBytes(buffer).ToArray();
         var start = DateTime.Now;
         Send(buffer);
         var stop = DateTime.Now;
-        Send(Messages.End);                      //Epilog
+        Send(Messages.Finished);                      //Epilog
         Task.Run(TransferRatePrinter(start, stop, buffer.Length));
     }
 
@@ -335,7 +346,7 @@ public abstract class AdaptorEmulator : NabuService
                 rate = rate / 1024;
                 unit = "MBps";
             }
-            Log($"Transfer Rate: {rate:0.00} {unit}");
+            Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
         };
 
     #endregion
@@ -357,62 +368,46 @@ public abstract class AdaptorEmulator : NabuService
 
                 switch (incoming)
                 {
-                    #region Messages
+                    #region NABU Messages
                     case 0:
+                        Log($"NA: Received 0, Disconnected");
                         goto END;
-                    case 0xFF:
-                        continue; // They were in DKG's code, so I've kept them
-                    case 0xEF:
-                        continue; // I have not seen enough packets to know why.
-                    //case Messages.ChannelStatus:
-                    //    Log("NABU: Channel Status?");
-                    //    ChannelStatus();
-                    //    continue;
-                    case Messages.Ready:
-                        Log($"NABU: {nameof(Messages.Ready)}, Adaptor: {nameof(Messages.Confirmed)}");
+                    case Messages.Reset:
+                        Log($"NPC: {nameof(Messages.Reset)}, NA: {nameof(Messages.ACK)} {nameof(Messages.Confirmed)}");
+                        Send(Messages.ACK);
                         Send(Messages.Confirmed);
                         continue;
-                    case 0x0F:
-                        continue; // So I defer to his expertise
-                    case 0x1C:
-                        continue; // also unknown
-                    case Messages.Done:
-                        Log($"NABU: 1E, Adaptor: {nameof(Messages.End)}");
-                        Send(Messages.End);
-                        continue;
-                    case 0x80:
-                        Log("NABU: Reset Segment Handler, NA: ACK DONE");
-                        Send(Messages.Initialized);
-                        continue;
-                    case Messages.Reset:
-                        Log($"NABU: {nameof(Messages.Reset)}, Adaptor: {nameof(Messages.ACK)}");
+                    case Messages.MagicalMysteryMessage:
                         Send(Messages.ACK);
+                        Log($"NPC: {nameof(Messages.MagicalMysteryMessage)}: {Format(Recv(2))}, NA: {nameof(Messages.Confirmed)}");
+                        Send(Messages.Confirmed);
                         continue;
                     case Messages.GetStatus:
-                        Log($"NABU: {nameof(Messages.GetStatus)}, Adaptor: {nameof(Messages.ACK)}");
+                        Log($"NPC: {nameof(Messages.GetStatus)}, NA: {nameof(Messages.ACK)}");
                         Send(Messages.ACK);
-                        ChannelStatus();
+                        GetStatus();
                         continue;
-                    case Messages.SetStatus:
-                        Log($"NABU: {nameof(Messages.SetStatus)}, Adaptor: {nameof(Messages.Initialized)}");
-                        Send(Messages.Initialized);
+                    case Messages.StartUp:
+                        Log($"NPC: {nameof(Messages.StartUp)}, NA: {nameof(Messages.ACK)}");
+                        Send(Messages.ACK);
+                        Send(Messages.Confirmed);
+                        Log($"NA: {nameof(Messages.Confirmed)}");
                         continue;
                     case Messages.PacketRequest:
-                        Log($"NABU: {nameof(Messages.PacketRequest)}, Adaptor: {nameof(Messages.ACK)}");
+                        Log($"NPC: {nameof(Messages.PacketRequest)}, NA: {nameof(Messages.ACK)}");
                         Send(Messages.ACK);
                         await PacketRequest();
                         continue;
                     case Messages.ChangeChannel:
-                        Log($"NABU: {nameof(Messages.ChangeChannel)}, Adaptor: {nameof(Messages.ACK)} ");
+                        Log($"NPC: {nameof(Messages.ChangeChannel)}");
                         Send(Messages.ACK);
+                        Log($"NA: {nameof(Messages.ACK)}");
                         ChannelChange();
                         continue;
-                    case 0x8F:
-                        continue; // and this
                     #endregion
 
                     default:
-                        Log($"UNEXPECTED: {incoming}");
+                        Warning($"Unsupported Message: {Format(incoming)}");
                         continue;
                 }
             }

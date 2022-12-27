@@ -8,11 +8,11 @@ public class NetworkState
     public bool HasChannels => Channels.Count > 0;
     public string? Channel { get; set; }
     public Dictionary<string, string> SourceCache { get; private set;} = new();
-    public Dictionary<int, byte[]> SegmentCache { get; private set; } = new();
+    public Dictionary<int, byte[]> PakCache { get; private set; } = new();
     public void ClearCache()
     {
-        SegmentCache.Clear();
-        SegmentCache = new();
+        PakCache.Clear();
+        PakCache = new();
         SourceCache.Clear();
         SourceCache = new();
         Channels.Clear();

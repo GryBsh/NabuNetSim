@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using System;
 
 namespace Nabu.Binary;
 
@@ -6,7 +7,7 @@ public abstract class BinaryAdapter : IBinaryAdapter
 {
     protected Stream? Stream { get; set; }
     protected readonly ILogger Logger;
-    public virtual bool Connected => Stream is not null;
+    public virtual bool Connected => Stream is not null && Stream.Length > 0;
     public BinaryAdapter(ILogger logger)
     {
         Logger = logger;
@@ -16,15 +17,17 @@ public abstract class BinaryAdapter : IBinaryAdapter
     public abstract void Open();
     public abstract void Close();
 
-    static string Format(params byte[] bytes) => Tools.Format(bytes);
+    protected static string Format(params byte[] bytes) => Tools.Format(bytes);
 
-    public byte[] Recv(int length)
+    public virtual byte[] Recv(int length)
     {
         var bytes = new byte[length];
+        
         for (int i = 0; i < length; i++)
         {
             Stream?.Read(bytes, i, 1);
         }
+        
         
         //#if DEBUG
         //Logger.LogTrace($"RCVD: {Format(bytes)}");
@@ -40,7 +43,7 @@ public abstract class BinaryAdapter : IBinaryAdapter
 
         var expected = bytes.SequenceEqual(read);
         if (expected is false)
-            Logger.LogWarning(Format(bytes), Format(read));
+            Logger.LogWarning($"{Format(bytes)} != {Format(read)}");
 
         return (
             expected,
@@ -55,7 +58,7 @@ public abstract class BinaryAdapter : IBinaryAdapter
         var expected = read == byt;
 
         if (expected is false)
-            Logger.LogWarning(Format(byt), Format(read));
+            Logger.LogWarning($"{Format(byt)} != {Format(read)}");
 
         return (
             expected,
@@ -63,7 +66,7 @@ public abstract class BinaryAdapter : IBinaryAdapter
         );
     }
 
-    public void Send(params byte[] bytes)
+    public virtual void Send(params byte[] bytes)
     {
         Logger.LogTrace($"SEND: {Format(bytes)}");
         Stream?.Write(bytes, 0, bytes.Length);

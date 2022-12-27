@@ -24,9 +24,9 @@ public class NetworkEmulator : NabuService
 
     #region PAK
 
-    async Task<byte[]> HttpGetPakBytes(string url, int segment)
+    async Task<byte[]> HttpGetPakBytes(string url, int pak)
     {
-        var filename = Tools.PakName(segment);
+        var filename = Tools.PakName(pak);
         url = $"{url}/{filename}.npak";
         var npak = await Http.GetByteArrayAsync(url);
         //Trace($"NPAK Length: {npak.Length}");
@@ -34,9 +34,9 @@ public class NetworkEmulator : NabuService
         //Trace($"Segment Length: {npak.Length}");
         return npak;
     }
-    async Task<byte[]> FileGetPakBytes(string path, int segment)
+    async Task<byte[]> FileGetPakBytes(string path, int pak)
     {
-        var filename = Tools.PakName(segment);
+        var filename = Tools.PakName(pak);
         path = Path.Join(path, $"{filename}.npak");
         var npak = await File.ReadAllBytesAsync(path);
         Trace($"NPAK Length: {npak.Length}");
@@ -67,7 +67,7 @@ public class NetworkEmulator : NabuService
         }
     }
 
-    IEnumerable<Channel>GetChannelsFromList(string sourceName, ChannelSource source, string list) {
+    IEnumerable<Channel> GetChannelsFromList(string sourceName, ChannelSource source, string list) {
         var parts =
                 list.Split('\n')
                     .Select(l => l.Split(';')
@@ -173,7 +173,7 @@ public class NetworkEmulator : NabuService
         Task.Run(ChangeChannelList);
     }
 
-    public async Task<(ImageType, byte[])> Request(int segment)
+    public async Task<(ImageType, byte[])> Request(int pak)
     {
         if (State.Source is null || State.Channel is null)
         {
@@ -195,9 +195,9 @@ public class NetworkEmulator : NabuService
             ChannelType.LocalPak or ChannelType.RemotePak => ImageType.Pak,
             _ => ImageType.Nabu
         };
-        if (State.SegmentCache.ContainsKey(segment))
+        if (State.PakCache.ContainsKey(pak))
         {
-            return (imageType, State.SegmentCache[segment]);
+            return (imageType, State.PakCache[pak]);
         }
 
         byte[] bytes = Array.Empty<byte>();
@@ -207,17 +207,17 @@ public class NetworkEmulator : NabuService
             {
                 ChannelType.RemoteNabu => await Http.GetByteArrayAsync(channel.Path),
                 ChannelType.LocalNabu => await File.ReadAllBytesAsync(channel.Path),
-                ChannelType.RemotePak  => await HttpGetPakBytes(channel.Path, segment),
-                ChannelType.LocalPak => await FileGetPakBytes(channel.Path, segment),
+                ChannelType.RemotePak  => await HttpGetPakBytes(channel.Path, pak),
+                ChannelType.LocalPak => await FileGetPakBytes(channel.Path, pak),
                 _ => Array.Empty<byte>()
             };
         }
         catch (Exception ex)
         {
-            Error(ex.Message);
+            Warning(ex.Message);
             return (ImageType.None, Array.Empty<byte>());
         }
-        State.SegmentCache[segment] = bytes;
+        State.PakCache[pak] = bytes;
         
         return (imageType, bytes);
     }

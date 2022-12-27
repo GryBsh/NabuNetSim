@@ -61,3 +61,4 @@ public class SerialAdapter : BinaryAdapter
         Serial = null;
     }
 }
+

@@ -44,7 +44,7 @@ This is the standard dotnet logging section.
 - Leo Binkowski: for stealing all that stuff from NABU and preserving it
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
-- RetroNET Chaters (in no particular order):
+- RetroNET and Discord Chaters (in no particular order):
   - Sark
   - Nath (The legend who decrypted NPAK files)
   - Brijohn (NABU MAME!!)
@@ -52,3 +52,4 @@ This is the standard dotnet logging section.
   - Hans
   - Guidol
   - VTTCP
+  - HungryMarmot

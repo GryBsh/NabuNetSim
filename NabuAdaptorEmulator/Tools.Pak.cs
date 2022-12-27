@@ -5,11 +5,11 @@ namespace Nabu;
 
 public static partial class Tools
 {
-    public static string PakName(int segmentNumber)
+    public static string PakName(int pak)
     {
-        var segment = FormatTriple(segmentNumber);
+        var pakName = FormatTriple(pak);
         var md5 = MD5.Create();
-        var hashed = Encoding.UTF8.GetBytes($"{segment}nabu");
+        var hashed = Encoding.UTF8.GetBytes($"{pakName}nabu");
         var hash = md5.ComputeHash(hashed);
         return string.Join('-',hash.Select(h => Format(h).ToUpper()));
     }
