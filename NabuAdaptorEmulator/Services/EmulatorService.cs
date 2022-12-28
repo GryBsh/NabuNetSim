@@ -125,8 +125,8 @@ public class EmulatorService : BackgroundService
                 Task.CompletedTask
             ); 
             
-            int[] fails = new int[DefinedAdaptors.Length];
-            bool started = false;
+            //int[] fails = new int[DefinedAdaptors.Length];
+            //bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
             foreach (var adaptor in DefinedAdaptors)
             {
@@ -142,7 +142,7 @@ public class EmulatorService : BackgroundService
                     if (services[index].IsCompleted)
                     {
                         // If it was already started, increase the fails
-                        if (started) fails[index] += 1;
+                        //if (started) fails[index] += 1;
 
                         // If so, restart it
                         var settings = DefinedAdaptors[index];
@@ -157,7 +157,7 @@ public class EmulatorService : BackgroundService
                         };      
                     }
                 }
-                started = true;
+                //started = true;
                 Thread.Sleep(100); // Lazy Wait, we don't care how long it takes to resume
             }
         }, stopping);
