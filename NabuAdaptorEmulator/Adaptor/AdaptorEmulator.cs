@@ -172,7 +172,7 @@ public class AdaptorEmulator : NabuService
         )
         {
             Log("NPC: What Time it is?");
-            SendTimePacket();
+            SendPacket(TimePacket());
             return;
         }
 
@@ -219,7 +219,7 @@ public class AdaptorEmulator : NabuService
     /// <Summary>
     ///     Send the time packet to the device
     /// </summary>
-    void SendTimePacket()
+    byte[] TimePacket()
     {
         //byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
         var now = DateTime.Now;
@@ -234,7 +234,7 @@ public class AdaptorEmulator : NabuService
             (byte)now.Minute,   //Minute
             (byte)now.Second    //Second
         };
-        Tools.SliceRaw(Logger, 0, Message.TimePak, buffer);
+        return Tools.SliceRaw(Logger, 0, Message.TimePak, buffer);
     }
 
     /// <summary>
