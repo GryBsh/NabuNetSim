@@ -1,5 +1,4 @@
-﻿using Nabu.Binary;
-
+﻿
 namespace Nabu.Adaptor;
 
 public enum AdaptorType {
@@ -18,6 +17,7 @@ public record AdaptorSettings()
     public string? Source { get; set; }
     public string? Channel { get; set; }
     public int BaudRate { get; set; } = 111865;
+    public string? TelnetHost { get; set; }
 
 }
 

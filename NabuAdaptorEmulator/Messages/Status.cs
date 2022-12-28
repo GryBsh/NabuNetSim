@@ -1,4 +1,4 @@
-﻿namespace Nabu;
+﻿namespace Nabu.Messages;
 
 public static class Status
 {

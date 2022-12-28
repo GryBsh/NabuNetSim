@@ -13,7 +13,8 @@ jobs:
     env:
       linux_arch: x64 arm arm64
       win_arch: x64 arm arm64
-      
+      PAK: Assets/PAKs
+      CONFIG: Assets/Config
     steps:
     - uses: actions/checkout@v3
     - name: Setup .NET
@@ -28,39 +29,43 @@ jobs:
       run: |
         for arch in $linux_arch; 
         do
-          dotnet publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o bin/linux/$arch -c release
-          cp -r Assets/PAKs bin/linux/$arch
-          mkdir bin/linux/$arch/NABUs
-          cp -f Assets/Config/appsettings.linux.json bin/linux/$arch/appsettings.json
-          cp -f README.md bin/linux/$arch
-          zip -r nnae-linux-$arch.zip bin/linux/$arch
+          BIN="bin/linux/$arch"
+          dotnet publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          cp -r $PAK $BIN
+          mkdir $BIN/NABUs
+          cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
+          cp -f README.md $BIN
+          zip -r nnae-linux-$arch.zip $BIN
         done
     - name: Package Windows
       run: |
         for arch in $win_arch; 
         do
-          dotnet publish -r win-$arch -p:PublishSingleFile=true --self-contained true -o bin/win/$arch -c release
-          cp -r Assets/PAKs bin/win/$arch
-          mkdir bin/win/$arch/NABUs
-          cp -f Assets/Config/appsettings.win.json bin/win/$arch/appsettings.json
-          cp -f README.md bin/win/$arch
-          zip -r nnae-win-$arch.zip bin/win/$arch
+          BIN="bin/win/$arch"
+          dotnet publish -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          cp -r $PAK $BIN
+          mkdir $BIN/NABUs
+          cp -f $CONFIG/appsettings.win.json $BIN/appsettings.json
+          cp -f README.md $BIN
+          zip -r nnae-win-$arch.zip $BIN
         done
     - name: Package MacOS
       run: |
-        dotnet publish -r osx-x64 -p:PublishSingleFile=true --self-contained true -o bin/macos/x64 -c release
-        cp -r Assets/PAKs bin/macos/x64
-        mkdir bin/macos/x64/NABUs
-        cp -f Assets/Config/appsettings.macos.json bin/macos/x64/appsettings.json
-        cp -f README.md bin/macos/x64
-        zip -r nnae-macos-x64.zip bin/macos/x64
+        BIN="bin/macos/x64"
+        dotnet publish -r osx-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        cp -r $PAK $BIN
+        mkdir $BIN/NABUs
+        cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
+        cp -f README.md $BIN
+        zip -r nnae-macos-x64.zip $BIN
 
-        dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o bin/macos/arm64 -c release
-        cp -r Assets/PAKs bin/macos/arm64
-        mkdir bin/macos/arm64/NABUs
-        cp -f Assets/Config/appsettings.macos.json bin/macos/arm64/appsettings.json
-        cp -f README.md bin/macos/arm64
-        zip -r nnae-macos-arm64.zip bin/macos/arm64
+        BIN="bin/macos/arm64"
+        dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        cp -r $PAK $BIN
+        mkdir $BIN/NABUs
+        cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
+        cp -f README.md $BIN
+        zip -r nnae-macos-arm64.zip $BIN
         
     - name: Release
       uses: softprops/action-gh-release@v1

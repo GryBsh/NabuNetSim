@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Patching;
 using Nabu.Services;
 using System;
+using System.Text;
 
 namespace Nabu.Network;
 
@@ -14,12 +16,12 @@ public class NetworkEmulator : NabuService
     public NetworkEmulator(
         ILogger<NetworkEmulator> logger,
         HttpClient http,
-        ChannelSources sources
+        ImageSourceDefinitions sources
     ) : base(logger)
     {
         Logger = logger;
         Http = http;
-        State.Sources = sources;
+        State.SourceDefinitions = sources;
     }
 
     #region PAK
@@ -30,7 +32,7 @@ public class NetworkEmulator : NabuService
         url = $"{url}/{filename}.npak";
         var npak = await Http.GetByteArrayAsync(url);
         //Trace($"NPAK Length: {npak.Length}");
-        npak = Tools.Unpack(npak);
+        npak = Tools.Unpak(npak);
         //Trace($"Segment Length: {npak.Length}");
         return npak;
     }
@@ -40,15 +42,21 @@ public class NetworkEmulator : NabuService
         path = Path.Join(path, $"{filename}.npak");
         var npak = await File.ReadAllBytesAsync(path);
         Trace($"NPAK Length: {npak.Length}");
-        npak = Tools.Unpack(npak);
+        npak = Tools.Unpak(npak);
         Trace($"Segment Length: {npak.Length}");
         return npak;
     }
     #endregion
     
-    #region Channel List
+    #region Source List
     
-    IEnumerable<Channel> GetLocalPakChannels(string sourceName, string root) {
+    /// <summary>
+    /// Get the list of PAK sources from a given folder
+    /// </summary>
+    /// <param name="sourceName">The name of the source definition</param>
+    /// <param name="root">A given folder</param>
+    /// <returns></returns>
+    IEnumerable<ProgramImage> GetLocalPakSources(string sourceName, string root) {
         var folders = Directory.GetDirectories(root);
         foreach (var folder in folders)
         {
@@ -59,21 +67,23 @@ public class NetworkEmulator : NabuService
                     name,
                     name,
                     sourceName, 
-                    ChannelSourceType.Folder, 
+                    DefinitionType.Folder, 
                     folder, 
-                    ChannelType.LocalPak
+                    SourceType.Local,
+                    ImageType.Pak,
+                    new[] { new PassThroughPatch(Logger) }
                 );                    
             } 
         }
     }
 
-    IEnumerable<Channel> GetChannelsFromList(string sourceName, ChannelSource source, string list) {
+    IEnumerable<ProgramImage> GetSourceFromList(string sourceName, ImageSourceDefinition source, string list) {
         var parts =
                 list.Split('\n')
                     .Select(l => l.Split(';')
                                     .Select(s => s.Trim())
                                     .ToArray()
-                    ).Where(arr => arr.Length == 2);
+                    ).Where(a => a.Length == 2);
 
         foreach (var line in parts)
         {
@@ -90,24 +100,27 @@ public class NetworkEmulator : NabuService
             var isRemote = (root ?? string.Empty).ToLower().StartsWith("http");
             var pathSeperator = isRemote ? '/' : Path.DirectorySeparatorChar;
             var realPath = $"{root}{pathSeperator}{path}";
-            var type = isRemote && isNabuFile ?
-                            ChannelType.RemoteNabu :
-                        isRemote ?
-                            ChannelType.RemotePak :
-                        isNabuFile ?
-                            ChannelType.LocalNabu :
-                            ChannelType.LocalPak;
+            var type = isRemote ? SourceType.Remote : SourceType.Local;
 
-            yield return new(name, path, sourceName, source.Type, realPath, type);
+            yield return new(
+                name, 
+                path, 
+                sourceName, 
+                source.Type, 
+                realPath, 
+                type, 
+                isNabuFile ? ImageType.Nabu : ImageType.Pak,
+                new[] { new PassThroughPatch(Logger) }
+            );
         }
     }
 
-    async IAsyncEnumerable<Channel> GetChannelList(string sourceName, ChannelSource source)
+    async IAsyncEnumerable<ProgramImage> GetImageList(string sourceName, ImageSourceDefinition source)
     {
-        if (source.Type is ChannelSourceType.Folder) {
+        if (source.Type is DefinitionType.Folder) {
             if (source.NabuRoot is null && source.PakRoot is null) yield break;
             if (source.PakRoot is not null){
-                foreach (var channel in GetLocalPakChannels(sourceName, source.PakRoot)) {
+                foreach (var channel in GetLocalPakSources(sourceName, source.PakRoot)) {
                     yield return channel;
                 }
             }
@@ -117,7 +130,16 @@ public class NetworkEmulator : NabuService
                 foreach (var file in files)
                 {
                     var name = file.Split('.')[0].Split(Path.DirectorySeparatorChar)[^1];
-                    yield return new(name, name, sourceName, source.Type, file, ChannelType.LocalNabu);
+                    yield return new(
+                        name, 
+                        name, 
+                        sourceName, 
+                        source.Type, 
+                        file, 
+                        SourceType.Local,
+                        ImageType.Nabu,
+                        new[] { new PassThroughPatch(Logger) }
+                    );
                 }
             }
         }
@@ -138,88 +160,153 @@ public class NetworkEmulator : NabuService
                 yield break;
             }
 
-            foreach (var channel in GetChannelsFromList(sourceName, source, list)) {
+            foreach (var channel in GetSourceFromList(sourceName, source, list)) {
                 yield return channel;
             }
         }
     }
-    
-    async Task<bool> ChangeChannelList()
+    /// <summary>
+    /// Refreshes the list of image sources from the current definition.
+    /// </summary>
+    /// <returns></returns>
+    async Task<bool> RefreshSources()
     {
         Log($"Refresh Channel List from Source: {State.Source}");
         if (State.HasChannels) return true;
-        if (State.Sources is null) return false;
+        if (State.SourceDefinitions is null) return false;
         if (State.Source is null) return false;
-        if (State.Sources.ContainsKey(State.Source) is false) return false;
+        if (State.SourceDefinitions.ContainsKey(State.Source) is false) return false;
 
-        var source = State.Sources[State.Source];
+        var source = State.SourceDefinitions[State.Source];
         if (source is null) return false;
-        State.Channels.Clear();
-        await foreach (var channel in GetChannelList(State.Source, source))
+        State.Sources.Clear();
+        await foreach (var channel in GetImageList(State.Source, source))
         {
-            Log($"Adding {channel.DisplayName} from {channel.Source}");
-            State.Channels.Add(channel.Name, channel);
+            Log($"Adding [{channel.Name}] {channel.DisplayName} from {channel.Source}");
+            State.Sources.Add(channel.Name, channel);
         }
-        Log($"Refreshed ({State.Channels.Count} Channels)");
+        Log($"Refreshed ({State.Sources.Count} Channels)");
         return true;
     }
     #endregion
-    
-     public void SetState(AdaptorSettings settings) {
+
+    #region RetroNET
+
+    public async Task<bool> GetResponse(short index, string url)
+    {
+        try
+        {
+            var response = await Http.GetStringAsync(url);
+            var ascii = Encoding.ASCII.GetBytes(response);
+            State.ResponseCache[index] = ascii;
+        } 
+        catch (Exception ex)
+        {
+            Warning(ex.Message);
+            return false;
+        }
+
+        return true;
+    }
+
+    public int GetResponseSize(short index)
+        => State.ResponseCache[index].Length;
+
+    public byte[] GetResponseData(short index, short offset, short length)
+    {
+        var (_, data) = Tools.SliceArray(State.ResponseCache[index], offset, length);
+        return data;
+    }
+        
+
+    /// <summary>
+    /// Sets the initial state of the Network Emulator
+    /// </summary>
+    /// <param name="settings"></param>
+    public void SetState(AdaptorSettings settings) {
         Log($"Source: {settings.Source}, Channel: {settings.Channel}");
         State.Source = settings.Source;
         State.Channel = settings.Channel;
         State.ClearCache();
-        Task.Run(ChangeChannelList);
+        Task.Run(RefreshSources);
     }
 
+    #endregion
+
+    /// <summary>
+    /// Requests a PAK from the Network Emulator
+    /// </summary>
+    /// <param name="pak">the number of the desired back, starting at 1</param>
+    /// <returns></returns>
     public async Task<(ImageType, byte[])> Request(int pak)
     {
-        if (State.Source is null || State.Channel is null)
+        if (Empty(State.Source))
         {
-            Warning("No Channel or Source");
-            return (ImageType.None, Array.Empty<byte>());
+            Warning("No Source Defined");
+            return (ImageType.None, ZeroBytes());
         }
+        var channel = State.Channel ?? string.Empty;
+        
+        if (Empty(channel))
+        {
+            var nabuName = FormatTriple(pak);
+            if (State.Sources.ContainsKey(nabuName))
+            {
+                Warning($"NTWRK: No channel defined, NABU Image Found: {pak}");
+                channel = nabuName;
+            } 
+            else
+            {
+                Warning("NTWRK: No Channel or NABU file for ");
+                return (ImageType.None, ZeroBytes());
+            }
+        }
+
         if (State.HasChannels is false) {
             State.ClearCache();
-            if (!await ChangeChannelList())
+            if (!await RefreshSources())
             {
-                Warning("No Channel List");
-                return (ImageType.None, Array.Empty<byte>());
+                Warning("NTWRK: No Channel List");
+                return (ImageType.None, ZeroBytes());
             }
         }
        
-        var channel = State.Channels[State.Channel];
-        var imageType = channel.Type switch
-        {
-            ChannelType.LocalPak or ChannelType.RemotePak => ImageType.Pak,
-            _ => ImageType.Nabu
-        };
+        var source = State.Sources[channel];
+        
         if (State.PakCache.ContainsKey(pak))
         {
-            return (imageType, State.PakCache[pak]);
+            return (source.ImageType, State.PakCache[pak]);
         }
 
-        byte[] bytes = Array.Empty<byte>();
+        byte[] bytes = ZeroBytes();
         try
         {
-            bytes = channel.Type switch
+            bytes = (source.SourceType, source.ImageType) switch
             {
-                ChannelType.RemoteNabu => await Http.GetByteArrayAsync(channel.Path),
-                ChannelType.LocalNabu => await File.ReadAllBytesAsync(channel.Path),
-                ChannelType.RemotePak  => await HttpGetPakBytes(channel.Path, pak),
-                ChannelType.LocalPak => await FileGetPakBytes(channel.Path, pak),
-                _ => Array.Empty<byte>()
+                (SourceType.Remote, ImageType.Nabu) => await Http.GetByteArrayAsync(source.Path),
+                (SourceType.Local,  ImageType.Nabu) => await File.ReadAllBytesAsync(source.Path),
+                (SourceType.Remote, ImageType.Pak)  => await HttpGetPakBytes(source.Path, pak),
+                (SourceType.Local,  ImageType.Pak)  => await FileGetPakBytes(source.Path, pak),
+                _ => ZeroBytes()
             };
         }
         catch (Exception ex)
         {
             Warning(ex.Message);
-            return (ImageType.None, Array.Empty<byte>());
+            return (ImageType.None, ZeroBytes());
         }
+
+        foreach (var patch in source.Patches)
+        {
+            if (patch.Name is not nameof(PassThroughPatch))
+                Log($"Applying Patch: {patch.Name}");
+
+            bytes = await patch.Patch(source, bytes);
+        }
+
         State.PakCache[pak] = bytes;
         
-        return (imageType, bytes);
+        return (source.ImageType, bytes);
     }
 
     

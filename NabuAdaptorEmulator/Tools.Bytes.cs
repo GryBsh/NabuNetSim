@@ -2,7 +2,9 @@
 
 public static partial class Tools
 {
-    public static int PackInt(byte[] buffer) 
+
+
+    public static int ToInt(params byte[] buffer) 
     {
         buffer = SetLength<byte>(4, buffer, 0x00);
         int r = 0;
@@ -13,7 +15,7 @@ public static partial class Tools
         return r;
     }
 
-    public static short PackShort(byte[] buffer)
+    public static short ToShort(params byte[] buffer)
     {
         buffer = SetLength<byte>(2, buffer, 0x00);
         int r = 0;
@@ -21,10 +23,20 @@ public static partial class Tools
         r |= buffer[1] << 8;
         return (short)r;
     }
+        
+    public static byte[] FromShort(short number)
+    {
+        var buffer = new byte[2];
+        buffer[0] = (byte)(number >> 0 & 0xFF);
+        buffer[1] = (byte)(number >> 8 & 0xFF);
+        return buffer;
+    }
+
+    public static byte FromBool(bool value) => (byte)(value ? 0x01 : 0x00);
 
     public static string Format(byte b) => $"{b:X02}";
     public static string FormatTriple(int bytes) => $"{bytes:X06}";
-    public static string Format(byte[] bytes)
+    public static string Format(params byte[] bytes)
     {
         var parts = bytes.Select(b => Format(b)).ToArray();
         return string.Join('|', parts);

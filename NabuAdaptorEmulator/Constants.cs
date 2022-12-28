@@ -10,7 +10,10 @@ internal static class Constants
     public const short FooterSize = 2;
     public const short TotalPayloadSize = MaxPayloadSize + HeaderSize + FooterSize;
 
-    
+    public const int FrameSize = 64;
+
+    public const int DefaultTCPPort = 5816;
+
     //Included for awareness, not used
     public const int TimePacketSize = HeaderSize + 9 + FooterSize;
 

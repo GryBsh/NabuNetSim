@@ -3,8 +3,17 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 using Nabu.Network;
+using System.IO.Ports;
+using System.Net.Sockets;
+using System.Net;
+using System.Text;
+using System.Reflection.Metadata;
+using System.IO;
 
 namespace Nabu.Services;
+
+public class SerialAdaptorEmulator { }
+public class TCPAdaptorEmulator { }
 
 public class EmulatorService : BackgroundService
 {
@@ -23,36 +32,84 @@ public class EmulatorService : BackgroundService
         ServiceProvider = serviceProvider;
     }
 
-    Task Serial(AdaptorSettings settings, CancellationToken stopping)
+    async Task Serial(AdaptorSettings settings, CancellationToken stopping)
     {
-        var adaptor = new SerialAdaptorEmulator(
+        var serial = new SerialPort(
+            settings.Port,
+            115200,
+            Parity.None,
+            8,
+            StopBits.Two
+        ){
+            ReceivedBytesThreshold = 1,
+            Handshake   = Handshake.None,
+            RtsEnable   = true,
+            DtrEnable   = true,
+            ReadTimeout = 1000,
+            ReadBufferSize = 1024,
+            WriteBufferSize = 1024,
+        };
+
+        while (serial.IsOpen is false)
+            try
+            {
+                serial.Open();
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"Serial Adaptor: {ex.Message}");
+                Thread.Sleep(5000);
+            }
+
+        var adaptor = new AdaptorEmulator(
             ServiceProvider.GetRequiredService<NetworkEmulator>(),
             ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
-            settings
+            serial.BaseStream
         );
-        return NabuServiceTask.From(
-            adaptor.Emulate,
-            settings,
-            stopping,
-            adaptor.Open,
-            adaptor.Close
-        );
+
+        adaptor.OnStart(settings);
+        await adaptor.Emulate(stopping);
+        serial.Close();
+        serial.Dispose();
     }
 
-    Task TCP(AdaptorSettings settings, CancellationToken stopping)
+    async Task TCP(AdaptorSettings settings, CancellationToken stopping)
     {
-        var adaptor = new TCPAdaptorEmulator(
+        var socket = new Socket(
+            AddressFamily.InterNetwork,
+            SocketType.Stream,
+            ProtocolType.Tcp
+        );
+
+        if (!int.TryParse(settings.Port, out int port))
+        {
+            port = Constants.DefaultTCPPort;
+        };
+
+        while (socket.Connected is false)
+            try
+            {
+                socket.Connect(
+                    new IPEndPoint(IPAddress.Loopback, port)
+                );
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning($"TCP Adaptor: {ex.Message}");
+                Thread.Sleep(5000);
+            }
+        var logger = ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>();
+        var stream = new NetworkStream(socket);
+        var adaptor = new AdaptorEmulator(
             ServiceProvider.GetRequiredService<NetworkEmulator>(),
-            ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
-            settings
+            logger,
+            stream
         );
-        return NabuServiceTask.From(
-            adaptor.Emulate,
-            settings,
-            stopping,
-            adaptor.Open,
-            adaptor.Close
-        );
+
+        adaptor.OnStart(settings);
+        await adaptor.Emulate(stopping);
+        stream.Dispose();
+        socket.Close();
     }
        
 
@@ -66,8 +123,10 @@ public class EmulatorService : BackgroundService
                 DefinedAdaptors.Length, 
                 Array.Empty<Task>(), 
                 Task.CompletedTask
-            );            
-
+            ); 
+            
+            int[] fails = new int[DefinedAdaptors.Length];
+            bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
             foreach (var adaptor in DefinedAdaptors)
             {
@@ -82,6 +141,9 @@ public class EmulatorService : BackgroundService
                     // Is this service stopped?
                     if (services[index].IsCompleted)
                     {
+                        // If it was already started, increase the fails
+                        if (started) fails[index] += 1;
+
                         // If so, restart it
                         var settings = DefinedAdaptors[index];
                         if (settings.Enabled is false) //but not if it's disabled
@@ -89,14 +151,14 @@ public class EmulatorService : BackgroundService
 
                         services[index] = settings.Type switch
                         {
-                            AdaptorType.Serial => Serial(settings, stopping),
-                            AdaptorType.TCP => TCP(settings, stopping),
+                            AdaptorType.Serial => Task.Run(() => Serial(settings, stopping)),
+                            AdaptorType.TCP => Task.Run(() => TCP(settings, stopping)),
                             _ => throw new NotImplementedException()
                         };      
                     }
                 }
-               
-                Thread.Sleep(1000); // Lazy Wait, we don't care how long it takes to resume
+                started = true;
+                Thread.Sleep(100); // Lazy Wait, we don't care how long it takes to resume
             }
         }, stopping);
     }

@@ -14,7 +14,7 @@ public static partial class Tools
         return string.Join('-',hash.Select(h => Format(h).ToUpper()));
     }
 
-    public static byte[] Unpack(byte[] pak)
+    public static byte[] Unpak(byte[] pak)
     {
         var cipher  = DES.Create();
         cipher.Key  = Constants.PakKey; //new byte[] { 0x6e, 0x58, 0x61, 0x32, 0x62, 0x79, 0x75, 0x7a };

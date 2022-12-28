@@ -9,7 +9,10 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 ## Known Issues
 
-- None, but I'm 100% sure there are some.
+- > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
+  with one value when it's first connecting: `0x8F|0x05`, then when the program is
+  first started another: `0x0F|0x05`. It seems to be signaling something, but what?
+- > I'm 100% sure there are more.
 
 ## Configuration
 
@@ -26,27 +29,38 @@ Can be set via command line arguments, in the usual dotnet way.
 ### Adaptors (Any number you'd like)
 
 - Type: Serial or TCP
-- Port: Either a name or path for Serial OR a number for TCP
+  - > Want something else? Open an issue and I'll see what I can do.
+- Port: Either a name or path for a Serial port OR a number for TCP port.
+  - > To use multiple instances of MAME, you'll need to start each one listening
+    on a different port. Then define an adapter for that port.
 - Enabled: Enables or disables the Adaptor
-- ChannelPrompt: Prompts for the user for the AdaptorChannel (for authenticity purposes only)
 - AdaptorChannel: The channel used by the adapter (for authenticity purposes only)
+  - > This will cause you NABU to show the channel prompt if set to 0, otherwise we
+  simulate signal lock regardless of channel.
 - Source: The source to pull channels and segments from
-- Channel: The channel to send segments from
-- BaudRate (Serial Only, default: 111865): The send/receive rate of the serial adapter.
+  - > From the sources defined above.
+- Channel: The channel to send segments from.
+  - > The file name, sans .nabu, for NABU files, or the folder name for PAK files.
+- BaudRate (Serial Only): The send/receive rate of the serial adapter.
+  - > The default is 111865 on Windows, which is the actual rate of the NABU Adaptor.
+    On Linux / macOS, the default is 115200, due to an issue with the dotnet serial port library
+    not accepting the non-standard rate. It seems to work better this way on Windows too,
+    and may become the default on all platforms in the future.
+  - > !! This has no effect on the TCP Adaptor !!
 
-> It can run as many adaptors as you're system can handle. But you'll need to configure them all.
+> !! It can run as many adaptors as you're system can handle. But you'll need to configure them all. !!
 
 ### Logging
 
 This app supports the standard dotnet logging section. Various components logging levels can be changed
 this way.
 
-> The default is `Information` for all components.
+> The default is `Information, Error, Warning` for all components.
 
 ## Special Thanks
 
 - DJ Sures: for his tireless work on the official recreation
-- Leo Binkowski: for `liberating` all that stuff from NABU and preserving it
+- Leo Binkowski: for preserving all that sweet hardware and software
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
 - RetroNET and Discord Chaters (in no particular order):

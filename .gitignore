@@ -9,6 +9,6 @@ obj/
 # Common node modules locations
 #/node_modules
 #/wwwroot/node_modules
-
+*.zip
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore
 .fake
