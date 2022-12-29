@@ -258,7 +258,6 @@ public class NetworkEmulator : NabuService
         State.ClearCache();
         Task.Run(RefreshSources);
         Settings = settings;
-        Storage = new(Logger, Settings);
     }
 
 

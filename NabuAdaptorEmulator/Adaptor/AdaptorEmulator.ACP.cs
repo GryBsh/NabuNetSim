@@ -43,7 +43,7 @@ public partial class AdaptorEmulator
             short flags = NABU.ToShort(Recv(2));
             string uri = Reader.ReadString();
 
-            var (success, error, i, length) = await Network.Storage.Open(index, flags, uri);
+            var (success, error, i, length) = await Storage.Open(index, flags, uri);
             if (success)
                 StorageLoaded(i, length);
             else
@@ -63,7 +63,7 @@ public partial class AdaptorEmulator
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
         
-            var (success, error, data) = Network.Storage.Get(index, offset, length);
+            var (success, error, data) = Storage.Get(index, offset, length);
             if (success is false) StorageError(error);
             else DataBuffer(data);
 
@@ -80,7 +80,7 @@ public partial class AdaptorEmulator
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
             var data = Recv(length);
-            var (success, error) = Network.Storage.Put(index, offset, data);
+            var (success, error) = Storage.Put(index, offset, data);
             if (success)
                 Send(0x81); // OK
             else
@@ -93,7 +93,7 @@ public partial class AdaptorEmulator
     }
     void StorageTime()
     {
-        var (_, date, time) = Network.Storage.DateTime();
+        var (_, date, time) = Storage.DateTime();
         Send(0x85);
         Writer.Write(date);
         Writer.Write(time);

@@ -19,10 +19,10 @@ public partial class AdaptorEmulator : NabuService
     BinaryWriter Writer;
     int SendDelay = 0;
     readonly NetworkEmulator Network;
-    readonly AdaptorStorage Storage;
+    readonly ACPService Storage;
     public AdaptorEmulator(
         NetworkEmulator network,
-        AdaptorStorage storage,
+        ACPService storage,
         ILogger logger,
         Stream stream
     //IStreamAdapter serial

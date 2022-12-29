@@ -80,8 +80,8 @@ public class EmulatorService : BackgroundService
 
         var adaptor = new AdaptorEmulator(
             ServiceProvider.GetRequiredService<NetworkEmulator>(),
-            new AdaptorStorage(
-                ServiceProvider.GetRequiredService<ILogger<AdaptorStorage>>(),
+            new ACPService(
+                ServiceProvider.GetRequiredService<ILogger<ACPService>>(),
                 settings
             ),
             ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
@@ -137,8 +137,8 @@ public class EmulatorService : BackgroundService
         var stream = new NetworkStream(socket);
         var adaptor = new AdaptorEmulator(
             ServiceProvider.GetRequiredService<NetworkEmulator>(),
-            new AdaptorStorage(
-                ServiceProvider.GetRequiredService<ILogger<AdaptorStorage>>(),
+            new ACPService(
+                ServiceProvider.GetRequiredService<ILogger<ACPService>>(),
                 settings
             ),
             ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),

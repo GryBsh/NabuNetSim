@@ -3,7 +3,7 @@ using Nabu.Adaptor;
 
 namespace Nabu.Network;
 
-public class AdaptorStorage : IStorageServer
+public class ACPService : IStorageServer
 {
     ILogger Logger;
     AdaptorSettings Settings;
@@ -11,7 +11,7 @@ public class AdaptorStorage : IStorageServer
 
     public string Protocol => throw new NotImplementedException();
 
-    public AdaptorStorage(ILogger logger, AdaptorSettings settings)
+    public ACPService(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;
