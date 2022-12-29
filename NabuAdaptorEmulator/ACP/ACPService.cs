@@ -48,10 +48,14 @@ public class ACPService : IStorageServer
         }
         try
         {
-            var handler = uri.ToLower() switch
+            IStorageHandler? handler = uri.ToLower() switch
             {
                 var path when path.StartsWith("file") 
                     => new FileStorage(Logger, Settings),
+                var path when path.StartsWith("http")
+                    => new HttpStorage(Logger, Settings),
+                var path when path.StartsWith("https")
+                    => new HttpStorage(Logger, Settings),
                 _   => null
             };
             if (handler is null) return (false, "Unknown URI Type", (byte)0x00, 0);
