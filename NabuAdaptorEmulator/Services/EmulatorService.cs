@@ -45,10 +45,25 @@ public class EmulatorService : BackgroundService
             Handshake   = Handshake.None,
             RtsEnable   = true,
             DtrEnable   = true,
-            ReadTimeout = 1000,
+            ReadTimeout = settings.ReadTimeout,
             ReadBufferSize = 1024,
             WriteBufferSize = 1024,
         };
+
+        settings.SendDelay = settings.SendDelay ??
+                    settings.Type switch
+                    {
+                        AdaptorType.TCP => Constants.DefaultTCPSendDelay,
+                        AdaptorType.Serial => Constants.DefaultSerialSendDelay,
+                        _ => 500
+                    };
+
+        Logger.LogInformation(
+            $"\nPort: {settings.Port}" +
+            $"\nBaudRate: {settings.BaudRate}" +
+            $"\nReadTimeout: {settings.ReadTimeout}" +
+            $"\nSendDelay: {settings.SendDelay}"
+        );
 
         while (serial.IsOpen is false)
             try
@@ -86,6 +101,19 @@ public class EmulatorService : BackgroundService
             port = Constants.DefaultTCPPort;
         };
 
+        settings.SendDelay = settings.SendDelay ??
+                    settings.Type switch
+                    {
+                        AdaptorType.TCP => Constants.DefaultTCPSendDelay,
+                        AdaptorType.Serial => Constants.DefaultSerialSendDelay,
+                        _ => 500
+                    };
+
+        Logger.LogInformation(
+            $"\nPort: {port}" +
+            $"\nSendDelay: {settings.SendDelay}"
+        );
+
         while (socket.Connected is false)
             try
             {
@@ -98,11 +126,11 @@ public class EmulatorService : BackgroundService
                 Logger.LogWarning($"TCP Adaptor: {ex.Message}");
                 Thread.Sleep(5000);
             }
-        var logger = ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>();
+
         var stream = new NetworkStream(socket);
         var adaptor = new AdaptorEmulator(
             ServiceProvider.GetRequiredService<NetworkEmulator>(),
-            logger,
+            ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
             stream
         );
 
@@ -128,10 +156,7 @@ public class EmulatorService : BackgroundService
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
-            foreach (var adaptor in DefinedAdaptors)
-            {
-                Logger.LogInformation($"Adaptor: {adaptor.Type}; On: {adaptor.Port}");
-            }
+            
 
             // Until the host tells us to stop
             while (stopping.IsCancellationRequested is false)

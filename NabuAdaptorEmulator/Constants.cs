@@ -10,7 +10,8 @@ internal static class Constants
     public const short FooterSize = 2;
     public const short TotalPayloadSize = MaxPayloadSize + HeaderSize + FooterSize;
 
-    public const int FrameSize = 64;
+    public const int DefaultSerialSendDelay = 500;
+    public const int DefaultTCPSendDelay = 200000;
 
     public const int DefaultTCPPort = 5816;
 

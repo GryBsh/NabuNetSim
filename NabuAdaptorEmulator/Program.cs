@@ -30,8 +30,6 @@ builder.ConfigureServices(
         );
 
         services.AddHttpClient();
-        services.AddTransient<SerialAdaptorEmulator>();
-        services.AddTransient<TCPAdaptorEmulator>();
         services.AddTransient<NetworkEmulator>();
         services.AddHostedService<EmulatorService>();
     }

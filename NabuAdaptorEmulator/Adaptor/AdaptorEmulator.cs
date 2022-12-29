@@ -17,6 +17,7 @@ public class AdaptorEmulator : NabuService
     Stream Stream;
     BinaryReader Reader;
     BinaryWriter Writer;
+    int SendDelay = 0;
     readonly NetworkEmulator Network;
     public AdaptorEmulator(
         NetworkEmulator network,
@@ -41,7 +42,8 @@ public class AdaptorEmulator : NabuService
         State = new(){
             Channel = settings.AdapterChannel
         };
-        Network.SetState(settings); 
+        Network.SetState(settings);
+        SendDelay = settings.SendDelay ?? 0;
     }
 
     #endregion
@@ -83,10 +85,6 @@ public class AdaptorEmulator : NabuService
         );
     }
 
-    (int, byte[]) SliceArray(byte[] buffer, int offset, int length)
-        => Tools.SliceArray(buffer, offset, length);
-
-
     public void Send(params byte[] bytes)
     {
         Logger.LogTrace($"NA: SEND: {Format(bytes)}");
@@ -97,11 +95,10 @@ public class AdaptorEmulator : NabuService
     public void SlowerSend(params byte[] bytes)
     {
         Logger.LogTrace($"NA: SEND: {Format(bytes)}");
-
         for (int i = 0; i < bytes.Length; i++)
         {
             Writer.Write(bytes[i]);
-            Thread.SpinWait(500);
+            Thread.SpinWait(SendDelay);
         }
 
         Logger.LogDebug($"NA: SENT: {bytes.Length} bytes");
@@ -259,7 +256,7 @@ public class AdaptorEmulator : NabuService
         var stop = DateTime.Now;
         Send(Message.Finished);                      //Epilog
         Task.Run(TransferRatePrinter(start, stop, buffer.Length));
-        GC.Collect();
+        
     }
 
     Action TransferRatePrinter(DateTime start, DateTime stop, int length)
@@ -394,7 +391,6 @@ public class AdaptorEmulator : NabuService
             {
                 byte incoming = Recv();
                 var ready = await HandleMessage(incoming);
-                GC.Collect();
                 if (ready) continue;
                 break;
 

@@ -18,6 +18,8 @@ public record AdaptorSettings()
     public string? Channel { get; set; }
     public int BaudRate { get; set; } = 111865;
     public string? TelnetHost { get; set; }
+    public int? SendDelay { get; set; }
+    public int ReadTimeout { get; set; } = 1000;
 
 }
 
