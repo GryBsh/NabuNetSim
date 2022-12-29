@@ -71,7 +71,6 @@ namespace Nabu.Adaptor
             } catch (Exception ex) {
                 StorageError(ex.Message);
             }
-            
         }
 
         void StoragePut()
@@ -113,7 +112,7 @@ namespace Nabu.Adaptor
                             return false;
                         case 0x83:
                             return true;
-                        case 0x01: // Storage-HTTP-Get
+                        case 0x01:
                             await StorageHttpGet();
                             continue;
                         case 0x02:

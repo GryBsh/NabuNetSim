@@ -261,7 +261,7 @@ public class NetworkEmulator : NabuService
     {
         if (Empty(State.Source))
         {
-            Warning("No Source Defined");
+            Warning("NTWRK: No Source Defined");
             return (ImageType.None, ZeroBytes());
         }
         var channel = State.Channel ?? string.Empty;
@@ -318,7 +318,7 @@ public class NetworkEmulator : NabuService
         foreach (var patch in source.Patches)
         {
             if (patch.Name is not nameof(PassThroughPatch))
-                Log($"Applying Patch: {patch.Name}");
+                Log($"NTWRK: Applying Patch: {patch.Name}");
 
             bytes = await patch.Patch(source, bytes);
         }
