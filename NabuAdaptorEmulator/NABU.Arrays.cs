@@ -5,7 +5,7 @@ public static partial class NABU
     public static (int, byte[]) SliceArray(byte[] buffer, int offset, int length)
     {
         int next = offset + length;
-        
+
         if (next >= buffer.Length)
         {
             next = 0;

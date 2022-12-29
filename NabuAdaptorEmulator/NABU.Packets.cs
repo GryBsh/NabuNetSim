@@ -21,9 +21,9 @@ public static partial class NABU
             crc ^= Constants.CRCTable[b];
         }
         return new byte[] {
-            (byte)(crc >> 8 & 0xFF ^ 0xFF),
-            (byte)(crc >> 0 & 0xFF ^ 0xFF)
-        };
+        (byte)(crc >> 8 & 0xFF ^ 0xFF),
+        (byte)(crc >> 0 & 0xFF ^ 0xFF)
+    };
 
     }
 
@@ -42,7 +42,7 @@ public static partial class NABU
         short segment,
         int pak,
         byte[] buffer
-    ) 
+    )
     {
         int offset = segment * Constants.MaxPayloadSize;
         if (offset >= buffer.Length)
@@ -126,7 +126,7 @@ public static partial class NABU
          *  SO: I'm not even going to bother to parse it, I will simply count
          *  the required bytes, and then read the packet, and correct the CRC.
          */
-        
+
         int length = Constants.TotalPayloadSize;
 
         int offset = (segment * length) + (2 * segment) + 2;

@@ -1,145 +1,151 @@
-﻿using System;
+﻿using Nabu.Network;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nabu.Adaptor
+namespace Nabu.Adaptor;
+
+public partial class AdaptorEmulator
 {
-    public partial class AdaptorEmulator
+    #region HCCA-ACP
+    void StorageStarted(short version, string id)
     {
-        #region HCCA-ACP
-        void StorageStarted(short version, string id)
-        {
-            Send(0x80);
-            Send(NABU.FromShort(version));
-            Writer.Write(id);
-        }
+        Send(0x80);
+        Send(NABU.FromShort(version));
+        Writer.Write(id);
+    }
 
-        void StorageLoaded(short index)
-        {
-            var length = Network.GetResponseSize(index);
-            Send(0x83);
-            Send(NABU.FromInt(length));
-        }
+    void StorageError(string message)
+    {
+        Send(0x82);
+        Writer.Write(message);
+    }
+    void StorageLoaded(short index, int length)
+    {
+        Send(0x83);
+        Send(NABU.FromShort(index));
+        Send(NABU.FromInt(length));
+    }
+    void DataBuffer(byte[] buffer)
+    {
+        Send(0x84);
+        Send(NABU.FromShort((short)buffer.Length));
+        Writer.Write(buffer);
+    }
 
-        void StorageError(string message)
-        {
-            Send(0x82);
-            Writer.Write(message);
-        }
-
-        async Task StorageHttpGet()
-        {
-            byte index = Recv();
-            string url = Reader.ReadString();
-            Log($"RequestStore HTTP Get {index}: {url}");
-            var (success, error) = await Network.GetResponse(index, url);
-            if (success)
-                StorageLoaded(index);
-            else
-                StorageError(error);
-
-        }
-
-        async Task StorageLoadFile()
+    async Task StorageOpen()
+    {
+        try
         {
             byte index = Recv();
-            string filename = Reader.ReadString();
-            var (success, error) = await Network.GetResponse(index, filename);
+            short flags = NABU.ToShort(Recv(2));
+            string uri = Reader.ReadString();
+
+            var (success, error, i, length) = await Network.Storage.Open(index, flags, uri);
             if (success)
-                StorageLoaded(index);
+                StorageLoaded(i, length);
             else
                 StorageError(error);
         }
-
-        void DataBuffer(byte[] buffer)
+        catch (Exception ex)
         {
-            Send(0x84);
-            Send(NABU.FromShort((short)buffer.Length));
-            Writer.Write(buffer);
+            StorageError(ex.Message);
         }
+    }
 
-        void StorageGet()
+    void StorageGet()
+    {
+        try
         {
             byte index = Recv();
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
-            try {
-                var data = Network.GetResponseData(index, offset, length);
-                DataBuffer(data);
-            } catch (Exception ex) {
-                StorageError(ex.Message);
-            }
-        }
+        
+            var (success, error, data) = Network.Storage.Get(index, offset, length);
+            if (success is false) StorageError(error);
+            else DataBuffer(data);
 
-        void StoragePut()
+        } catch (Exception ex) {
+            StorageError(ex.Message);
+        }
+    }
+
+    void StoragePut()
+    {
+        try
         {
             byte index = Recv();
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
             var data = Recv(length);
-            var (success, error) = Network.SetResponseData(index, offset);
+            var (success, error) = Network.Storage.Put(index, offset, data);
             if (success)
                 Send(0x81); // OK
             else
                 StorageError(error);
         }
-
-        void StorageTime()
+        catch (Exception ex)
         {
-            var now = DateTime.Now;
-            Send(0x85);
-            Writer.Write(now.ToString("YYYYMMdd").ToCharArray());
-            Writer.Write(now.ToString("HHmmss").ToCharArray());
+            StorageError(ex.Message);
         }
+    }
+    void StorageTime()
+    {
+        var (_, date, time) = Network.Storage.DateTime();
+        Send(0x85);
+        Writer.Write(date);
+        Writer.Write(time);
+    }
 
-        async Task<bool> ACPHandler(CancellationToken cancel)
+    async Task<bool> ACPHandler(CancellationToken cancel)
+    {
+        short version = 0x01;
+        var id = Guid.NewGuid().ToString();
+        StorageStarted(version, id);
+        Log($"Started HCCA-ACP v{version} [{id}]");
+
+        while (cancel.IsCancellationRequested is false)
         {
-            short version = 0x01;
-            var id = Guid.NewGuid().ToString();
-            StorageStarted(version, id);
-            Log($"Started HCCA-ACP v{version} [{id}]");
-
-            while (cancel.IsCancellationRequested is false)
+            try
             {
-                try
+                var input = Recv();
+                switch (input)
                 {
-                    var input = Recv();
-                    switch (input)
-                    {
-                        case 0x00:
-                            return false;
-                        case 0x83:
-                            return true;
-                        case 0x01:
-                            await StorageHttpGet();
-                            continue;
-                        case 0x02:
-                            await StorageLoadFile();
-                            continue;
-                        case 0x03:
-                            StorageGet();
-                            continue;
-                        case 0x04:
-                            StoragePut();
-                            continue;
-                        case 0x05:
-                            StorageTime();
-                            continue;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Warning(ex.Message);
-                    break;
+                    case 0x00:
+                        Warning($"FAIL HCCA-ACP v{version} [{id}]");
+                        return false;
+                    case 0x83:
+                        goto End;
+                    case 0xEF: 
+                        return true;
+                    case 0x01:
+                        await StorageOpen();
+                        continue;
+                    case 0x02:
+                        StorageGet();
+                        continue;
+                    case 0x03:
+                        StoragePut();
+                        continue;
+                    case 0x04:
+                        StorageTime();
+                        continue;
                 }
             }
-            return true;
+            catch (Exception ex)
+            {
+                Warning(ex.Message);
+                continue;
+            }
         }
-
-        #endregion
-
-
+    End:
+        Log($"End HCCA-ACP v{version} [{id}]");
+        return true;
     }
+
+    #endregion
+
+
 }

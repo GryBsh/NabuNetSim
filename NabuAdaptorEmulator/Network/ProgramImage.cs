@@ -17,11 +17,11 @@ public enum ImageType
 }
 
 public record ProgramImage(
-    string DisplayName, 
+    string DisplayName,
     string Name,
-    string Source, 
+    string Source,
     DefinitionType DefinitionType,
-    string Path, 
+    string Path,
     SourceType SourceType,
     ImageType ImageType,
     IPakPatch[] Patches

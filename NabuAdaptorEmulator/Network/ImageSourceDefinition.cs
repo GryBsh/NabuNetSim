@@ -9,7 +9,6 @@ public enum DefinitionType
 
 public record ImageSourceDefinition
 {
-    
     public DefinitionType Type { get; set; } = DefinitionType.NabuRetroNet;
     public string? ListUrl { get; set; }
     public string? NabuRoot { get; set; }

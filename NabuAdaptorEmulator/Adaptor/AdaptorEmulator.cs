@@ -23,7 +23,7 @@ public partial class AdaptorEmulator : NabuService
         NetworkEmulator network,
         ILogger logger,
         Stream stream
-        //IStreamAdapter serial
+    //IStreamAdapter serial
     ) : base(logger)
     {
         Network = network;
@@ -34,11 +34,12 @@ public partial class AdaptorEmulator : NabuService
     }
 
     #region State
-    
+
     public virtual void OnStart(AdaptorSettings settings)
     {
         Settings = settings;
-        State = new(){
+        State = new()
+        {
             Channel = settings.AdapterChannel
         };
         Network.SetState(settings);
@@ -64,7 +65,7 @@ public partial class AdaptorEmulator : NabuService
         var buffer = new byte[length];
         for (int i = 0; i < length; i++)
             buffer[i] = Recv();
-        
+
         Logger.LogTrace($"NA: RCVD: {Format(buffer)}");
         Logger.LogDebug($"NA: RCVD: {buffer.Length} bytes");
         return buffer;
@@ -111,14 +112,14 @@ public partial class AdaptorEmulator : NabuService
     {
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
-        {            
+        {
             try
             {
                 byte incoming = Recv();
                 var cont = incoming switch
                 {
                     0xAF => await ACPHandler(cancel),
-                    _    => await NabuNetHandler(cancel, incoming)
+                    _ => await NabuNetHandler(cancel, incoming)
                 };
 
                 if (cont) continue;
@@ -134,7 +135,7 @@ public partial class AdaptorEmulator : NabuService
             {
                 Error(ex.Message);
                 break;
-            }    
+            }
         }
 
         Log("Disconnected");
@@ -143,5 +144,3 @@ public partial class AdaptorEmulator : NabuService
     #endregion
 
 }
-
-

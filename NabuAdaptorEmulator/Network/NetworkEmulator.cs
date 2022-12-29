@@ -14,10 +14,12 @@ public class NetworkEmulator : NabuService
     AdaptorSettings? Settings;
     readonly NetworkState State = new();
 
+    public AdaptorStorage Storage { get; private set; }
+
     public NetworkEmulator(
         ILogger<NetworkEmulator> logger,
         HttpClient http,
-        ImageSourceDefinitions sources
+        Dictionary<string, ImageSourceDefinition> sources
     ) : base(logger)
     {
         Logger = logger;
@@ -57,12 +59,14 @@ public class NetworkEmulator : NabuService
     /// <param name="sourceName">The name of the source definition</param>
     /// <param name="root">A given folder</param>
     /// <returns></returns>
-    IEnumerable<ProgramImage> GetLocalPakSources(string sourceName, string root) {
+    IEnumerable<ProgramImage> GetLocalPakSources(string sourceName, string root)
+    {
         var folders = Directory.GetDirectories(root);
         foreach (var folder in folders)
         {
             var files = Directory.GetFiles(folder, "*.npak");
-            if (files.Length > 0) {
+            if (files.Length > 0)
+            {
                 var name = folder.Split(Path.DirectorySeparatorChar)[^1];
                 yield return new(
                     name,
@@ -78,7 +82,8 @@ public class NetworkEmulator : NabuService
         }
     }
 
-    IEnumerable<ProgramImage> GetSourceFromList(string sourceName, ImageSourceDefinition source, string list) {
+    IEnumerable<ProgramImage> GetSourceFromList(string sourceName, ImageSourceDefinition source, string list)
+    {
         var parts =
                 list.Split('\n')
                     .Select(l => l.Split(';')
@@ -118,15 +123,19 @@ public class NetworkEmulator : NabuService
 
     async IAsyncEnumerable<ProgramImage> GetImageList(string sourceName, ImageSourceDefinition source)
     {
-        if (source.Type is DefinitionType.Folder) {
+        if (source.Type is DefinitionType.Folder)
+        {
             if (source.NabuRoot is null && source.PakRoot is null) yield break;
-            if (source.PakRoot is not null) {
-                foreach (var channel in GetLocalPakSources(sourceName, source.PakRoot)) {
+            if (source.PakRoot is not null)
+            {
+                foreach (var channel in GetLocalPakSources(sourceName, source.PakRoot))
+                {
                     yield return channel;
                 }
             }
 
-            if (source.NabuRoot is not null) {
+            if (source.NabuRoot is not null)
+            {
                 var files = Directory.GetFiles(source.NabuRoot, "*.nabu");
                 foreach (var file in files)
                 {
@@ -161,7 +170,8 @@ public class NetworkEmulator : NabuService
                 yield break;
             }
 
-            foreach (var channel in GetSourceFromList(sourceName, source, list)) {
+            foreach (var channel in GetSourceFromList(sourceName, source, list))
+            {
                 yield return channel;
             }
         }
@@ -193,11 +203,12 @@ public class NetworkEmulator : NabuService
 
     #region RetroNET
 
-    public async Task<(bool, string)> GetResponse(short index, string url)
+    public async Task<(bool, string)> StorageOpen(short index, string url)
     {
         try
         {
-            var response = url.ToLower().StartsWith("http") switch {
+            var response = url.ToLower().StartsWith("http") switch
+            {
                 true => await Http.GetByteArrayAsync(url),
                 false => await File.ReadAllBytesAsync(
                     Path.Combine(Settings.StoragePath, url)
@@ -217,13 +228,13 @@ public class NetworkEmulator : NabuService
     public int GetResponseSize(short index)
         => State.ACPStorage[index].Length;
 
-    public byte[] GetResponseData(short index, int offset, short length)
+    public byte[] StorageGet(short index, int offset, short length)
     {
         var (_, data) = NABU.SliceArray(State.ACPStorage[index], offset, length);
         return data;
     }
 
-    public (bool, string) SetResponseData(short index, int offset, params byte[] bytes)
+    public (bool, string) StoragePut(short index, int offset, params byte[] bytes)
     {
         var data = State.ACPStorage[index];
         var size = offset + bytes.Length;
@@ -241,16 +252,18 @@ public class NetworkEmulator : NabuService
     /// Sets the initial state of the Network Emulator
     /// </summary>
     /// <param name="settings"></param>
-    public void SetState(AdaptorSettings settings) {
+    public void SetState(AdaptorSettings settings)
+    {
         Log($"Source: {settings.Source}, Channel: {settings.Channel}");
         State.Source = settings.Source;
         State.Channel = settings.Channel;
         State.ClearCache();
         Task.Run(RefreshSources);
         Settings = settings;
+        Storage = new(Logger, Settings);
     }
 
-    
+
 
     /// <summary>
     /// Requests a PAK from the Network Emulator
@@ -265,7 +278,7 @@ public class NetworkEmulator : NabuService
             return (ImageType.None, ZeroBytes());
         }
         var channel = State.Channel ?? string.Empty;
-        
+
         if (Empty(channel))
         {
             var nabuName = FormatTriple(pak);
@@ -273,15 +286,16 @@ public class NetworkEmulator : NabuService
             {
                 Warning($"NTWRK: No channel defined, NABU Image Found: {pak}");
                 channel = nabuName;
-            } 
+            }
             else
             {
-                Warning("NTWRK: No Channel or NABU file for ");
+                Warning($"NTWRK: No Channel or NABU file for {pak}");
                 return (ImageType.None, ZeroBytes());
             }
         }
 
-        if (State.HasChannels is false) {
+        if (State.HasChannels is false)
+        {
             State.ClearCache();
             if (!await RefreshSources())
             {
@@ -289,9 +303,9 @@ public class NetworkEmulator : NabuService
                 return (ImageType.None, ZeroBytes());
             }
         }
-       
+
         var source = State.Sources[channel];
-        
+
         if (State.PakCache.ContainsKey(pak))
         {
             return (source.ImageType, State.PakCache[pak]);
@@ -303,9 +317,9 @@ public class NetworkEmulator : NabuService
             bytes = (source.SourceType, source.ImageType) switch
             {
                 (SourceType.Remote, ImageType.Nabu) => await Http.GetByteArrayAsync(source.Path),
-                (SourceType.Local,  ImageType.Nabu) => await File.ReadAllBytesAsync(source.Path),
+                (SourceType.Local, ImageType.Nabu)  => await File.ReadAllBytesAsync(source.Path),
                 (SourceType.Remote, ImageType.Pak)  => await HttpGetPakBytes(source.Path, pak),
-                (SourceType.Local,  ImageType.Pak)  => await FileGetPakBytes(source.Path, pak),
+                (SourceType.Local, ImageType.Pak)   => await FileGetPakBytes(source.Path, pak),
                 _ => ZeroBytes()
             };
         }
@@ -324,9 +338,8 @@ public class NetworkEmulator : NabuService
         }
 
         State.PakCache[pak] = bytes;
-        
+
         return (source.ImageType, bytes);
     }
 
-    
 }

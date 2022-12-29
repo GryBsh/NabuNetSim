@@ -2,7 +2,7 @@
 
 public static partial class NABU
 {
-    public static int ToInt(params byte[] buffer) 
+    public static int ToInt(params byte[] buffer)
     {
         buffer = SetLength<byte>(4, buffer, 0x00);
         int r = 0;
@@ -31,7 +31,7 @@ public static partial class NABU
         r |= buffer[1] << 8;
         return (short)r;
     }
-        
+
     public static byte[] FromShort(short number)
     {
         var buffer = new byte[2];

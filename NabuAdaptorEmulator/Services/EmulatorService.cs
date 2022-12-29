@@ -40,11 +40,12 @@ public class EmulatorService : BackgroundService
             Parity.None,
             8,
             StopBits.Two
-        ){
+        )
+        {
             ReceivedBytesThreshold = 1,
-            Handshake   = Handshake.None,
-            RtsEnable   = true,
-            DtrEnable   = true,
+            Handshake = Handshake.None,
+            RtsEnable = true,
+            DtrEnable = true,
             ReadTimeout = settings.ReadTimeout,
             ReadBufferSize = 1024,
             WriteBufferSize = 1024,
@@ -141,24 +142,25 @@ public class EmulatorService : BackgroundService
         stream.Dispose();
         socket.Close();
     }
-       
+
 
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        await Task.Run(() => {
+        await Task.Run(() =>
+        {
 
             // We are going to keep track of the services that were defined
             // so if they stop, we can restart them
             Task[] services = NABU.SetLength(
-                DefinedAdaptors.Length, 
-                Array.Empty<Task>(), 
+                DefinedAdaptors.Length,
+                Array.Empty<Task>(),
                 Task.CompletedTask
-            ); 
-            
+            );
+
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
-            
+
 
             // Until the host tells us to stop
             while (stopping.IsCancellationRequested is false)
@@ -181,7 +183,7 @@ public class EmulatorService : BackgroundService
                             AdaptorType.Serial => Task.Run(() => Serial(settings, stopping)),
                             AdaptorType.TCP => Task.Run(() => TCP(settings, stopping)),
                             _ => throw new NotImplementedException()
-                        };      
+                        };
                     }
                 }
                 //started = true;
@@ -190,5 +192,3 @@ public class EmulatorService : BackgroundService
         }, stopping);
     }
 }
-
-

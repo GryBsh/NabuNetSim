@@ -1,7 +1,8 @@
 ﻿
 namespace Nabu.Adaptor;
 
-public enum AdaptorType {
+public enum AdaptorType
+{
     Unknown = 0,
     Serial,
     TCP
@@ -11,8 +12,8 @@ public enum AdaptorType {
 public record AdaptorSettings()
 {
     public AdaptorType Type { get; set; } = AdaptorType.Unknown;
-    public string Port {get; set;} = string.Empty;
-    public bool Enabled {get; set;} = true;
+    public string Port { get; set; } = string.Empty;
+    public bool Enabled { get; set; } = true;
     public short AdapterChannel { get; set; } = 0x0001;
     public string? Source { get; set; }
     public string? Channel { get; set; }
@@ -23,5 +24,3 @@ public record AdaptorSettings()
     public string StoragePath { get; set; } = "./Files";
 
 }
-
-
