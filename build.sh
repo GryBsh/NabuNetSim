@@ -37,5 +37,5 @@ do
     publish win $arch
 done
 
-#publish macos x64 osx
-#publish macos arm64 osx.11.0
+publish macos x64 osx
+publish macos arm64 osx.11.0
