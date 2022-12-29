@@ -14,8 +14,6 @@ public class NetworkEmulator : NabuService
     AdaptorSettings? Settings;
     readonly NetworkState State = new();
 
-    public AdaptorStorage Storage { get; private set; }
-
     public NetworkEmulator(
         ILogger<NetworkEmulator> logger,
         HttpClient http,

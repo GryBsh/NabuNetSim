@@ -19,14 +19,17 @@ public partial class AdaptorEmulator : NabuService
     BinaryWriter Writer;
     int SendDelay = 0;
     readonly NetworkEmulator Network;
+    readonly AdaptorStorage Storage;
     public AdaptorEmulator(
         NetworkEmulator network,
+        AdaptorStorage storage,
         ILogger logger,
         Stream stream
     //IStreamAdapter serial
     ) : base(logger)
     {
         Network = network;
+        Storage = storage;
         Stream = stream;
         Reader = new BinaryReader(stream, Encoding.ASCII);
         Writer = new BinaryWriter(stream, Encoding.ASCII);
@@ -100,7 +103,6 @@ public partial class AdaptorEmulator : NabuService
             Writer.Write(bytes[i]);
             Thread.SpinWait(SendDelay);
         }
-
         Logger.LogDebug($"NA: SENT: {bytes.Length} bytes");
     }
 
@@ -128,7 +130,6 @@ public partial class AdaptorEmulator : NabuService
             }
             catch (TimeoutException)
             {
-                //Trace("Timeout expired.");
                 continue;
             }
             catch (Exception ex)
