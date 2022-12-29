@@ -71,7 +71,7 @@ this way.
   - Nath (The legend who decrypted NPAK files)
   - Brijohn (NABU MAME!!)
   - Worm
-  - Hans23
+  - Hans23 (Creator of the HCCA-ACP spec)
   - Guidol
   - VTTCP
   - HungryMarmot
