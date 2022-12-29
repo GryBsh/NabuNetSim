@@ -10,12 +10,12 @@ public class NetworkState
     public Dictionary<string, string> SourceCache { get; private set;} = new();
     public Dictionary<int, byte[]> PakCache { get; private set; } = new();
 
-    public Dictionary<int, byte[]> ResponseCache { get; private set; } = new();
+    public Dictionary<int, byte[]> ACPStorage { get; private set; } = new();
 
     public void ClearCache()
     {
-        ResponseCache.Clear();
-        ResponseCache = new();
+        ACPStorage.Clear();
+        ACPStorage = new();
         PakCache.Clear();
         PakCache = new();
         SourceCache.Clear();

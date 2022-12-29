@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Nabu;
 
-public partial class Tools
+public static partial class NABU
 {
     public static byte[] GenerateCRC(byte[] buffer)
     {

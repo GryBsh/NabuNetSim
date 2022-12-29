@@ -1,9 +1,7 @@
 ﻿namespace Nabu;
 
-public static partial class Tools
+public static partial class NABU
 {
-
-
     public static int ToInt(params byte[] buffer) 
     {
         buffer = SetLength<byte>(4, buffer, 0x00);
@@ -13,6 +11,16 @@ public static partial class Tools
         r |= buffer[2] << 16;
         r |= buffer[3] << 24;
         return r;
+    }
+
+    public static byte[] FromInt(int number)
+    {
+        var buffer = new byte[4];
+        buffer[0] = (byte)(number >> 0 & 0xFF);
+        buffer[1] = (byte)(number >> 8 & 0xFF);
+        buffer[2] = (byte)(number >> 16 & 0xFF);
+        buffer[3] = (byte)(number >> 24 & 0xFF);
+        return buffer;
     }
 
     public static short ToShort(params byte[] buffer)

@@ -1,6 +1,6 @@
 ﻿namespace Nabu;
 
-public static partial class Tools
+public static partial class NABU
 {
     public static (int, byte[]) SliceArray(byte[] buffer, int offset, int length)
     {

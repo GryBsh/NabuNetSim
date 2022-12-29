@@ -11,4 +11,5 @@ public class AdaptorState
     public bool ChannelKnown => Channel is > 0 and < 0x100;
     public string LastRate { get; set; } = "0.00";
     public Dictionary<string, byte[]> SegmentCache { get; } = new();
+
 }

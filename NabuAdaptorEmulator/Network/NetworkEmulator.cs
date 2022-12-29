@@ -3,6 +3,7 @@ using Nabu.Adaptor;
 using Nabu.Patching;
 using Nabu.Services;
 using System;
+using System.Reflection.PortableExecutable;
 using System.Text;
 
 namespace Nabu.Network;
@@ -10,7 +11,7 @@ namespace Nabu.Network;
 public class NetworkEmulator : NabuService
 {
     readonly HttpClient Http;
-    //readonly AdaptorSettings Settings;
+    AdaptorSettings? Settings;
     readonly NetworkState State = new();
 
     public NetworkEmulator(
@@ -28,28 +29,28 @@ public class NetworkEmulator : NabuService
 
     async Task<byte[]> HttpGetPakBytes(string url, int pak)
     {
-        var filename = Tools.PakName(pak);
+        var filename = NABU.PakName(pak);
         url = $"{url}/{filename}.npak";
         var npak = await Http.GetByteArrayAsync(url);
         //Trace($"NPAK Length: {npak.Length}");
-        npak = Tools.Unpak(npak);
+        npak = NABU.Unpak(npak);
         //Trace($"Segment Length: {npak.Length}");
         return npak;
     }
     async Task<byte[]> FileGetPakBytes(string path, int pak)
     {
-        var filename = Tools.PakName(pak);
+        var filename = NABU.PakName(pak);
         path = Path.Join(path, $"{filename}.npak");
         var npak = await File.ReadAllBytesAsync(path);
         Trace($"NPAK Length: {npak.Length}");
-        npak = Tools.Unpak(npak);
+        npak = NABU.Unpak(npak);
         Trace($"Segment Length: {npak.Length}");
         return npak;
     }
     #endregion
-    
+
     #region Source List
-    
+
     /// <summary>
     /// Get the list of PAK sources from a given folder
     /// </summary>
@@ -66,14 +67,14 @@ public class NetworkEmulator : NabuService
                 yield return new(
                     name,
                     name,
-                    sourceName, 
-                    DefinitionType.Folder, 
-                    folder, 
+                    sourceName,
+                    DefinitionType.Folder,
+                    folder,
                     SourceType.Local,
                     ImageType.Pak,
                     new[] { new PassThroughPatch(Logger) }
-                );                    
-            } 
+                );
+            }
         }
     }
 
@@ -89,7 +90,7 @@ public class NetworkEmulator : NabuService
         {
             var name = line[^1];
             var path = line[0];
-            
+
             if (name is null || path is null)
             {
                 Warning($"Invalid from Source {sourceName}: Channel: {name}, Path: {path}");
@@ -103,12 +104,12 @@ public class NetworkEmulator : NabuService
             var type = isRemote ? SourceType.Remote : SourceType.Local;
 
             yield return new(
-                name, 
-                path, 
-                sourceName, 
-                source.Type, 
-                realPath, 
-                type, 
+                name,
+                path,
+                sourceName,
+                source.Type,
+                realPath,
+                type,
                 isNabuFile ? ImageType.Nabu : ImageType.Pak,
                 new[] { new PassThroughPatch(Logger) }
             );
@@ -119,7 +120,7 @@ public class NetworkEmulator : NabuService
     {
         if (source.Type is DefinitionType.Folder) {
             if (source.NabuRoot is null && source.PakRoot is null) yield break;
-            if (source.PakRoot is not null){
+            if (source.PakRoot is not null) {
                 foreach (var channel in GetLocalPakSources(sourceName, source.PakRoot)) {
                     yield return channel;
                 }
@@ -131,11 +132,11 @@ public class NetworkEmulator : NabuService
                 {
                     var name = file.Split('.')[0].Split(Path.DirectorySeparatorChar)[^1];
                     yield return new(
-                        name, 
-                        name, 
-                        sourceName, 
-                        source.Type, 
-                        file, 
+                        name,
+                        name,
+                        sourceName,
+                        source.Type,
+                        file,
                         SourceType.Local,
                         ImageType.Nabu,
                         new[] { new PassThroughPatch(Logger) }
@@ -150,8 +151,8 @@ public class NetworkEmulator : NabuService
             try
             {
 
-                list =  State.SourceCache.ContainsKey(sourceName) ? 
-                            State.SourceCache[sourceName] : 
+                list = State.SourceCache.ContainsKey(sourceName) ?
+                            State.SourceCache[sourceName] :
                             State.SourceCache[sourceName] = await Http.GetStringAsync(source.ListUrl);
             }
             catch (Exception ex)
@@ -192,32 +193,89 @@ public class NetworkEmulator : NabuService
 
     #region RetroNET
 
-    public async Task<bool> GetResponse(short index, string url)
+    public async Task<(bool, string)> GetResponse(short index, string url)
     {
         try
         {
-            var response = await Http.GetStringAsync(url);
-            var ascii = Encoding.ASCII.GetBytes(response);
-            State.ResponseCache[index] = ascii;
-        } 
+            var response = url.ToLower().StartsWith("http") switch {
+                true => await Http.GetByteArrayAsync(url),
+                false => await File.ReadAllBytesAsync(
+                    Path.Combine(Settings.StoragePath, url)
+                )
+            };
+            State.ACPStorage[index] = response;
+        }
         catch (Exception ex)
         {
             Warning(ex.Message);
-            return false;
+            return (false, ex.Message);
         }
 
-        return true;
+        return (true, string.Empty);
     }
 
     public int GetResponseSize(short index)
-        => State.ResponseCache[index].Length;
+        => State.ACPStorage[index].Length;
 
-    public byte[] GetResponseData(short index, short offset, short length)
+    public byte[] GetResponseData(short index, int offset, short length)
     {
-        var (_, data) = Tools.SliceArray(State.ResponseCache[index], offset, length);
+        var (_, data) = NABU.SliceArray(State.ACPStorage[index], offset, length);
         return data;
     }
-        
+
+    public (bool, string) SetResponseData(short index, int offset, params byte[] bytes)
+    {
+        var data = State.ACPStorage[index];
+        var size = offset + bytes.Length;
+        if (size < data.Length) size = data.Length;
+        var buffer = new byte[size];
+        data.CopyTo(buffer, 0);
+        bytes.CopyTo(buffer, offset);
+        State.ACPStorage[index] = buffer;
+        return (true, string.Empty);
+    }
+
+    async Task RequestStoreHttpGet()
+    {
+        byte index = Recv();
+        string url = Reader.ReadString();
+        Log($"RequestStore HTTP Get {index}: {url}");
+        var (success, _) = await Network.GetResponse(index, url);
+        Send(NABU.FromBool(success));
+    }
+
+    void RequestStoreGetSize()
+    {
+        short index = Recv();
+
+        var size = Network.GetResponseSize(index);
+        Log($"RequestStore Get Size {index}: Size: {size}");
+        var sizes = NABU.FromShort((short)size);
+        Send(sizes);
+    }
+
+    void RequestStoreGetData()
+    {
+        short index = Recv();
+        short offset = NABU.ToShort(Recv(2));
+        short length = NABU.ToShort(Recv(2));
+        Log($"RequestStore.Get Response {index}: Offset: {offset}, Length: {length} ");
+        var data = Network.GetResponseData(index, offset, length);
+        SlowerSend(data);
+    }
+
+    void Telnet()
+    {
+        Warning("A6 : Telnet not supported");
+        Send(0x00);
+        return;
+    }
+
+    #endregion
+
+
+
+
 
     /// <summary>
     /// Sets the initial state of the Network Emulator
@@ -229,9 +287,10 @@ public class NetworkEmulator : NabuService
         State.Channel = settings.Channel;
         State.ClearCache();
         Task.Run(RefreshSources);
+        Settings = settings;
     }
 
-    #endregion
+    
 
     /// <summary>
     /// Requests a PAK from the Network Emulator

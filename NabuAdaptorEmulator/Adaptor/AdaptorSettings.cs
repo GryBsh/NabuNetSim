@@ -20,6 +20,7 @@ public record AdaptorSettings()
     public string? TelnetHost { get; set; }
     public int? SendDelay { get; set; }
     public int ReadTimeout { get; set; } = 1000;
+    public string StoragePath { get; set; } = "./Files";
 
 }
 

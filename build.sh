@@ -19,6 +19,7 @@ publish () {
     echo "   Preparing $BIN contents"
     cp -r $PAK $BIN
     mkdir $BIN/NABUs
+    mkdir $BIN/Files
     cp -f $CONFIG/appsettings.$os.json $BIN/appsettings.json
     cp -f README.md $BIN
     echo "   Zipping $BIN"

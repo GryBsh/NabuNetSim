@@ -33,6 +33,7 @@ jobs:
           dotnet publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
           cp -r $PAK $BIN
           mkdir $BIN/NABUs
+          mkdir $BIN/Files
           cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
           cp -f README.md $BIN
           zip -r nnae-linux-$arch.zip $BIN
@@ -45,6 +46,7 @@ jobs:
           dotnet publish -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
           cp -r $PAK $BIN
           mkdir $BIN/NABUs
+          mkdir $BIN/Files
           cp -f $CONFIG/appsettings.win.json $BIN/appsettings.json
           cp -f README.md $BIN
           zip -r nnae-win-$arch.zip $BIN
@@ -55,6 +57,7 @@ jobs:
         dotnet publish -r osx-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
         cp -r $PAK $BIN
         mkdir $BIN/NABUs
+        mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
         zip -r nnae-macos-x64.zip $BIN
@@ -63,6 +66,7 @@ jobs:
         dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
         cp -r $PAK $BIN
         mkdir $BIN/NABUs
+        mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
         zip -r nnae-macos-arm64.zip $BIN
