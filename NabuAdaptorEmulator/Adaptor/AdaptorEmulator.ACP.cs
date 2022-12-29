@@ -87,8 +87,8 @@ namespace Nabu.Adaptor
         {
             var now = DateTime.Now;
             Send(0x85);
-            Writer.Write(now.ToString("YYYYMMDD").ToCharArray());
-            Writer.Write(now.ToString("HHmmSS").ToCharArray());
+            Writer.Write(now.ToString("YYYYMMdd").ToCharArray());
+            Writer.Write(now.ToString("HHmmss").ToCharArray());
         }
 
         async Task<bool> ACPHandler(CancellationToken cancel)
