@@ -25,7 +25,6 @@ public partial class AdaptorEmulator : NabuService
         ACPService storage,
         ILogger logger,
         Stream stream
-    //IStreamAdapter serial
     ) : base(logger)
     {
         Network = network;

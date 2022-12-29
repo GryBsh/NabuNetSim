@@ -91,3 +91,42 @@ public class FileStorage : IStorageHandler
         throw new NotImplementedException();
     }
 }
+
+public class HttpStorage : IStorageHandler
+{
+    ILogger Logger;
+    AdaptorSettings Settings;
+
+    public string Protocol => "http";
+
+    public HttpStorage(ILogger logger, AdaptorSettings settings)
+    {
+        Logger = logger;
+        Settings = settings;
+    }
+
+    public Task<(bool, string, int)> Open(short flags, string uri)
+    {
+        throw new NotImplementedException();
+    }
+
+    public (bool, string, byte[]) Get(int offset, short length)
+    {
+        throw new NotImplementedException();
+    }
+
+    public (bool, string) Put(int offset, byte[] buffer)
+    {
+        throw new NotImplementedException();
+    }
+
+    public void End()
+    {
+        throw new NotImplementedException();
+    }
+
+    public (bool, string, byte, byte[]) Command(byte index, byte command, byte[] data)
+    {
+        throw new NotImplementedException();
+    }
+}
