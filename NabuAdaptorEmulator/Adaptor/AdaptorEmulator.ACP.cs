@@ -32,7 +32,7 @@ public partial class AdaptorEmulator
     {
         Send(0x84);
         Send(NABU.FromShort((short)buffer.Length));
-        Writer.Write(buffer);
+        SlowerSend(buffer);
     }
 
     async Task StorageOpen()
