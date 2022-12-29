@@ -19,8 +19,7 @@ public class ACPService : IStorageServer
 
     byte NextIndex()
     {
-        var slots = (0x00..0x100);
-        for (int i = slots.Start.Value; i < slots.End.Value; i++)
+        for (int i = 0x00; i < 0xFF; i++)
         {
             if (StorageSlots.ContainsKey((byte)i)) continue;
             return (byte)i;
@@ -44,7 +43,7 @@ public class ACPService : IStorageServer
         {
             index = NextIndex();
             if (index is 0xFF)
-                return (false, "All slots full", (byte)0xFF, 0);
+                return (false, "All slots full", 0xFF, 0);
         }
         try
         {
@@ -58,7 +57,8 @@ public class ACPService : IStorageServer
                     => new HttpStorage(Logger, Settings),
                 _   => null
             };
-            if (handler is null) return (false, "Unknown URI Type", (byte)0x00, 0);
+            if (handler is null) 
+                return (false, "Unknown URI Type", 0xFF, 0);
 
             var (success, error, length) = await handler.Open(flags, uri);
             StorageSlots[index] = handler;
@@ -66,7 +66,7 @@ public class ACPService : IStorageServer
         }
         catch (Exception ex)
         {
-            return (false, ex.Message, (byte)0x00, 0);
+            return (false, ex.Message, 0xFF, 0);
         }
     }
 
