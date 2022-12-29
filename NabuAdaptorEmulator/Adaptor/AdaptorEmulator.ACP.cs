@@ -65,18 +65,22 @@ namespace Nabu.Adaptor
             byte index = Recv();
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
-            var data = Network.GetResponseData(index, offset, length);
-
-            DataBuffer(data);
+            try {
+                var data = Network.GetResponseData(index, offset, length);
+                DataBuffer(data);
+            } catch (Exception ex) {
+                StorageError(ex.Message);
+            }
+            
         }
 
-        async Task StoragePut()
+        void StoragePut()
         {
             byte index = Recv();
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
             var data = Recv(length);
-            var (success, error) = Network.SetResponseData(index, offset)
+            var (success, error) = Network.SetResponseData(index, offset);
             if (success)
                 Send(0x81); // OK
             else
@@ -119,7 +123,7 @@ namespace Nabu.Adaptor
                             StorageGet();
                             continue;
                         case 0x04:
-                            await StoragePut();
+                            StoragePut();
                             continue;
                         case 0x05:
                             StorageTime();

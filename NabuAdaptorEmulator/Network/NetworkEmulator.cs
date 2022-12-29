@@ -235,47 +235,7 @@ public class NetworkEmulator : NabuService
         return (true, string.Empty);
     }
 
-    async Task RequestStoreHttpGet()
-    {
-        byte index = Recv();
-        string url = Reader.ReadString();
-        Log($"RequestStore HTTP Get {index}: {url}");
-        var (success, _) = await Network.GetResponse(index, url);
-        Send(NABU.FromBool(success));
-    }
-
-    void RequestStoreGetSize()
-    {
-        short index = Recv();
-
-        var size = Network.GetResponseSize(index);
-        Log($"RequestStore Get Size {index}: Size: {size}");
-        var sizes = NABU.FromShort((short)size);
-        Send(sizes);
-    }
-
-    void RequestStoreGetData()
-    {
-        short index = Recv();
-        short offset = NABU.ToShort(Recv(2));
-        short length = NABU.ToShort(Recv(2));
-        Log($"RequestStore.Get Response {index}: Offset: {offset}, Length: {length} ");
-        var data = Network.GetResponseData(index, offset, length);
-        SlowerSend(data);
-    }
-
-    void Telnet()
-    {
-        Warning("A6 : Telnet not supported");
-        Send(0x00);
-        return;
-    }
-
     #endregion
-
-
-
-
 
     /// <summary>
     /// Sets the initial state of the Network Emulator
