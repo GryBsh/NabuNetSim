@@ -11,7 +11,7 @@ internal static class Constants
     public const short TotalPayloadSize = MaxPayloadSize + HeaderSize + FooterSize;
 
     public const int DefaultSerialSendDelay = 500;
-    public const int DefaultTCPSendDelay = 200000;
+    public const int DefaultTCPSendDelay = 130000;
 
     public const int DefaultTCPPort = 5816;
 

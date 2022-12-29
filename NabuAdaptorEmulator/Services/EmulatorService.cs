@@ -59,10 +59,11 @@ public class EmulatorService : BackgroundService
                     };
 
         Logger.LogInformation(
-            $"\nPort: {settings.Port}" +
-            $"\nBaudRate: {settings.BaudRate}" +
-            $"\nReadTimeout: {settings.ReadTimeout}" +
-            $"\nSendDelay: {settings.SendDelay}"
+            $"Serial:" +
+            $"\n\t Port: {settings.Port}" +
+            $"\n\t BaudRate: {settings.BaudRate}" +
+            $"\n\t ReadTimeout: {settings.ReadTimeout}" +
+            $"\n\t SendDelay: {settings.SendDelay}"
         );
 
         while (serial.IsOpen is false)
@@ -110,8 +111,9 @@ public class EmulatorService : BackgroundService
                     };
 
         Logger.LogInformation(
-            $"\nPort: {port}" +
-            $"\nSendDelay: {settings.SendDelay}"
+            $"TCP:" +
+            $"\n\t Port: {port}" +
+            $"\n\t SendDelay: {settings.SendDelay}"
         );
 
         while (socket.Connected is false)

@@ -42,14 +42,14 @@ Can be set via command line arguments, in the usual dotnet way.
 - Channel: The channel to send segments from.
   - > The file name, sans .nabu, for NABU files, or the folder name for PAK files.
 - BaudRate (Serial Only): The send/receive rate of the serial adapter.
-  - > The default is 111865 on Windows, which is the actual rate of the NABU Adaptor.
-    On Linux / macOS, the default is 115200, due to an issue with the dotnet serial port library
+  - > The default is `111865` on Windows, which is the actual rate of the NABU Adaptor.
+    On Linux / macOS, the default is `115200`, due to an issue with the dotnet serial port library
     not accepting the non-standard rate. It seems to work better this way on Windows too,
     and may become the default on all platforms in the future.
   - > !! This has no effect on the TCP Adaptor !!
 - SendDelay: The delay in iterations between each byte sent in "Slower Send" mode.
-  - > For Serial the default is 500, for TCP it is 200,000.
-  - > I don't know why MAME is 400x slower than the real thing, but it is.
+  - > For Serial the default is `500`, for TCP it is `130000`.
+  - > I don't know why MAME is 260x slower than the real thing, but it is.
 
 > !! It can run as many adaptors as you're system can handle. But you'll need to configure them all. !!
 
