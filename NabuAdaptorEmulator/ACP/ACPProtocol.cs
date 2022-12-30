@@ -31,8 +31,6 @@ public class ACPProtocol : Protocol
         Send(toSend);
     }
 
-   
-
     void StorageStarted()
     {
         FrameAndSend(
