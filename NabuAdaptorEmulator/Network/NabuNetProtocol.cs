@@ -136,7 +136,7 @@ public class NabuNetProtocol : Protocol
             (last, payload) = NABU.SlicePak(Logger, segment, segmentData);
 
         if (payload.Length == 0) Unauthorized();
-        else SendPacket(payload, last: last);
+        else SendPacket(pak, payload, last: last);
     }
 
     /// <Summary>
@@ -185,7 +185,7 @@ public class NabuNetProtocol : Protocol
     /// <summary>
     ///     Sends a packet to the device
     /// </summary>
-    void SendPacket(byte[] buffer, bool last = false)
+    void SendPacket(int pak, byte[] buffer, bool last = false)
     {
         if (buffer.Length > Constants.MaxPacketSize)
         {
@@ -208,7 +208,11 @@ public class NabuNetProtocol : Protocol
         Finished();                      //Epilog
 
         Task.Run(() => TransferRatePrinter(start, stop, buffer.Length));
-        if (last) GC.Collect();
+        if (last)
+        {
+            Network.UncachePak(pak);
+            GC.Collect();
+        }
     }
 
     void TransferRatePrinter(DateTime start, DateTime stop, int length)
