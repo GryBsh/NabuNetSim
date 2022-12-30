@@ -1,6 +1,4 @@
-﻿using static System.Formats.Asn1.AsnWriter;
-
-namespace Nabu.Messages;
+﻿namespace Nabu.Messages;
 
 public static class Message
 {

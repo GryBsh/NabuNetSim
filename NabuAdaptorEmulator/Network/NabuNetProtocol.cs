@@ -6,7 +6,7 @@ namespace Nabu.Network;
 
 public class NabuNetProtocol : Protocol
 {
-    NetworkEmulator Network { get; }
+    NetworkSimulator Network { get; }
     NabuNetAdaptorState State;
     public override byte Identifier => 0x83;
     public override string Name => "NabuNet";
@@ -14,7 +14,7 @@ public class NabuNetProtocol : Protocol
 
     public NabuNetProtocol(
         ILogger<NabuNetProtocol> logger,
-        NetworkEmulator network) : base(logger)
+        NetworkSimulator network) : base(logger)
     {
         Network = network;
         State = new();

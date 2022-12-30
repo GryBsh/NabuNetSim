@@ -1,29 +1,17 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
-using Nabu.Network;
-using System.IO.Ports;
-using System.Net.Sockets;
-using System.Net;
-using System.Text;
-using System.Reflection.Metadata;
-using System.IO;
-using Nabu.ACP;
 
 namespace Nabu.Services;
 
-public class SerialAdaptorEmulator { }
-public class TCPAdaptorEmulator { }
-
-public class EmulatorService : BackgroundService
+public class Simulation : BackgroundService
 {
     readonly ILogger Logger;
     readonly AdaptorSettings[] DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
 
-    public EmulatorService(
-        ILogger<EmulatorService> logger,
+    public Simulation(
+        ILogger<Simulation> logger,
         Settings settings,
         IServiceProvider serviceProvider
     )
@@ -32,121 +20,6 @@ public class EmulatorService : BackgroundService
         DefinedAdaptors = settings.Adaptors ?? Array.Empty<AdaptorSettings>();
         ServiceProvider = serviceProvider;
     }
-
-    async Task Serial(AdaptorSettings settings, CancellationToken stopping)
-    {
-        var serial = new SerialPort(
-            settings.Port,
-            115200,
-            Parity.None,
-            8,
-            StopBits.Two
-        )
-        {
-            ReceivedBytesThreshold = 1,
-            Handshake = Handshake.None,
-            RtsEnable = true,
-            DtrEnable = true,
-            ReadTimeout = settings.ReadTimeout,
-            ReadBufferSize = 1024,
-            WriteBufferSize = 1024,
-        };
-
-        settings.SendDelay ??= Constants.DefaultSerialSendDelay;
-
-        Logger.LogInformation(
-            $"Serial:" +
-            $"\n\t Port: {settings.Port}" +
-            $"\n\t BaudRate: {settings.BaudRate}" +
-            $"\n\t ReadTimeout: {settings.ReadTimeout}" +
-            $"\n\t SendDelay: {settings.SendDelay}"
-        );
-
-        while (serial.IsOpen is false)
-            try
-            {
-                serial.Open();
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning($"Serial Adaptor: {ex.Message}");
-                Thread.Sleep(5000);
-            }
-        try
-        {
-            var adaptor = new AdaptorEmulator(
-                settings,
-                ServiceProvider.GetRequiredService<NabuNetProtocol>(),
-                //ServiceProvider.GetServices<IProtocolExtension>(),
-                ServiceProvider.GetRequiredService<ACPProtocol>(),
-                ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
-                serial.BaseStream
-            );
-            
-            await adaptor.Emulate(stopping);
-
-        } catch (Exception ex)
-        {
-            Logger.LogError(ex.Message, ex );
-        }
-        finally
-        {
-            serial.Close();
-            serial.Dispose();
-        }
-
-        
-    }
-
-    async Task TCP(AdaptorSettings settings, CancellationToken stopping)
-    {
-        var socket = new Socket(
-            AddressFamily.InterNetwork,
-            SocketType.Stream,
-            ProtocolType.Tcp
-        );
-
-        if (!int.TryParse(settings.Port, out int port))
-        {
-            port = Constants.DefaultTCPPort;
-        };
-
-        settings.SendDelay = settings.SendDelay ?? Constants.DefaultTCPSendDelay;
-
-        Logger.LogInformation(
-            $"TCP:" +
-            $"\n\t Port: {port}" +
-            $"\n\t SendDelay: {settings.SendDelay}"
-        );
-
-        while (socket.Connected is false)
-            try
-            {
-                socket.Connect(
-                    new IPEndPoint(IPAddress.Loopback, port)
-                );
-            }
-            catch (Exception ex)
-            {
-                Logger.LogWarning($"TCP Adaptor: {ex.Message}");
-                Thread.Sleep(5000);
-            }
-
-        var stream = new NetworkStream(socket);
-        var adaptor = new AdaptorEmulator(
-             settings,
-             ServiceProvider.GetRequiredService<NabuNetProtocol>(),
-             //ServiceProvider.GetServices<IProtocolExtension>(),
-             ServiceProvider.GetRequiredService<ACPProtocol>(),
-             ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
-             stream
-         );
-
-        await adaptor.Emulate(stopping);
-        stream.Dispose();
-        socket.Close();
-    }
-
 
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
@@ -184,8 +57,8 @@ public class EmulatorService : BackgroundService
 
                         services[index] = settings.Type switch
                         {
-                            AdaptorType.Serial => Task.Run(() => Serial(settings, stopping)),
-                            AdaptorType.TCP => Task.Run(() => TCP(settings, stopping)),
+                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, settings, stopping)),
+                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, Logger, settings, stopping)),
                             _ => throw new NotImplementedException()
                         };
                     }

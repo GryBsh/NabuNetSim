@@ -2,20 +2,17 @@
 using Nabu.Adaptor;
 using Nabu.Patching;
 using Nabu.Services;
-using System;
-using System.Reflection.PortableExecutable;
-using System.Text;
 
 namespace Nabu.Network;
 
-public class NetworkEmulator : NabuService
+public class NetworkSimulator : NabuService
 {
     readonly HttpClient Http;
     AdaptorSettings? Settings;
     readonly NetworkState State = new();
 
-    public NetworkEmulator(
-        ILogger<NetworkEmulator> logger,
+    public NetworkSimulator(
+        ILogger<NetworkSimulator> logger,
         HttpClient http,
         Dictionary<string, ImageSourceDefinition> sources
     ) : base(logger)

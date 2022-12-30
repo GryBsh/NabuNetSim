@@ -30,10 +30,10 @@ builder.ConfigureServices(
         );
 
         services.AddHttpClient();
-        services.AddTransient<NetworkEmulator>();
+        services.AddTransient<NetworkSimulator>();
         services.AddTransient<NabuNetProtocol>();
         services.AddTransient<ACPProtocol>();
-        services.AddHostedService<EmulatorService>();
+        services.AddHostedService<Simulation>();
     }
 );
 

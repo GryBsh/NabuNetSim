@@ -96,11 +96,9 @@ public class ACPProtocol : Protocol
             byte index = Recv();
             int offset = NABU.ToInt(Recv(4));
             short length = NABU.ToShort(Recv(2));
-
             var (success, error, data) = Storage.Get(index, offset, length);
             if (success is false) StorageError(error);
             else DataBuffer(data);
-
         }
         catch (Exception ex)
         {
@@ -132,11 +130,11 @@ public class ACPProtocol : Protocol
     void ACPDateTime()
     {
         var (_, date, time) = Storage.DateTime();
-        FrameAndSend(Combine(
+        FrameAndSend(
             new byte[] { 0x85 },
             Encoding.ASCII.GetBytes(date),
             Encoding.ASCII.GetBytes(time)
-        ).ToArray());
+        );
         
     }
 
