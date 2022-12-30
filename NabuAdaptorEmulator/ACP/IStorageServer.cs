@@ -6,7 +6,7 @@ using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nabu.Network;
+namespace Nabu.ACP;
 
 public interface IStorageServer
 {

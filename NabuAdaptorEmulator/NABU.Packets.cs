@@ -37,7 +37,7 @@ public static partial class NABU
     /// <param name="pak"></param>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static byte[] SliceRaw(
+    public static (bool, byte[]) SliceRaw(
         ILogger logger,
         short segment,
         int pak,
@@ -48,7 +48,7 @@ public static partial class NABU
         if (offset >= buffer.Length)
         {
             logger.LogError($"Packet Start {offset} is beyond the end of the buffer");
-            return Array.Empty<byte>();
+            return (true, Array.Empty<byte>());
         }
 
         logger.LogTrace("Preparing Packet");
@@ -56,9 +56,7 @@ public static partial class NABU
 
         var (next, slice) = SliceArray(buffer, offset, Constants.MaxPayloadSize);
         bool lastPacket = next is 0;
-
         int packetSize = slice.Length + Constants.HeaderSize + Constants.FooterSize;
-
         var message = new byte[packetSize];
         int idx = 0;
 
@@ -106,10 +104,10 @@ public static partial class NABU
         message[idx++] = crc[0];        //CRC MSB
         message[idx++] = crc[1];        //CRC LSB
 
-        return message;
+        return (lastPacket, message);
     }
 
-    public static byte[] SlicePak(ILogger logger, short segment, byte[] buffer)
+    public static (bool, byte[]) SlicePak(ILogger logger, short segment, byte[] buffer)
     {
         /*
          *  [  Pak   ]
@@ -129,13 +127,13 @@ public static partial class NABU
 
         int length = Constants.TotalPayloadSize;
 
-        int offset = (segment * length) + (2 * segment) + 2;
-        var (_, message) = SliceArray(buffer, offset, length);
-
+        int offset = (segment * length) + (2 * (segment + 1));
+        var (next, message) = SliceArray(buffer, offset, length);
+        
         logger.LogDebug("Sending Packet from PAK");
         var crc = GenerateCRC(message[0..^2]);
         message[^2] = crc[0];    //CRC MSB
         message[^1] = crc[1];    //CRC LSB
-        return message;
+        return (next is 0, message);
     }
 }

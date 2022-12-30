@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 
-namespace Nabu.Network;
+namespace Nabu.ACP;
 
 public class RAMStorage : IStorageHandler
 {

@@ -1,17 +1,55 @@
-﻿using Nabu.Messages;
-using Nabu.Network;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Logging;
+using Nabu.Adaptor;
+using Nabu.Messages;
 
-namespace Nabu.Adaptor;
+namespace Nabu.Network;
 
-public partial class AdaptorEmulator
+public class NabuNetProtocol : Protocol
 {
-    #region Status / Channel Change
+    NetworkEmulator Network { get; }
+    NabuNetAdaptorState State;
+    public override byte Identifier => 0x83;
+    public override string Name => "NabuNet";
+    protected override byte Version => 0x01;
 
+    public NabuNetProtocol(
+        ILogger<NabuNetProtocol> logger,
+        NetworkEmulator network) : base(logger)
+    {
+        Network = network;
+        State = new();
+    }
+
+    #region NabuNet Responses
+
+    void Authorized()
+    {
+        Send(ServiceStatus.Authorized);               //Prolog
+        Recv(Message.ACK);
+    }
+    void Unauthorized()
+    {
+        Send(ServiceStatus.Unauthorized);
+        Recv(Message.ACK);
+    }
+
+    void Ack() => Send(Message.ACK);
+    void Confirmed() => Send(StateMessage.Confirmed);
+    void Finished() => Send(Message.Finished);        //Epilog
+
+    void StatusResult(byte value)
+    {
+        Send(value);
+        Finished();
+    }
+
+    #endregion
+
+    #region NabuNet Operations
+
+    /// <summary>
+    ///  Handles the GetStatis Message - 0x82
+    /// </summary>
     void GetStatus()
     {
         short data = NABU.ToShort(Recv(1));
@@ -22,27 +60,27 @@ public partial class AdaptorEmulator
                 if (State.ChannelKnown)
                 {
                     Log($"NPC: {nameof(StatusMessage.Signal)}? NA: {nameof(Status.SignalLock)}");
-                    Send(Status.SignalLock);
-                    Send(Message.Finished);
+                    StatusResult(Status.SignalLock);
                 }
                 else
                 {
                     Log($"NPC: {nameof(StatusMessage.Signal)}? NA: {nameof(Status.NoSignal)}");
-                    Send(Status.NoSignal);
-                    Send(Message.Finished);
+                    StatusResult(Status.NoSignal);
                 }
                 break;
-            case 0x1E: // <-- NPC Program/DOS Loaded
-                Log($"NPC: 1E? NA: {nameof(Message.Finished)}");
-                Send(Message.Finished);
+            case StatusMessage.MysteryStatus: // <-- NPC Program/DOS Loaded
+                Log($"NPC: 1E? NA: {nameof(Message.Finished)}?");
+                Finished();
                 break;
             default:
                 Log($"Unsupported Status: {data:X02}");
                 break;
         }
-
     }
 
+    /// <summary>
+    ///  Handles the Channel Change Message - 0x85
+    /// </summary>
     void ChannelChange()
     {
         short data = NABU.ToShort(Recv(2));
@@ -55,26 +93,27 @@ public partial class AdaptorEmulator
             State.Channel = 0;
             return;
         }
-        Send(StateMessage.Confirmed);
+        Confirmed();
         Log($"Channel Code: {State.Channel:X04}");
     }
 
-    #endregion
-
-    #region Segment Request
+    /// <summary>
+    ///  Handles the Segment Request message - 0x84
+    /// </summary>
+    /// <returns>A Task to await fetching the program image from disk/http</returns>
     async Task SegmentRequest()
     {
         short segment = Recv();
         int pak = NABU.ToInt(Recv(3));
 
         Log($"NPC: Segment: {segment:x04}, PAK: {FormatTriple(pak)}, NA: {nameof(StateMessage.Confirmed)}");
-        Send(StateMessage.Confirmed);
+        Confirmed();
         if (segment == 0x00 &&
             pak == Message.TimePak
         )
         {
             Log("NPC: What Time it is?");
-            SendPacket(TimePacket());
+            SendPacket(TimePacket(), last: true);
             return;
         }
 
@@ -84,24 +123,48 @@ public partial class AdaptorEmulator
         if (type is ImageType.None)
         {
             Error("No Image Found or Error");
-            Send(ServiceStatus.Unauthorized);
-            Recv(Message.ACK);
+            Unauthorized();
             return;
         }
 
+        bool last = false;
         byte[] payload = Array.Empty<byte>();
 
-        if (type == ImageType.Nabu)
-            payload = NABU.SliceRaw(Logger, segment, pak, segmentData);
+        if (type == ImageType.Raw)
+            (last, payload) = NABU.SliceRaw(Logger, segment, pak, segmentData);
         else
-            payload = NABU.SlicePak(Logger, segment, segmentData);
+            (last, payload) = NABU.SlicePak(Logger, segment, segmentData);
 
-        if (payload.Length == 0) Send(ServiceStatus.Unauthorized);
-        else SendPacket(payload);
+        if (payload.Length == 0) Unauthorized();
+        else SendPacket(payload, last: last);
     }
+
+    /// <Summary>
+    ///     Send the time packet to the device - segment: 00 pak: 7FFFFF
+    /// </summary>
+    byte[] TimePacket()
+    {
+        //byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
+        var now = DateTime.Now;
+        byte[] buffer = {
+            0x02,
+            0x02,
+            (byte)(now.DayOfWeek + 1),      //Day Of Week
+            (byte)(now.Year - 1900),        //Year
+            (byte)now.Month,                //Month 
+            (byte)now.Day,                  //Day
+            (byte)now.Hour,                 //Hour
+            (byte)now.Minute,               //Minute
+            (byte)now.Second                //Second
+        };
+        var (_, payload) = NABU.SliceRaw(Logger, 0, Message.TimePak, buffer);
+        return payload;
+    }
+
     #endregion
 
-    #region Send Packet
+    #region NabuNet Packets
+
     /// <summary>
     ///     Escapes the Escape bytes in the packet with Escape.
     /// </summary>
@@ -119,74 +182,51 @@ public partial class AdaptorEmulator
         }
     }
 
-    /// <Summary>
-    ///     Send the time packet to the device
-    /// </summary>
-    byte[] TimePacket()
-    {
-        //byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
-        var now = DateTime.Now;
-        byte[] buffer = {
-            0x02,
-            0x02,
-            (byte)(now.DayOfWeek + 1),      //Day Of Week
-            (byte)(now.Year - 1900),        //Year
-            (byte)now.Month,                //Month 
-            (byte)now.Day,                  //Day
-            (byte)now.Hour,                 //Hour
-            (byte)now.Minute,               //Minute
-            (byte)now.Second                //Second
-        };
-        return NABU.SliceRaw(Logger, 0, Message.TimePak, buffer);
-    }
-
     /// <summary>
-    ///     Send a packet to the device
+    ///     Sends a packet to the device
     /// </summary>
-    void SendPacket(byte[] buffer, bool escape = true)
+    void SendPacket(byte[] buffer, bool last = false)
     {
         if (buffer.Length > Constants.MaxPacketSize)
         {
             Error("Packet too large");
-            Send(ServiceStatus.Unauthorized);
-            Recv(Message.ACK);
+            Unauthorized();
             return;
         }
+
         Log($"NA: {nameof(ServiceStatus.Authorized)}, NPC: {nameof(Message.ACK)}");
-        Send(ServiceStatus.Authorized);               //Prolog
-        Recv(Message.ACK);
-        if (escape)
-            buffer = EscapeBytes(buffer).ToArray();
+
+        Authorized();
+
+        buffer = EscapeBytes(buffer).ToArray();
         Log($"NA: Sending Packet, {buffer.Length} bytes");
+
         var start = DateTime.Now;
         Send(buffer);
         var stop = DateTime.Now;
-        Send(Message.Finished);                      //Epilog
-        Task.Run(TransferRatePrinter(start, stop, buffer.Length));
 
+        Finished();                      //Epilog
+
+        Task.Run(() => TransferRatePrinter(start, stop, buffer.Length));
+        if (last) GC.Collect();
     }
 
-    Action TransferRatePrinter(DateTime start, DateTime stop, int length)
-        => () => {
-            var elapsed = stop - start;
-            var rate = ((length * 8) / elapsed.TotalMilliseconds);
-            rate = (length < 100 ?
-                            rate * 100 :
-                            rate * 1000
-                    ) / 1024;
-            var unit = "KBps";
-            if (rate > 1024)
-            {
-                rate = rate / 1024;
-                unit = "MBps";
-            }
-            Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
-        };
+    void TransferRatePrinter(DateTime start, DateTime stop, int length)
+    {
+        var elapsed = stop - start;
+        var rate = length / elapsed.TotalSeconds / 1024;
+        var unit = "Kbps";
+        if (rate > 1024)
+        {
+            rate = rate / 1024;
+            unit = "Mbps";
+        }
+        Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
+    }
 
     #endregion
 
-    #region RetroNET
-
+    #region RetroNet
     async Task RequestStoreHttpGet()
     {
         byte index = Recv();
@@ -219,48 +259,62 @@ public partial class AdaptorEmulator
     void Telnet()
     {
         Warning("A6 : Telnet not supported");
-        Send(0x00);
+        Send(0x00); // This should terminate receiving bytes until null (a null terminated string) 
+                    // on the NABU and any software looking for a 0x00 byte from a disconnect.
         return;
     }
-
     #endregion
 
-    public virtual async Task<bool> NabuNetHandler(CancellationToken cancel, byte incoming)
+    public override bool Attach(AdaptorSettings settings, Stream stream)
+    {
+        var success = base.Attach(settings, stream);
+        if (success is false) return false;
+
+        State = new()
+        {
+            Channel = settings.AdapterChannel
+        };
+        Network.SetState(settings);
+
+        return true;
+    }
+
+    public override async Task<bool> Listen(byte incoming)
     {
         switch (incoming)
         {
-            #region Base Messages
+            #region NabuNet "Classic" Messages
             case 0:
                 Log($"NA: Received 0, Disconnected");
                 return false;
             case Message.Reset:
-                Send(Message.ACK);
+                Ack();
                 Log($"NPC: {nameof(Message.Reset)}, NA: {nameof(Message.ACK)} {nameof(StateMessage.Confirmed)}");
-                Send(StateMessage.Confirmed);
+                Confirmed();
                 break;
             case Message.MagicalMysteryMessage:
-                Send(Message.ACK);
-                Log($"NPC: {nameof(Message.MagicalMysteryMessage)}: {Format(Recv(2))}, NA: {nameof(StateMessage.Confirmed)}");
-                Send(StateMessage.Confirmed);
+                Ack();
+                Log($"NPC: {nameof(Message.MagicalMysteryMessage)}: {FormatSeperated(Recv(2))}, NA: {nameof(StateMessage.Confirmed)}");
+                Confirmed();
                 break;
             case Message.GetStatus:
-                Send(Message.ACK);
+                Ack();
                 Log($"NPC: {nameof(Message.GetStatus)}, NA: {nameof(Message.ACK)}");
                 GetStatus();
                 break;
             case Message.StartUp:
-                Send(Message.ACK);
+                Ack();
                 Log($"NPC: {nameof(Message.StartUp)}, NA: {nameof(Message.ACK)}");
-                Send(StateMessage.Confirmed);
+                Confirmed();
                 Log($"NA: {nameof(StateMessage.Confirmed)}");
                 break;
             case Message.PacketRequest:
-                Send(Message.ACK);
+                Ack();
                 Log($"NPC: {nameof(Message.PacketRequest)}, NA: {nameof(Message.ACK)}");
                 await SegmentRequest();
                 break;
             case Message.ChangeChannel:
-                Send(Message.ACK);
+                Ack();
                 Log($"NPC: {nameof(Message.ChangeChannel)}, NA: {nameof(Message.ACK)}");
                 ChannelChange();
                 break;
@@ -280,11 +334,12 @@ public partial class AdaptorEmulator
 
             #endregion
 
-
             default:
-                Warning($"Unsupported Message: {Format(incoming)}");
                 break;
         }
-        return true;
+
+        return false;
     }
+
+    public override void Listening() { }
 }

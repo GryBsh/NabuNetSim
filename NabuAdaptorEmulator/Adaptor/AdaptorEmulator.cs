@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Nabu.ACP;
 using Nabu.Messages;
 using Nabu.Network;
 
@@ -7,126 +8,71 @@ using System;
 using System.Diagnostics;
 using System.Reflection;
 using System.Text;
+using System.Threading.Channels;
 
 namespace Nabu.Adaptor;
 
-public partial class AdaptorEmulator : NabuService
+public class AdaptorEmulator : NabuService
 {
-    AdaptorSettings? Settings;
-    AdaptorState State;
-    Stream Stream;
-    BinaryReader Reader;
-    BinaryWriter Writer;
-    int SendDelay = 0;
-    readonly NetworkEmulator Network;
-    readonly ACPService Storage;
+    readonly AdaptorSettings Settings;
+    readonly Stream Stream;
+    readonly BinaryReader Reader;
+    readonly NabuNetProtocol NabuNet;
+    readonly ACPProtocol ACP;
+    //IEnumerable<IProtocolExtension> Protocols { get; }
+
     public AdaptorEmulator(
-        NetworkEmulator network,
-        ACPService storage,
+        AdaptorSettings settings,
+        NabuNetProtocol nabu,
+        ACPProtocol acp,
+        //IEnumerable<IProtocolExtension> protocols,
         ILogger logger,
         Stream stream
     ) : base(logger)
     {
-        Network = network;
-        Storage = storage;
-        Stream = stream;
-        Reader = new BinaryReader(stream, Encoding.ASCII);
-        Writer = new BinaryWriter(stream, Encoding.ASCII);
-        State = new();
-    }
-
-    #region State
-
-    public virtual void OnStart(AdaptorSettings settings)
-    {
         Settings = settings;
-        State = new()
-        {
-            Channel = settings.AdapterChannel
-        };
-        Network.SetState(settings);
-        SendDelay = settings.SendDelay ?? 0;
+        NabuNet = nabu;
+        ACP = acp;
+        //Protocols = protocols;
+        
+        Stream = stream;
+        Reader = new BinaryReader(stream);
+        NabuNet.Attach(Settings, Stream);
+        ACP.Attach(Settings, Stream);
+        //foreach (var p in Protocols)
+        //    p.Attach(Settings, Stream);
     }
 
-    #endregion
-
-    #region Communication
-    public byte Recv()
-    {
-        return Reader.ReadByte();
-    }
-
-    public (bool, byte) Recv(byte byt)
-    {
-        var (expected, buffer) = Recv(new[] { byt });
-        return (expected, buffer[0]);
-    }
-
-    public byte[] Recv(int length = 1)
-    {
-        var buffer = new byte[length];
-        for (int i = 0; i < length; i++)
-            buffer[i] = Recv();
-
-        Logger.LogTrace($"NA: RCVD: {Format(buffer)}");
-        Logger.LogDebug($"NA: RCVD: {buffer.Length} bytes");
-        return buffer;
-    }
-
-    public (bool, byte[]) Recv(params byte[] bytes)
-    {
-        var read = Recv(bytes.Length);
-
-        var expected = bytes.SequenceEqual(read);
-        if (expected is false)
-            Logger.LogWarning($"NA: {Format(bytes)} != {Format(read)}");
-
-        return (
-            expected,
-            read
-        );
-    }
-
-    public void Send(params byte[] bytes)
-    {
-        //SlowerSend(bytes);
-        Logger.LogTrace($"NA: SEND: {Format(bytes)}");
-        Writer.Write(bytes, 0, bytes.Length);
-        Logger.LogDebug($"NA: SENT: {bytes.Length} bytes");
-    }
-
-    public void SlowerSend(params byte[] bytes)
-    {
-        Logger.LogTrace($"NA: SEND: {Format(bytes)}");
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            Writer.Write(bytes[i]);
-            Thread.SpinWait(SendDelay);
-        }
-        Logger.LogDebug($"NA: SENT: {bytes.Length} bytes");
-    }
-
-    #endregion
 
     #region Adaptor Loop   
-
+        
     public virtual async Task Emulate(CancellationToken cancel)
     {
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {
+            
             try
             {
-                byte incoming = Recv();
-                var cont = incoming switch
+                byte incoming = Reader.ReadByte();
+                /*
+                var handler = 
+                    Protocols.FirstOrDefault(p => p.Identifier == incoming) ??
+                    NabuNet;
+                */
+
+                IProtocol handler = incoming switch
                 {
-                    0xAF => await ACPHandler(cancel),
-                    _ => await NabuNetHandler(cancel, incoming)
+                    SupportedProtocols.ACP => ACP,
+                    _ => NabuNet
                 };
 
-                if (cont) continue;
+                if (handler.Attached &&
+                    await handler.Listen(cancel, incoming)
+                ) {
+                    continue;
+                }
                 break;
-
             }
             catch (TimeoutException)
             {
@@ -135,9 +81,17 @@ public partial class AdaptorEmulator : NabuService
             catch (Exception ex)
             {
                 Error(ex.Message);
+                GC.Collect();
                 break;
             }
+
         }
+    
+
+        NabuNet.Detach();
+        ACP.Detach();
+        //foreach (var p in Protocols)
+        //    p.Detach();
 
         Log("Disconnected");
         GC.Collect();

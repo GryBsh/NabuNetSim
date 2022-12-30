@@ -32,3 +32,9 @@ public static class RetroNetMessage
     public const byte RequestStoreGetData = 0xA5;
     public const byte Telnet = 0xA6;
 }
+
+public static class SupportedProtocols
+{
+    public const byte NabuNet = 0x83;
+    public const byte ACP = 0xAF;
+}

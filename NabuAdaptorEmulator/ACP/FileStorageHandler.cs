@@ -1,16 +1,16 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 
-namespace Nabu.Network;
+namespace Nabu.ACP;
 
-public class FileStorage : IStorageHandler
+public class FileStorageHandler : IStorageHandler
 {
     ILogger Logger;
     AdaptorSettings Settings;
     StorageFlags Flags = StorageFlags.ReadWrite;
     FileInfo? File;
 
-    public FileStorage(ILogger logger, AdaptorSettings settings)
+    public FileStorageHandler(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;
@@ -28,21 +28,14 @@ public class FileStorage : IStorageHandler
     {
         StorageFlags storageFlags = (StorageFlags)flags;
         var path = CombinePath(uri);
-        var fileExists = File?.Exists ?? false;
-        if (fileExists)
+        try
         {
-            try
-            {
-                File = new FileInfo(path);
-                return Task.FromResult((true, string.Empty, (int)File.Length));
-            }
-            catch (Exception ex)
-            {
-                return Task.FromResult((false, ex.Message, 0));
-            }
-        } else
+            File = new FileInfo(path);
+            return Task.FromResult((true, string.Empty, (int)File.Length));
+        }
+        catch (Exception ex)
         {
-            return Task.FromResult((false, "File Not Found", 0));
+            return Task.FromResult((false, ex.Message, 0));
         }
     }
 

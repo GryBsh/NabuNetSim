@@ -1,33 +1,35 @@
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 
-namespace Nabu.Network;
+namespace Nabu.ACP;
 
-public class HttpStorage : RAMStorage
+public class HttpStorageHandler : RAMStorage
 {
-    public HttpStorage(ILogger logger, AdaptorSettings settings) : base(logger, settings)
+    public HttpStorageHandler(ILogger logger, AdaptorSettings settings) : base(logger, settings)
     {
     }
 
     public override async Task<(bool, string, int)> Open(short flags, string uri)
     {
-        try {
+        try
+        {
             using var client = new HttpClient();
             using var response = await client.GetAsync(uri);
             if (response.IsSuccessStatusCode)
             {
                 Buffer = await response.Content.ReadAsByteArrayAsync();
                 return (true, string.Empty, Buffer.Length);
-            } 
+            }
             else
             {
                 return (false, response.ReasonPhrase ?? string.Empty, 0);
             }
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             return (false, ex.Message, 0);
         }
     }
 
-    
+
 }

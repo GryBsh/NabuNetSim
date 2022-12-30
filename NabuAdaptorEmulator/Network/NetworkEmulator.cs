@@ -113,7 +113,7 @@ public class NetworkEmulator : NabuService
                 source.Type,
                 realPath,
                 type,
-                isNabuFile ? ImageType.Nabu : ImageType.Pak,
+                isNabuFile ? ImageType.Raw : ImageType.Pak,
                 new[] { new PassThroughPatch(Logger) }
             );
         }
@@ -145,7 +145,7 @@ public class NetworkEmulator : NabuService
                         source.Type,
                         file,
                         SourceType.Local,
-                        ImageType.Nabu,
+                        ImageType.Raw,
                         new[] { new PassThroughPatch(Logger) }
                     );
                 }
@@ -260,7 +260,11 @@ public class NetworkEmulator : NabuService
         Settings = settings;
     }
 
-
+    public void UncachePak(int pak)
+    {
+        if (State.PakCache.ContainsKey(pak))
+            State.PakCache.Remove(pak);
+    }
 
     /// <summary>
     /// Requests a PAK from the Network Emulator
@@ -313,8 +317,8 @@ public class NetworkEmulator : NabuService
         {
             bytes = (source.SourceType, source.ImageType) switch
             {
-                (SourceType.Remote, ImageType.Nabu) => await Http.GetByteArrayAsync(source.Path),
-                (SourceType.Local, ImageType.Nabu)  => await File.ReadAllBytesAsync(source.Path),
+                (SourceType.Remote, ImageType.Raw) => await Http.GetByteArrayAsync(source.Path),
+                (SourceType.Local, ImageType.Raw)  => await File.ReadAllBytesAsync(source.Path),
                 (SourceType.Remote, ImageType.Pak)  => await HttpGetPakBytes(source.Path, pak),
                 (SourceType.Local, ImageType.Pak)   => await FileGetPakBytes(source.Path, pak),
                 _ => ZeroBytes()

@@ -13,6 +13,7 @@ public abstract class NabuService
 
     protected static bool Empty(string? str) => string.IsNullOrWhiteSpace(str);
     protected static byte[] ZeroBytes() => Array.Empty<byte>();
+    protected static string FormatSeperated(params byte[] bytes) => NABU.FormatSeperated(bytes);
     protected static string Format(params byte[] bytes) => NABU.Format(bytes);
     protected static string FormatTriple(int triple) => NABU.FormatTriple(triple);
 

@@ -44,9 +44,14 @@ public static partial class NABU
 
     public static string Format(byte b) => $"{b:X02}";
     public static string FormatTriple(int bytes) => $"{bytes:X06}";
-    public static string Format(params byte[] bytes)
+    public static string FormatSeperated(params byte[] bytes)
     {
         var parts = bytes.Select(b => Format(b)).ToArray();
         return string.Join('|', parts);
+    }
+    public static string Format(params byte[] bytes)
+    {
+        var parts = bytes.Select(b => Format(b)).ToArray();
+        return string.Join(string.Empty, parts);
     }
 }

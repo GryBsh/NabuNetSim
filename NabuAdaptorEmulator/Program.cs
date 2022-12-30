@@ -2,7 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
+using Nabu.ACP;
 using Nabu.Network;
 using Nabu.Services;
 
@@ -31,6 +31,8 @@ builder.ConfigureServices(
 
         services.AddHttpClient();
         services.AddTransient<NetworkEmulator>();
+        services.AddTransient<NabuNetProtocol>();
+        services.AddTransient<ACPProtocol>();
         services.AddHostedService<EmulatorService>();
     }
 );

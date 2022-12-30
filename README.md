@@ -9,6 +9,7 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 ## Known Issues
 
+- > HCCA-ACP support is experimental at best.
 - > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
   with one value when it's first connecting: `0x8F|0x05`, then when the program is
   first started another: `0x0F|0x05`. It seems to be signaling something, but what?
@@ -42,10 +43,9 @@ Can be set via command line arguments, in the usual dotnet way.
 - Channel: The channel to send segments from.
   - > The file name, sans .nabu, for NABU files, or the folder name for PAK files.
 - BaudRate (Serial Only): The send/receive rate of the serial adapter.
-  - > The default is `111865` on Windows, which is the actual rate of the NABU Adaptor.
-    On Linux / macOS, the default is `115200`, due to an issue with the dotnet serial port library
-    not accepting the non-standard rate. It seems to work better this way on Windows too,
-    and may become the default on all platforms in the future.
+  - > The "correct" rate is `111865`. However, you cannot set this baudrate on
+  macOS or Linux witht the dotnet's `System.IO.Ports`. So we're using a default of `115200`.
+  If you experience issues, try setting this to `111865` if your on Windows or .
   - > !! This has no effect on the TCP Adaptor !!
 - SendDelay: The delay in iterations between each byte sent in "Slower Send" mode.
   - > For Serial the default is `500`, for TCP it is `130000`.

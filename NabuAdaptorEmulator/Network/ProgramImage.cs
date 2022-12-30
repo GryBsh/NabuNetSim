@@ -12,7 +12,7 @@ public enum SourceType
 public enum ImageType
 {
     None = 0,
-    Nabu,
+    Raw,
     Pak
 }
 

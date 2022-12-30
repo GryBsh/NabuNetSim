@@ -9,6 +9,7 @@ using System.Net;
 using System.Text;
 using System.Reflection.Metadata;
 using System.IO;
+using Nabu.ACP;
 
 namespace Nabu.Services;
 
@@ -51,13 +52,7 @@ public class EmulatorService : BackgroundService
             WriteBufferSize = 1024,
         };
 
-        settings.SendDelay = settings.SendDelay ??
-                    settings.Type switch
-                    {
-                        AdaptorType.TCP => Constants.DefaultTCPSendDelay,
-                        AdaptorType.Serial => Constants.DefaultSerialSendDelay,
-                        _ => 500
-                    };
+        settings.SendDelay ??= Constants.DefaultSerialSendDelay;
 
         Logger.LogInformation(
             $"Serial:" +
@@ -77,21 +72,30 @@ public class EmulatorService : BackgroundService
                 Logger.LogWarning($"Serial Adaptor: {ex.Message}");
                 Thread.Sleep(5000);
             }
+        try
+        {
+            var adaptor = new AdaptorEmulator(
+                settings,
+                ServiceProvider.GetRequiredService<NabuNetProtocol>(),
+                //ServiceProvider.GetServices<IProtocolExtension>(),
+                ServiceProvider.GetRequiredService<ACPProtocol>(),
+                ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
+                serial.BaseStream
+            );
+            
+            await adaptor.Emulate(stopping);
 
-        var adaptor = new AdaptorEmulator(
-            ServiceProvider.GetRequiredService<NetworkEmulator>(),
-            new ACPService(
-                ServiceProvider.GetRequiredService<ILogger<ACPService>>(),
-                settings
-            ),
-            ServiceProvider.GetRequiredService<ILogger<SerialAdaptorEmulator>>(),
-            serial.BaseStream
-        );
+        } catch (Exception ex)
+        {
+            Logger.LogError(ex.Message, ex );
+        }
+        finally
+        {
+            serial.Close();
+            serial.Dispose();
+        }
 
-        adaptor.OnStart(settings);
-        await adaptor.Emulate(stopping);
-        serial.Close();
-        serial.Dispose();
+        
     }
 
     async Task TCP(AdaptorSettings settings, CancellationToken stopping)
@@ -107,13 +111,7 @@ public class EmulatorService : BackgroundService
             port = Constants.DefaultTCPPort;
         };
 
-        settings.SendDelay = settings.SendDelay ??
-                    settings.Type switch
-                    {
-                        AdaptorType.TCP => Constants.DefaultTCPSendDelay,
-                        AdaptorType.Serial => Constants.DefaultSerialSendDelay,
-                        _ => 500
-                    };
+        settings.SendDelay = settings.SendDelay ?? Constants.DefaultTCPSendDelay;
 
         Logger.LogInformation(
             $"TCP:" +
@@ -136,16 +134,14 @@ public class EmulatorService : BackgroundService
 
         var stream = new NetworkStream(socket);
         var adaptor = new AdaptorEmulator(
-            ServiceProvider.GetRequiredService<NetworkEmulator>(),
-            new ACPService(
-                ServiceProvider.GetRequiredService<ILogger<ACPService>>(),
-                settings
-            ),
-            ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
-            stream
-        );
+             settings,
+             ServiceProvider.GetRequiredService<NabuNetProtocol>(),
+             //ServiceProvider.GetServices<IProtocolExtension>(),
+             ServiceProvider.GetRequiredService<ACPProtocol>(),
+             ServiceProvider.GetRequiredService<ILogger<TCPAdaptorEmulator>>(),
+             stream
+         );
 
-        adaptor.OnStart(settings);
         await adaptor.Emulate(stopping);
         stream.Dispose();
         socket.Close();
@@ -193,6 +189,7 @@ public class EmulatorService : BackgroundService
                             _ => throw new NotImplementedException()
                         };
                     }
+                    
                 }
                 //started = true;
                 Thread.Sleep(100); // Lazy Wait, we don't care how long it takes to resume

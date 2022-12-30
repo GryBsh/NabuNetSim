@@ -1,9 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Network;
 
-namespace Nabu.Network;
+namespace Nabu.ACP;
 
-public class ACPService : IStorageServer
+public class StorageService : IStorageServer
 {
     ILogger Logger;
     AdaptorSettings Settings;
@@ -11,7 +12,7 @@ public class ACPService : IStorageServer
 
     public string Protocol => throw new NotImplementedException();
 
-    public ACPService(ILogger logger, AdaptorSettings settings)
+    public StorageService(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;
@@ -32,7 +33,7 @@ public class ACPService : IStorageServer
         var now = System.DateTime.Now;
         return (
             true,
-            now.ToString("YYYYMMdd").ToCharArray(),
+            now.ToString("yyyyMMdd").ToCharArray(),
             now.ToString("HHmmss").ToCharArray()
         );
     }
@@ -49,17 +50,15 @@ public class ACPService : IStorageServer
         {
             IStorageHandler? handler = uri.ToLower() switch
             {
-                var path when path.StartsWith("file") 
-                    => new FileStorage(Logger, Settings),
-                var path when path.StartsWith("http")
-                    => new HttpStorage(Logger, Settings),
-                var path when path.StartsWith("https")
-                    => new HttpStorage(Logger, Settings),
+                var path when path.StartsWith("file")
+                    => new FileStorageHandler(Logger, Settings),
+                var path when path.StartsWith("http") || path.StartsWith("https")
+                    => new HttpStorageHandler(Logger, Settings),
                 var path when path.StartsWith("ram")
                     => new RAMStorage(Logger, Settings),
-                _   => null
+                _ => null
             };
-            if (handler is null) 
+            if (handler is null)
                 return (false, "Unknown URI Type", 0xFF, 0);
 
             var (success, error, length) = await handler.Open(flags, uri);
