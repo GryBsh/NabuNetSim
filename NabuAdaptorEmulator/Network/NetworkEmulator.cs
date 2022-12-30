@@ -205,6 +205,8 @@ public class NetworkEmulator : NabuService
     {
         try
         {
+            if (Settings is null) return (false, "Network initialized improperly");
+
             var response = url.ToLower().StartsWith("http") switch
             {
                 true => await Http.GetByteArrayAsync(url),

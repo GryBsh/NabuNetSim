@@ -113,7 +113,7 @@ public class NabuNetProtocol : Protocol
         )
         {
             Log("NPC: What Time it is?");
-            SendPacket(TimePacket(), last: true);
+            SendPacket(pak,TimePacket(), last: true);
             return;
         }
 
