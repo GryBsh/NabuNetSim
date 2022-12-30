@@ -19,7 +19,7 @@ public class RAMStorage : IStorageHandler
     {
         try
         {
-            Buffer = new byte[0xFFFF];
+            Buffer = new byte[0x100000];
             return Task.FromResult((true, string.Empty, Buffer.Length));
         }
         catch (Exception ex)
