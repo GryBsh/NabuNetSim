@@ -6,32 +6,20 @@ public static partial class NABU
     {
         int next = offset + length;
 
-        if (next >= buffer.Length)
-        {
+        if (next >= buffer.Length) {
             next = 0;
             length = buffer.Length - offset;
         }
-
-        length = offset + length;
-        return (next, buffer[offset..length]);
+        return (next, buffer.AsSpan().Slice(offset, length).ToArray());
     }
 
     public static T[] SetLength<T>(int length, T[] items, T fill)
     {
         if (items.Length == length) return items;
-
         var result = new T[length];
-        for (int i = 0; i < length; i++)
-        {
-            if (items.Length > i)
-            {
-                result[i] = items[i];
-            }
-            else
-            {
-                result[i] = fill;
-            }
-        }
+        result.AsSpan().Fill(fill);
+        length = length > items.Length ? items.Length : length;
+        items.AsSpan().Slice(0, length).CopyTo(result);
         return result;
     }
 }

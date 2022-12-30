@@ -89,6 +89,7 @@ public partial class AdaptorEmulator : NabuService
 
     public void Send(params byte[] bytes)
     {
+        //SlowerSend(bytes);
         Logger.LogTrace($"NA: SEND: {Format(bytes)}");
         Writer.Write(bytes, 0, bytes.Length);
         Logger.LogDebug($"NA: SENT: {bytes.Length} bytes");

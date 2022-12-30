@@ -55,6 +55,8 @@ public class ACPService : IStorageServer
                     => new HttpStorage(Logger, Settings),
                 var path when path.StartsWith("https")
                     => new HttpStorage(Logger, Settings),
+                var path when path.StartsWith("ram")
+                    => new RAMStorage(Logger, Settings),
                 _   => null
             };
             if (handler is null) 

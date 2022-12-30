@@ -3,19 +3,13 @@ using Nabu.Adaptor;
 
 namespace Nabu.Network;
 
-public class HttpStorage : IStorageHandler
+public class HttpStorage : RAMStorage
 {
-    ILogger Logger;
-    AdaptorSettings Settings;
-    byte[] Buffer = Array.Empty<byte>();
-
-    public HttpStorage(ILogger logger, AdaptorSettings settings)
+    public HttpStorage(ILogger logger, AdaptorSettings settings) : base(logger, settings)
     {
-        Logger = logger;
-        Settings = settings;
     }
 
-    public async Task<(bool, string, int)> Open(short flags, string uri)
+    public override async Task<(bool, string, int)> Open(short flags, string uri)
     {
         try {
             using var client = new HttpClient();
@@ -35,46 +29,5 @@ public class HttpStorage : IStorageHandler
         }
     }
 
-    public (bool, string, byte[]) Get(int offset, short length)
-    {
-        try
-        {
-            var buffer = Buffer.AsSpan(offset, length).ToArray();
-            return (true, string.Empty, buffer);
-        }
-        catch (Exception ex)
-        {
-            return (false, ex.Message, Array.Empty<byte>());
-        }
-    }
-
-    public (bool, string) Put(int offset, byte[] buffer)
-    {
-        try 
-        {
-            
-            if (offset + buffer.Length > Buffer.Length)
-            {
-                var old = Buffer;
-                Buffer = new byte[offset + buffer.Length];
-                old.AsSpan().CopyTo(Buffer);
-            }
-            buffer.AsSpan().CopyTo(Buffer.AsSpan(offset));
-            return (true, string.Empty);
-        } 
-        catch (Exception ex)
-        {
-            return (false, ex.Message);
-        }
-    }
-
-    public void End()
-    {
-        Buffer = Array.Empty<byte>();
-    }
-
-    public (bool, string, byte, byte[]) Command(byte index, byte command, byte[] data)
-    {
-        throw new NotImplementedException();
-    }
+    
 }

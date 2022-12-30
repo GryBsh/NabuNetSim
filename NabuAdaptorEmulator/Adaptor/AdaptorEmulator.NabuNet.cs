@@ -85,6 +85,7 @@ public partial class AdaptorEmulator
         {
             Error("No Image Found or Error");
             Send(ServiceStatus.Unauthorized);
+            Recv(Message.ACK);
             return;
         }
 
@@ -126,16 +127,16 @@ public partial class AdaptorEmulator
         //byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
         var now = DateTime.Now;
         byte[] buffer = {
-        0x02,
-        0x02,
-        (byte)(now.DayOfWeek + 1),
-        0x54,               //Year: 84 
-        (byte)now.Month,    //Month 
-        (byte)now.Day,      //Day
-        (byte)now.Hour,     //Hour
-        (byte)now.Minute,   //Minute
-        (byte)now.Second    //Second
-    };
+            0x02,
+            0x02,
+            (byte)(now.DayOfWeek + 1),      //Day Of Week
+            (byte)(now.Year - 1900),        //Year
+            (byte)now.Month,                //Month 
+            (byte)now.Day,                  //Day
+            (byte)now.Hour,                 //Hour
+            (byte)now.Minute,               //Minute
+            (byte)now.Second                //Second
+        };
         return NABU.SliceRaw(Logger, 0, Message.TimePak, buffer);
     }
 
@@ -148,6 +149,7 @@ public partial class AdaptorEmulator
         {
             Error("Packet too large");
             Send(ServiceStatus.Unauthorized);
+            Recv(Message.ACK);
             return;
         }
         Log($"NA: {nameof(ServiceStatus.Authorized)}, NPC: {nameof(Message.ACK)}");
