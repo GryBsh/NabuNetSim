@@ -19,7 +19,7 @@ public static partial class NABU
         var result = new T[length];
         result.AsSpan().Fill(fill);
         length = length > items.Length ? items.Length : length;
-        items.AsSpan().Slice(0, length).CopyTo(result);
+        items.AsSpan()[..length].CopyTo(result);
         return result;
     }
 }

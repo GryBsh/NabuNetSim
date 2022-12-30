@@ -32,7 +32,11 @@ public class RAMStorage : IStorageHandler
     {
         try
         {
-            var buffer = Buffer.AsSpan(offset, length).ToArray();
+            int l = length;
+            if (length > Buffer.Length)
+                l = Buffer.Length - offset;
+
+            var buffer = Buffer.AsSpan(offset, l).ToArray();
             return (true, string.Empty, buffer);
         }
         catch (Exception ex)
