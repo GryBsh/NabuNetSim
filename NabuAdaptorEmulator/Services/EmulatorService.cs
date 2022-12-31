@@ -58,7 +58,7 @@ public class Simulation : BackgroundService
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, settings, stopping)),
-                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, Logger, settings, stopping)),
+                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, stopping)),
                             _ => throw new NotImplementedException()
                         };
                     }

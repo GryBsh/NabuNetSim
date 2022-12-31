@@ -262,7 +262,10 @@ public class NetworkSimulator : NabuService
     public void UncachePak(int pak)
     {
         if (State.PakCache.ContainsKey(pak))
+        {
+            Log($"Removing pak {pak} from cache");
             State.PakCache.Remove(pak);
+        }
     }
 
     /// <summary>
@@ -318,8 +321,8 @@ public class NetworkSimulator : NabuService
             {
                 (SourceType.Remote, ImageType.Raw) => await Http.GetByteArrayAsync(source.Path),
                 (SourceType.Local, ImageType.Raw)  => await File.ReadAllBytesAsync(source.Path),
-                (SourceType.Remote, ImageType.Pak)  => await HttpGetPakBytes(source.Path, pak),
-                (SourceType.Local, ImageType.Pak)   => await FileGetPakBytes(source.Path, pak),
+                (SourceType.Remote, ImageType.Pak) => await HttpGetPakBytes(source.Path, pak),
+                (SourceType.Local, ImageType.Pak)  => await FileGetPakBytes(source.Path, pak),
                 _ => ZeroBytes()
             };
         }

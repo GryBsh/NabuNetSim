@@ -18,13 +18,13 @@ public class ACPProtocol : Protocol
 
     #region ACP Return Messages
 
-    void FrameAndSend(params byte[] buffer)
+    void SendFramed(params byte[] buffer)
     {
-        Send(NABU.FromShort((short)buffer.Length));
+        Send(NABU.FromShort((short)buffer.Length)); 
         Send(buffer);
     }
 
-    void FrameAndSend(params IEnumerable<byte>[] buffer)
+    void SendFramed(params IEnumerable<byte>[] buffer)
     {
         var toSend = Combine(buffer).ToArray();
         Send(NABU.FromShort((short)toSend.Length));
@@ -33,7 +33,7 @@ public class ACPProtocol : Protocol
 
     void StorageStarted()
     {
-        FrameAndSend(
+        SendFramed(
             new byte[] { 0x80 },
             NABU.FromShort(Version),
             String(Id)
@@ -42,14 +42,14 @@ public class ACPProtocol : Protocol
 
     void StorageError(string message)
     {
-        FrameAndSend(
+        SendFramed(
             new byte[] { 0x82 },
             String(message)
         );
     }
     void StorageLoaded(short index, int length)
     {
-        FrameAndSend(
+        SendFramed(
             new byte[] { 0x83 },
             NABU.FromShort(index),
             NABU.FromInt(length)
@@ -57,7 +57,7 @@ public class ACPProtocol : Protocol
     }
     void DataBuffer(byte[] buffer)
     {
-        FrameAndSend(
+        SendFramed(
             new byte[] { 0x84 },
             NABU.FromShort((short)buffer.Length),
             buffer
@@ -115,7 +115,7 @@ public class ACPProtocol : Protocol
             var data = Recv(length);
             var (success, error) = Storage.Put(index, offset, data);
             if (success)
-                FrameAndSend(0x81); // OK
+                SendFramed(0x81); // OK
             else
                 StorageError(error);
         }
@@ -128,7 +128,7 @@ public class ACPProtocol : Protocol
     void ACPDateTime()
     {
         var (_, date, time) = Storage.DateTime();
-        FrameAndSend(
+        SendFramed(
             new byte[] { 0x85 },
             Encoding.ASCII.GetBytes(date),
             Encoding.ASCII.GetBytes(time)
@@ -140,8 +140,8 @@ public class ACPProtocol : Protocol
 
     public override void Listening()
     {
+        Log($"v{Version} Started");
         StorageStarted();
-        Log($"{Id} Started");
     }
 
     public override async Task<bool> Listen(byte incoming)

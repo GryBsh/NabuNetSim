@@ -218,11 +218,11 @@ public class NabuNetProtocol : Protocol
     void TransferRatePrinter(DateTime start, DateTime stop, int length)
     {
         var elapsed = stop - start;
-        var rate = length / elapsed.TotalSeconds / 1024;
+        var rate = 8 * length / elapsed.TotalSeconds / 1000;
         var unit = "Kbps";
-        if (rate > 1024)
+        if (rate > 1000)
         {
-            rate = rate / 1024;
+            rate = rate / 1000;
             unit = "Mbps";
         }
         Log($"NPC: Transfer Rate: {rate:0.00} {unit}");

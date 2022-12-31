@@ -9,8 +9,10 @@ namespace Nabu.Adaptor;
 
 public class TCPAdaptor
 {
-    public static async Task Start(IServiceProvider serviceProvider, ILogger logger, AdaptorSettings settings, CancellationToken stopping)
+    private TCPAdaptor() { }
+    public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
     {
+        var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>();
         var socket = new Socket(
             AddressFamily.InterNetwork,
             SocketType.Stream,
@@ -38,7 +40,7 @@ public class TCPAdaptor
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"TCP Adaptor: {ex.Message}");
+                logger.LogWarning(ex.Message);
                 Thread.Sleep(5000);
             }
 
@@ -46,9 +48,8 @@ public class TCPAdaptor
         var adaptor = new AdaptorEmulator(
              settings,
              serviceProvider.GetRequiredService<NabuNetProtocol>(),
-             //ServiceProvider.GetServices<IProtocolExtension>(),
-             serviceProvider.GetRequiredService<ACPProtocol>(),
-             serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>(),
+             serviceProvider.GetServices<IProtocol>(),
+             logger,
              stream
          );
 

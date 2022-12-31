@@ -13,29 +13,29 @@ public class AdaptorEmulator : NabuService
     readonly Stream Stream;
     readonly BinaryReader Reader;
     readonly NabuNetProtocol NabuNet;
-    readonly ACPProtocol ACP;
-    //IEnumerable<IProtocolExtension> Protocols { get; }
+    //readonly ACPProtocol ACP;
+    IEnumerable<IProtocol> Protocols { get; }
 
     public AdaptorEmulator(
         AdaptorSettings settings,
         NabuNetProtocol nabu,
-        ACPProtocol acp,
-        //IEnumerable<IProtocolExtension> protocols,
+        //ACPProtocol acp,
+        IEnumerable<IProtocol> protocols,
         ILogger logger,
         Stream stream
     ) : base(logger)
     {
         Settings = settings;
         NabuNet = nabu;
-        ACP = acp;
-        //Protocols = protocols;
+        //ACP = acp;
+        Protocols = protocols;
         
         Stream = stream;
         Reader = new BinaryReader(stream);
         NabuNet.Attach(Settings, Stream);
-        ACP.Attach(Settings, Stream);
-        //foreach (var p in Protocols)
-        //    p.Attach(Settings, Stream);
+        //ACP.Attach(Settings, Stream);
+        foreach (var protocol in Protocols)
+            protocol.Attach(Settings, Stream);
     }
 
 
@@ -50,18 +50,11 @@ public class AdaptorEmulator : NabuService
             try
             {
                 byte incoming = Reader.ReadByte();
-                /*
+                
                 var handler = 
                     Protocols.FirstOrDefault(p => p.Identifier == incoming) ??
                     NabuNet;
-                */
-
-                IProtocol handler = incoming switch
-                {
-                    SupportedProtocols.ACP => ACP,
-                    _ => NabuNet
-                };
-
+                
                 if (handler.Attached &&
                     await handler.Listen(cancel, incoming)
                 ) {
@@ -84,9 +77,8 @@ public class AdaptorEmulator : NabuService
     
 
         NabuNet.Detach();
-        ACP.Detach();
-        //foreach (var p in Protocols)
-        //    p.Detach();
+        foreach (var protocol in Protocols)
+            protocol.Detach();
 
         Log("Disconnected");
         GC.Collect();

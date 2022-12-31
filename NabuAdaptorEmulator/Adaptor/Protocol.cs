@@ -77,7 +77,7 @@ public abstract class Protocol : NabuService, IProtocol
     {
         //SlowerSend(bytes);
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
-        Writer.Write(bytes, 0, bytes.Length);
+        Writer.Write(bytes);
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 
@@ -133,7 +133,7 @@ public abstract class Protocol : NabuService, IProtocol
     public async Task<bool> Listen(CancellationToken cancel, byte incoming)
     {
         Listening();
-        Debug($"Started {Id}");
+        Debug($"v{Version} Running...");
         
         try
         {
