@@ -5,14 +5,12 @@ namespace Nabu.ACP;
 
 public class FileStorageHandler : IStorageHandler
 {
-    ILogger Logger;
     AdaptorSettings Settings;
     StorageFlags Flags = StorageFlags.ReadWrite;
     FileInfo? File;
 
     public FileStorageHandler(ILogger logger, AdaptorSettings settings)
     {
-        Logger = logger;
         Settings = settings;
     }
 
@@ -26,7 +24,7 @@ public class FileStorageHandler : IStorageHandler
 
     public Task<(bool, string, int)> Open(short flags, string uri)
     {
-        StorageFlags storageFlags = (StorageFlags)flags;
+        Flags = (StorageFlags)flags;
         var path = CombinePath(uri);
         try
         {
@@ -57,7 +55,7 @@ public class FileStorageHandler : IStorageHandler
     {
         try
         {
-            if (Flags == StorageFlags.ReadOnly)
+            if (Flags.HasFlag(StorageFlags.ReadOnly))
                 return (false, "File Opened Read Only");
 
             File?.OpenWrite().Write(buffer, offset, buffer.Length);

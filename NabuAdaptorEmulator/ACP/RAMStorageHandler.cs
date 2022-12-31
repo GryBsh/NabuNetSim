@@ -3,13 +3,13 @@ using Nabu.Adaptor;
 
 namespace Nabu.ACP;
 
-public class RAMStorage : IStorageHandler
+public class RAMStorageHandler : IStorageHandler
 {
     protected ILogger Logger;
     protected AdaptorSettings Settings;
     protected byte[] Buffer = Array.Empty<byte>();
 
-    public RAMStorage(ILogger logger, AdaptorSettings settings)
+    public RAMStorageHandler(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;

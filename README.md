@@ -1,4 +1,4 @@
-﻿# NABU Adaptor Emulator
+﻿# NABU Network Emulator
 
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (MAME),
 and can host multiple instances of either. Making it possible to host a NABU Network from one

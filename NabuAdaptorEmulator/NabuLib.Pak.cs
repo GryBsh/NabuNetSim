@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Nabu;
 
-public static partial class NABU
+public static partial class NabuLib
 {
     public static string PakName(int pak)
     {

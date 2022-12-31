@@ -1,6 +1,8 @@
-﻿namespace Nabu;
+﻿using System.Text;
 
-public static partial class NABU
+namespace Nabu;
+
+public static partial class NabuLib
 {
     public static int ToInt(params byte[] buffer)
     {
@@ -39,6 +41,16 @@ public static partial class NABU
         buffer[1] = (byte)(number >> 8 & 0xFF);
         return buffer;
     }
+
+    public static IEnumerable<byte> FromASCII(string str)
+    {
+        yield return (byte)str.Length;
+        foreach (byte b in Encoding.ASCII.GetBytes(str))
+            yield return b;
+    }
+
+    public static string ToASCII(byte[] buffer) 
+        => Encoding.ASCII.GetString(buffer);
 
     public static byte FromBool(bool value) => (byte)(value ? 0x01 : 0x00);
 

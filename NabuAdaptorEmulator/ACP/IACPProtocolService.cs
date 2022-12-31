@@ -1,7 +1,9 @@
 ﻿namespace Nabu.ACP;
 
-public interface IStorageServer
+public interface IACPProtocolService
 {
+    // 0x00 0x00                                    -> FRAME SIZE
+    // 2 bytes
     string Protocol { get; }
     //----------------------------------
     // 0x01 |Index |Length|Uri         |            -> LOAD     

@@ -3,7 +3,7 @@ using Nabu.Adaptor;
 
 namespace Nabu.ACP;
 
-public class HttpStorageHandler : RAMStorage
+public class HttpStorageHandler : RAMStorageHandler
 {
     public HttpStorageHandler(ILogger logger, AdaptorSettings settings) : base(logger, settings)
     {

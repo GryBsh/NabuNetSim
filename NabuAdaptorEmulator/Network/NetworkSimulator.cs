@@ -26,21 +26,21 @@ public class NetworkSimulator : NabuService
 
     async Task<byte[]> HttpGetPakBytes(string url, int pak)
     {
-        var filename = NABU.PakName(pak);
+        var filename = NabuLib.PakName(pak);
         url = $"{url}/{filename}.npak";
         var npak = await Http.GetByteArrayAsync(url);
         //Trace($"NPAK Length: {npak.Length}");
-        npak = NABU.Unpak(npak);
+        npak = NabuLib.Unpak(npak);
         //Trace($"Segment Length: {npak.Length}");
         return npak;
     }
     async Task<byte[]> FileGetPakBytes(string path, int pak)
     {
-        var filename = NABU.PakName(pak);
+        var filename = NabuLib.PakName(pak);
         path = Path.Join(path, $"{filename}.npak");
         var npak = await File.ReadAllBytesAsync(path);
         Trace($"NPAK Length: {npak.Length}");
-        npak = NABU.Unpak(npak);
+        npak = NabuLib.Unpak(npak);
         Trace($"Segment Length: {npak.Length}");
         return npak;
     }
@@ -227,7 +227,7 @@ public class NetworkSimulator : NabuService
 
     public byte[] StorageGet(short index, int offset, short length)
     {
-        var (_, data) = NABU.SliceArray(State.ACPStorage[index], offset, length);
+        var (_, data) = NabuLib.Slice(State.ACPStorage[index], offset, length);
         return data;
     }
 

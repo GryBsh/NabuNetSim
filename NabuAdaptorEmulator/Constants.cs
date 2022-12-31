@@ -1,7 +1,10 @@
-﻿namespace Nabu;
+﻿using System.Data;
+
+namespace Nabu;
 
 internal static class Constants
 {
+
     // Sizes
     public const int MaxSegmentSize = 65536;
     public const int MaxPacketSize = 1024;

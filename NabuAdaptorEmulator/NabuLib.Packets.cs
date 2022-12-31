@@ -2,7 +2,7 @@
 
 namespace Nabu;
 
-public static partial class NABU
+public static partial class NabuLib
 {
     public static byte[] GenerateCRC(byte[] buffer)
     {
@@ -21,11 +21,10 @@ public static partial class NABU
     }
 
     /// <summary>
-    ///     Creates a packet fpr the requested segment
+    ///     Creates a packet for the requested segment
     ///     from the provided buffer
     /// </summary>
     /// <param name="logger"></param>
-    /// <param name="emulator"></param>
     /// <param name="segment"></param>
     /// <param name="pak"></param>
     /// <param name="buffer"></param>
@@ -47,7 +46,7 @@ public static partial class NABU
         logger.LogTrace("Preparing Packet");
 
 
-        var (next, slice) = SliceArray(buffer, offset, Constants.MaxPayloadSize);
+        var (next, slice) = Slice(buffer, offset, Constants.MaxPayloadSize);
         bool lastPacket = next is 0;
         int packetSize = slice.Length + Constants.HeaderSize + Constants.FooterSize;
         var message = new byte[packetSize];
@@ -63,7 +62,7 @@ public static partial class NABU
          * [     1      ]   Type (See code below)
          * [      2     ]   Segment LM
          * [       2    ]   Offset ML
-         * [      >=991 ]   DATA upto 991 bytes
+         * [      <=991 ]   DATA up to 991 bytes
          * [           2]   CRC
          * [     END    ]
          */
@@ -116,12 +115,15 @@ public static partial class NABU
          *  
          *  SO: I'm not even going to bother to parse it, I will simply count
          *  the required bytes, and then read the packet, and correct the CRC.
+         *  BECAUSE: From a performance standpoint, it's less work, and theoretically
+         *  faster.
          */
 
         int length = Constants.TotalPayloadSize;
 
-        int offset = (segment * length) + (2 * (segment + 1));
-        var (next, message) = SliceArray(buffer, offset, length);
+                     // 2 bytes/seg         //Segment Offset
+        int offset = (2 * (segment + 1)) + (segment * length);
+        var (next, message) = Slice(buffer, offset, length);
         
         logger.LogDebug("Sending Packet from PAK");
         var crc = GenerateCRC(message[0..^2]);

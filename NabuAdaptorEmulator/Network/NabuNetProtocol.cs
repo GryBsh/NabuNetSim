@@ -9,7 +9,6 @@ public class NabuNetProtocol : Protocol
     NetworkSimulator Network { get; }
     NabuNetAdaptorState State;
     public override byte Identifier => 0x83;
-    public override string Name => "NabuNet";
     protected override byte Version => 0x01;
 
     public NabuNetProtocol(
@@ -52,7 +51,7 @@ public class NabuNetProtocol : Protocol
     /// </summary>
     void GetStatus()
     {
-        short data = NABU.ToShort(Recv(1));
+        short data = NabuLib.ToShort(Recv(1));
 
         switch (data)
         {
@@ -83,7 +82,7 @@ public class NabuNetProtocol : Protocol
     /// </summary>
     void ChannelChange()
     {
-        short data = NABU.ToShort(Recv(2));
+        short data = NabuLib.ToShort(Recv(2));
         if (data is > 0 and < 0x100)
         {
             State.Channel = data;
@@ -104,7 +103,7 @@ public class NabuNetProtocol : Protocol
     async Task SegmentRequest()
     {
         short segment = Recv();
-        int pak = NABU.ToInt(Recv(3));
+        int pak = NabuLib.ToInt(Recv(3));
 
         Log($"NPC: Segment: {segment:x04}, PAK: {FormatTriple(pak)}, NA: {nameof(StateMessage.Confirmed)}");
         Confirmed();
@@ -131,9 +130,9 @@ public class NabuNetProtocol : Protocol
         byte[] payload = Array.Empty<byte>();
 
         if (type == ImageType.Raw)
-            (last, payload) = NABU.SliceRaw(Logger, segment, pak, segmentData);
+            (last, payload) = NabuLib.SliceRaw(Logger, segment, pak, segmentData);
         else
-            (last, payload) = NABU.SlicePak(Logger, segment, segmentData);
+            (last, payload) = NabuLib.SlicePak(Logger, segment, segmentData);
 
         if (payload.Length == 0) Unauthorized();
         else SendPacket(pak, payload, last: last);
@@ -157,7 +156,7 @@ public class NabuNetProtocol : Protocol
             (byte)now.Minute,               //Minute
             (byte)now.Second                //Second
         };
-        var (_, payload) = NABU.SliceRaw(Logger, 0, Message.TimePak, buffer);
+        var (_, payload) = NabuLib.SliceRaw(Logger, 0, Message.TimePak, buffer);
         return payload;
     }
 
@@ -237,7 +236,7 @@ public class NabuNetProtocol : Protocol
         string url = Reader.ReadString();
         Log($"RequestStore HTTP Get {index}: {url}");
         var (success, _) = await Network.StorageOpen(index, url);
-        Send(NABU.FromBool(success));
+        Send(NabuLib.FromBool(success));
     }
 
     void RequestStoreGetSize()
@@ -246,15 +245,15 @@ public class NabuNetProtocol : Protocol
 
         var size = Network.GetResponseSize(index);
         Log($"RequestStore Get Size {index}: Size: {size}");
-        var sizes = NABU.FromShort((short)size);
+        var sizes = NabuLib.FromShort((short)size);
         Send(sizes);
     }
 
     void RequestStoreGetData()
     {
         short index = Recv();
-        short offset = NABU.ToShort(Recv(2));
-        short length = NABU.ToShort(Recv(2));
+        short offset = NabuLib.ToShort(Recv(2));
+        short length = NabuLib.ToShort(Recv(2));
         Log($"RequestStore.Get Response {index}: Offset: {offset}, Length: {length} ");
         var data = Network.StorageGet(index, offset, length);
         SlowerSend(data);
@@ -289,7 +288,7 @@ public class NabuNetProtocol : Protocol
         {
             #region NabuNet "Classic" Messages
             case 0:
-                Log($"NA: Received 0, Disconnected");
+                Warning($"NA: Received 0, Aborting");
                 return false;
             case Message.Reset:
                 Ack();
@@ -324,8 +323,9 @@ public class NabuNetProtocol : Protocol
                 break;
             #endregion
 
+            // RetroNet clashes with ACP - Dropping Support for the moment
             #region RetroNET Messages
-
+            /*
             case RetroNetMessage.RequestStoreHttpGet:
                 await RequestStoreHttpGet();
                 break;
@@ -335,7 +335,7 @@ public class NabuNetProtocol : Protocol
             case RetroNetMessage.RequestStoreGetData:
                 RequestStoreGetData();
                 break;
-
+            */
             #endregion
 
             default:
@@ -345,5 +345,5 @@ public class NabuNetProtocol : Protocol
         return false;
     }
 
-    public override void Listening() { }
+    public override void OnListen() { }
 }

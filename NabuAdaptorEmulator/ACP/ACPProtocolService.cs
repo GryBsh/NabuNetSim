@@ -3,7 +3,7 @@ using Nabu.Adaptor;
 
 namespace Nabu.ACP;
 
-public class StorageService : IStorageServer
+public class ACPProtocolService : IACPProtocolService
 {
     ILogger Logger;
     AdaptorSettings Settings;
@@ -11,7 +11,7 @@ public class StorageService : IStorageServer
 
     public string Protocol => throw new NotImplementedException();
 
-    public StorageService(ILogger logger, AdaptorSettings settings)
+    public ACPProtocolService(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;
@@ -54,7 +54,7 @@ public class StorageService : IStorageServer
                 var path when path.StartsWith("http") || path.StartsWith("https")
                     => new HttpStorageHandler(Logger, Settings),
                 var path when path.StartsWith("ram")
-                    => new RAMStorage(Logger, Settings),
+                    => new RAMStorageHandler(Logger, Settings),
                 _ => null
             };
             if (handler is null)

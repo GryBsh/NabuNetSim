@@ -57,9 +57,9 @@ public class AdaptorEmulator : NabuService
                 
                 if (handler.Attached &&
                     await handler.Listen(cancel, incoming)
-                ) {
-                    continue;
-                }
+                )   continue;
+                
+                Trace("Adaptor Loop Break");
                 break;
             }
             catch (TimeoutException)
@@ -74,7 +74,6 @@ public class AdaptorEmulator : NabuService
             }
 
         }
-    
 
         NabuNet.Detach();
         foreach (var protocol in Protocols)

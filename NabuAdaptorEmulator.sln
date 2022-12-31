@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.33103.201
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "NabuAdaptorEmulator", "NabuAdaptorEmulator\NabuAdaptorEmulator.csproj", "{9CFD6536-51A8-41EE-9084-320098304C43}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.Network", "NabuAdaptorEmulator\Nabu.Network.csproj", "{9CFD6536-51A8-41EE-9084-320098304C43}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

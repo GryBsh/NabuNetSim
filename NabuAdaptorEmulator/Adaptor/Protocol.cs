@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Services;
+using System;
 using System.Text;
 
 namespace Nabu.Adaptor;
@@ -11,9 +12,6 @@ public abstract class Protocol : NabuService, IProtocol
     protected BinaryReader Reader { get; private set; }
     protected BinaryWriter Writer { get; private set; }
     protected abstract byte Version { get; }
-    protected string Id { get; }
-
-    public abstract string Name { get; }
     public abstract byte Identifier { get; }
     public bool Attached => Stream != Stream.Null;
     
@@ -25,55 +23,60 @@ public abstract class Protocol : NabuService, IProtocol
         Settings = new();
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
-        Id = $"{Name} v{Version}";
+        
     }
 
 
     #region Send / Receive
     // These methods perform all the stream reading / writing
     // for all communication with the NABU PC / Emulator
-    public byte Recv()
+    protected byte Recv()
     {
-        return Reader.ReadByte();
+        var b = Reader.ReadByte();
+        Trace($"NA: RCVD: {Format(b)}");
+        Debug($"NA: RCVD: 1 byte");
+        return b;
     }
 
-    public (bool, byte) Recv(byte byt)
+    bool Expected(byte expected, byte read)
     {
-        var (expected, buffer) = Recv(new[] { byt });
-        return (expected, buffer[0]);
+        var good = read == expected;
+        if (!good)
+            Warning($"NA: {Format(expected)} != {Format(read)}");
+        return good;
     }
 
-    public byte[] FasterRead(int length = 1)
+    protected (bool, byte) Recv(byte byt)
     {
-        return Reader.ReadBytes(length);
+        var read = Recv();
+        var expected = Expected(byt, read);
+        return (expected, read);
     }
 
-    public byte[] Recv(int length = 1)
+    protected byte[] Recv(int length = 1)
     {
-        var buffer = new byte[length];
-        for (int i = 0; i < length; i++)
-            buffer[i] = Recv();
-
+        var buffer = Reader.ReadBytes(length);
         Trace($"NA: RCVD: {FormatSeperated(buffer)}");
         Debug($"NA: RCVD: {buffer.Length} bytes");
         return buffer;
     }
 
-    public (bool, byte[]) Recv(params byte[] bytes)
+    bool Expected(byte[] expected, byte[] read)
     {
-        var read = Recv(bytes.Length);
-
-        var expected = bytes.SequenceEqual(read);
-        if (expected is false)
-            Warning($"NA: {FormatSeperated(bytes)} != {FormatSeperated(read)}");
-
-        return (
-            expected,
-            read
-        );
+        var good = expected.SequenceEqual(read);
+        if (!good)
+            Warning($"NA: {FormatSeperated(expected)} != {FormatSeperated(read)}");
+        return good;
     }
 
-    public void Send(params byte[] bytes)
+    protected (bool, byte[]) Recv(params byte[] bytes)
+    {
+        var read = Recv(bytes.Length);
+        bool expected = Expected(bytes, read);
+        return (expected, read);
+    }
+
+    protected void Send(params byte[] bytes)
     {
         //SlowerSend(bytes);
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
@@ -81,8 +84,8 @@ public abstract class Protocol : NabuService, IProtocol
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 
-    
-    public void SlowerSend(params byte[] bytes)
+
+    protected void SlowerSend(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
         for (int i = 0; i < bytes.Length; i++)
@@ -92,24 +95,47 @@ public abstract class Protocol : NabuService, IProtocol
         }
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
-    
 
-    public IEnumerable<byte> Combine(params IEnumerable<byte>[] buffers)
+    #endregion
+
+    #region Framed Protocols
+    protected void SendFramed(params byte[] buffer)
     {
-        foreach (var buffer in buffers)
-            foreach (var b in buffer)
-                yield return b;
+        Send(NabuLib.FromShort((short)buffer.Length));
+        Send(buffer);
     }
 
-    public IEnumerable<byte> String(string str)
+    protected void SendFramed(byte header, params IEnumerable<byte>[] buffer)
     {
-        yield return (byte)str.Length;
-        foreach (byte b in Encoding.ASCII.GetBytes(str))
-            yield return b;
+        var wad = NabuLib.Concat(buffer).ToArray();
+        var payload = new byte[1 + wad.Length];
+        payload[0] = header;
+        wad.AsSpan().CopyTo(
+            payload.AsSpan().Slice(1, wad.Length)
+        );
+        SendFramed(payload);
+    }
+
+    protected (short, byte[]) ReadFrame()
+    {
+        var length  = NabuLib.ToShort(Recv(2));
+        if (0 > length)
+        {
+            Warning($"NabuNet message detected in frame, aborting.");
+            return (0, Array.Empty<byte>());
+        }
+        else if (length is 0)
+        {
+            Warning($"0 length frame, aborting.");
+            return (0, Array.Empty<byte>());
+        }
+        var buffer = Recv(length);
+        return (length, buffer);
     }
 
     #endregion
 
+    #region IProtocol
 
     public virtual bool Attach(AdaptorSettings settings, Stream stream)
     {
@@ -127,12 +153,12 @@ public abstract class Protocol : NabuService, IProtocol
         return true;
     }
 
-    public abstract void Listening();
+    public abstract void OnListen();
     public abstract Task<bool> Listen(byte unhandled);
     
     public async Task<bool> Listen(CancellationToken cancel, byte incoming)
     {
-        Listening();
+        OnListen();
         Debug($"v{Version} Running...");
         
         try
@@ -140,7 +166,7 @@ public abstract class Protocol : NabuService, IProtocol
             while (await Listen(incoming))
                 continue;
 
-            Debug($"End {Id}");
+            Debug($"End {Version}");
             return true;
         }
         catch (TimeoutException) {
@@ -148,7 +174,7 @@ public abstract class Protocol : NabuService, IProtocol
         }
         catch (Exception ex)
         {
-            Error($"FAIL {Id}: {ex.Message}");
+            Error($"FAIL v{Version}: {ex.Message}");
             return false;
         }
 
@@ -161,5 +187,7 @@ public abstract class Protocol : NabuService, IProtocol
         Reader = new BinaryReader(Stream);
         Writer = new BinaryWriter(Stream);
     }
+
+    #endregion
 }
 
