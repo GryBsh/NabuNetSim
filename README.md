@@ -1,4 +1,4 @@
-﻿# NABU Network Emulator
+﻿# NABUNetSim
 
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (MAME),
 and can host multiple instances of either. Making it possible to host a NABU Network from one
@@ -47,7 +47,7 @@ Can be set via command line arguments, in the usual dotnet way.
   macOS or Linux witht the dotnet's `System.IO.Ports`. So we're using a default of `115200`.
   If you experience issues, try setting this to `111865` if your on Windows or .
   - > !! This has no effect on the TCP Adaptor !!
-- SendDelay: The delay in iterations between each byte sent in "Slower Send" mode.
+- SendDelay: The delay in iterations between each byte sent in "Slower Send" mode, for RetroNet.
   - > For Serial the default is `500`, for TCP it is `130000`.
   - > I don't know why MAME is 260x slower than the real thing, but it is.
 

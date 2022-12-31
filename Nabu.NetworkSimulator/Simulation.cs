@@ -2,7 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 
-namespace Nabu.Services;
+namespace Nabu;
 
 public class Simulation : BackgroundService
 {

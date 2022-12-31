@@ -205,28 +205,12 @@ public class NabuNetProtocol : Protocol
         var stop = DateTime.Now;
 
         Finished();                      //Epilog
-
-        Task.Run(() => TransferRatePrinter(start, stop, buffer.Length));
         if (last)
         {
             Network.UncachePak(pak);
             GC.Collect();
         }
     }
-
-    void TransferRatePrinter(DateTime start, DateTime stop, int length)
-    {
-        var elapsed = stop - start;
-        var rate = 8 * length / elapsed.TotalSeconds / 1000;
-        var unit = "Kbps";
-        if (rate > 1000)
-        {
-            rate = rate / 1000;
-            unit = "Mbps";
-        }
-        Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
-    }
-
     #endregion
 
     #region RetroNet

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Nabu.Services;
 using System;
 using System.Text;
 
@@ -76,11 +75,29 @@ public abstract class Protocol : NabuService, IProtocol
         return (expected, read);
     }
 
+    void TransferRate(DateTime start, DateTime stop, int length)
+    {
+        var elapsed = stop - start;
+        var rate = 8 * length / elapsed.TotalSeconds / 1000;
+        var unit = "Kbps";
+        if (rate > 1000)
+        {
+            rate = rate / 1000;
+            unit = "Mbps";
+        }
+        Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
+    }
+
     protected void Send(params byte[] bytes)
     {
-        //SlowerSend(bytes);
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
-        Writer.Write(bytes);
+        if (bytes.Length > 128) { // This doesn't work unless you fill the buffer
+            DateTime start = DateTime.Now;
+            Writer.Write(bytes);
+            DateTime end = DateTime.Now;
+            Task.Run(() => TransferRate(start, end, bytes.Length));
+        }
+        else Writer.Write(bytes);
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 

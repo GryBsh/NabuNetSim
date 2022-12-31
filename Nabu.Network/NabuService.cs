@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Nabu.Services;
+namespace Nabu;
 
 public abstract class NabuService
 {

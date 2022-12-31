@@ -3,8 +3,6 @@ using Nabu.ACP;
 using Nabu.Messages;
 using Nabu.Network;
 
-using Nabu.Services;
-
 namespace Nabu.Adaptor;
 
 public class AdaptorEmulator : NabuService

@@ -23,7 +23,7 @@ publish () {
     cp -f $CONFIG/appsettings.$os.json $BIN/appsettings.json
     cp -f README.md $BIN
     echo "   Zipping $BIN"
-    zip -r nnae-$os-$arch.zip $BIN 1>/dev/null
+    zip -r nns-$os-$arch.zip $BIN 1>/dev/null
 
     echo "<| Published $os $arch $target |>"
 }
