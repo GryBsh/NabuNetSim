@@ -124,13 +124,10 @@ public abstract class Protocol : NabuService, IProtocol
 
     protected void SendFramed(byte header, params IEnumerable<byte>[] buffer)
     {
+        var head = new byte[] { header };
         var wad = NabuLib.Concat(buffer).ToArray();
-        var payload = new byte[1 + wad.Length];
-        payload[0] = header;
-        wad.AsSpan().CopyTo(
-            payload.AsSpan().Slice(1, wad.Length)
-        );
-        SendFramed(payload);
+        if (wad.Length is 0) SendFramed(head);   // Empty frame     
+        else SendFramed(NabuLib.Concat(head, wad).ToArray());
     }
 
     protected (short, byte[]) ReadFrame()
@@ -197,7 +194,7 @@ public abstract class Protocol : NabuService, IProtocol
 
     }
 
-    public void Detach()
+    public virtual void Detach()
     {
         Settings = new();
         Stream = Stream.Null;

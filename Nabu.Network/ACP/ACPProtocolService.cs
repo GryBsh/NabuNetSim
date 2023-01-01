@@ -26,13 +26,13 @@ public class ACPProtocolService : IACPProtocolService
         return 0xFF;
     }
 
-    public (bool, char[], char[]) DateTime()
+    public (bool, string, string) DateTime()
     {
         var now = System.DateTime.Now;
         return (
             true,
-            now.ToString("yyyyMMdd").ToCharArray(),
-            now.ToString("HHmmss").ToCharArray()
+            now.ToString("yyyyMMdd"),
+            now.ToString("HHmmss")
         );
     }
 

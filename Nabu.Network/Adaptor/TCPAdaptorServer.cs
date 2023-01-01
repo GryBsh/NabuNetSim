@@ -22,7 +22,7 @@ public class TCPAdaptorServer
             port = 5919;
         };
 
-        settings.SendDelay = settings.SendDelay ?? Constants.DefaultTCPSendDelay;
+        settings.SendDelay ??= Constants.DefaultTCPSendDelay;
 
         logger.LogInformation(
             $"\n\t Port: {port}" +
@@ -51,7 +51,5 @@ public class TCPAdaptorServer
                 logger.LogError(ex.Message, ex);
                 break;
             }
-
-        
     }
 }

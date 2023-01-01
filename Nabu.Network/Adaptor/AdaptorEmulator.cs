@@ -44,7 +44,6 @@ public class AdaptorEmulator : NabuService
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {
-
             try
             {
                 byte incoming = Reader.ReadByte();

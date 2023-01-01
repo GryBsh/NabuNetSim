@@ -147,8 +147,8 @@ public class ACPProtocol : Protocol
         var (_, date, time) = Storage.DateTime();
         SendFramed(
             0x85,
-            Encoding.ASCII.GetBytes(date),
-            Encoding.ASCII.GetBytes(time)
+            NabuLib.FromASCII(date),
+            NabuLib.FromASCII(time)
         );
         Log($"NA: DataTime Send");
     }
@@ -177,6 +177,7 @@ public class ACPProtocol : Protocol
                 return false;
             case 0xEF:
                 Log($"v{Version} Ending");
+                //Storage.End();
                 return false;
             case 0x01:
                 await Open(message);
@@ -196,6 +197,11 @@ public class ACPProtocol : Protocol
         }
     }
 
+    public override void Detach()
+    {
+        Storage.End();
+        base.Detach();
+    }
 
 }
 

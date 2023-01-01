@@ -38,7 +38,7 @@ public interface IACPProtocolService
 
     //-----------------------
     // 0x04                 |                       -> TIME
-    (bool, char[], char[]) DateTime();
+    (bool, string, string) DateTime();
     // 0x85 |Date    |Time  |                       -> DATETIME [Date]  [Time]
     //      |YYYYMMdd|HHmmss|
     // - OR -

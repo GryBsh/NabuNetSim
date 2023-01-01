@@ -5,7 +5,7 @@ VisualStudioVersion = 17.5.33103.201
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.Network", "Nabu.Network\Nabu.Network.csproj", "{9CFD6536-51A8-41EE-9084-320098304C43}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nabu.NetSim", "Nabu.NetSim\Nabu.NetSim.csproj", "{445B6617-C61F-49FA-B7CA-33CFA85029F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.NetSim", "Nabu.NetSim\Nabu.NetSim.csproj", "{445B6617-C61F-49FA-B7CA-33CFA85029F8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

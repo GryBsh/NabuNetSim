@@ -44,11 +44,12 @@ public class RAMStorageHandler : IStorageHandler
     {
         try
         {
-            if (offset + buffer.Length > Buffer.Length)
+            var length = buffer.Length + offset;
+            if (length > Buffer.Length)
             {
-                var old = Buffer;
-                Buffer = new byte[offset + buffer.Length];
-                old.AsSpan().CopyTo(Buffer);
+                var temp = new byte[length];
+                Buffer.AsSpan().CopyTo(temp);
+                Buffer = temp;
             }
             buffer.AsSpan().CopyTo(Buffer.AsSpan(offset));
             return (true, string.Empty);
