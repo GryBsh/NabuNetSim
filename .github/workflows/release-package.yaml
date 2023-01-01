@@ -36,7 +36,7 @@ jobs:
           mkdir $BIN/Files
           cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
           cp -f README.md $BIN
-          zip -r nnae-linux-$arch.zip $BIN
+          zip -r nns-linux-$arch.zip $BIN
         done
     - name: Package Windows
       run: |
@@ -49,7 +49,7 @@ jobs:
           mkdir $BIN/Files
           cp -f $CONFIG/appsettings.win.json $BIN/appsettings.json
           cp -f README.md $BIN
-          zip -r nnae-win-$arch.zip $BIN
+          zip -r nns-win-$arch.zip $BIN
         done
     - name: Package MacOS
       run: |
@@ -60,7 +60,7 @@ jobs:
         mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
-        zip -r nnae-macos-x64.zip $BIN
+        zip -r nns-macos-x64.zip $BIN
 
         BIN="bin/macos/arm64"
         dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
@@ -69,7 +69,7 @@ jobs:
         mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
-        zip -r nnae-macos-arm64.zip $BIN
+        zip -r nns-macos-arm64.zip $BIN
         
     - name: Release
       uses: softprops/action-gh-release@v1
