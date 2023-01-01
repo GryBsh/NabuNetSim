@@ -30,7 +30,7 @@ jobs:
         for arch in $linux_arch; 
         do
           BIN="bin/linux/$arch"
-          dotnet ./Nabu.NetSim publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          dotnet publish ./Nabu.NetSim -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
           cp -r $PAK $BIN
           mkdir $BIN/NABUs
           mkdir $BIN/Files
