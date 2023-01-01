@@ -6,14 +6,14 @@ namespace Nabu.Network;
 
 public class NabuNetProtocol : Protocol
 {
-    NetworkSimulator Network { get; }
+    NabuNetProtocolService Network { get; }
     NabuNetAdaptorState State;
-    public override byte Identifier => 0x83;
+    public override byte Command => 0x83;
     protected override byte Version => 0x01;
 
     public NabuNetProtocol(
         ILogger<NabuNetProtocol> logger,
-        NetworkSimulator network) : base(logger)
+        NabuNetProtocolService network) : base(logger)
     {
         Network = network;
         State = new();
@@ -130,9 +130,9 @@ public class NabuNetProtocol : Protocol
         byte[] payload = Array.Empty<byte>();
 
         if (type == ImageType.Raw)
-            (last, payload) = NabuLib.SliceRaw(Logger, segment, pak, segmentData);
+            (last, payload) = NabuLib.SliceFromRaw(Logger, segment, pak, segmentData);
         else
-            (last, payload) = NabuLib.SlicePak(Logger, segment, segmentData);
+            (last, payload) = NabuLib.SliceFromPak(Logger, segment, segmentData);
 
         if (payload.Length == 0) Unauthorized();
         else SendPacket(pak, payload, last: last);
@@ -156,7 +156,7 @@ public class NabuNetProtocol : Protocol
             (byte)now.Minute,               //Minute
             (byte)now.Second                //Second
         };
-        var (_, payload) = NabuLib.SliceRaw(Logger, 0, Message.TimePak, buffer);
+        var (_, payload) = NabuLib.SliceFromRaw(Logger, 0, Message.TimePak, buffer);
         return payload;
     }
 

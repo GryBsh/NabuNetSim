@@ -18,7 +18,6 @@ public abstract class NabuService
     protected static string Format(byte byt) => NabuLib.Format(byt);
     protected static string FormatTriple(int triple) => NabuLib.FormatTriple(triple);
 
-
     protected void Log(string message) => Logger.LogInformation(message);
     protected void Debug(string message) => Logger.LogDebug(message);
     protected void Trace(string message) => Logger.LogTrace(message);

@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using System;
 using System.Text;
 
 namespace Nabu.Adaptor;
@@ -11,7 +10,7 @@ public abstract class Protocol : NabuService, IProtocol
     protected BinaryReader Reader { get; private set; }
     protected BinaryWriter Writer { get; private set; }
     protected abstract byte Version { get; }
-    public abstract byte Identifier { get; }
+    public abstract byte Command { get; }
     public bool Attached => Stream != Stream.Null;
     
     int SendDelay = 0;
@@ -29,6 +28,11 @@ public abstract class Protocol : NabuService, IProtocol
     #region Send / Receive
     // These methods perform all the stream reading / writing
     // for all communication with the NABU PC / Emulator
+
+    /// <summary>
+    ///     Receive 1 byte.
+    /// </summary>
+    /// <returns>The received byte</returns>
     protected byte Recv()
     {
         var b = Reader.ReadByte();
@@ -37,21 +41,26 @@ public abstract class Protocol : NabuService, IProtocol
         return b;
     }
 
-    bool Expected(byte expected, byte read)
-    {
-        var good = read == expected;
-        if (!good)
-            Warning($"NA: {Format(expected)} != {Format(read)}");
-        return good;
-    }
 
-    protected (bool, byte) Recv(byte byt)
+    /// <summary>
+    ///     Receives a byte and returns if it was the expected byte
+    ///     and the actual byte received.
+    /// </summary>
+    /// <param name="expected">The expected byte</param>
+    /// <returns>If it was the expected byte and the actual byte received</returns>
+    protected (bool, byte) Recv(byte expected)
     {
         var read = Recv();
-        var expected = Expected(byt, read);
-        return (expected, read);
+        var good = read == expected;
+        if (!good) Warning($"NA: {Format(expected)} != {Format(read)}");
+        return (good, read);
     }
 
+    /// <summary>
+    ///     Receives the specified bytes.
+    /// </summary>
+    /// <param name="length"></param>
+    /// <returns></returns>
     protected byte[] Recv(int length = 1)
     {
         var buffer = Reader.ReadBytes(length);
@@ -59,22 +68,29 @@ public abstract class Protocol : NabuService, IProtocol
         Debug($"NA: RCVD: {buffer.Length} bytes");
         return buffer;
     }
-
-    bool Expected(byte[] expected, byte[] read)
+        
+    /// <summary>
+    ///     Receives the number of bytes expected
+    ///     and returns if the bytes received are equal
+    ///     as well as the actual bytes received.
+    /// </summary>
+    /// <param name="expected">The bytes expected to be received</param>
+    /// <returns>If the expected bytes were received and the bytes actually received</returns>
+    protected (bool, byte[]) Recv(params byte[] expected)
     {
+        var read = Recv(expected.Length);
         var good = expected.SequenceEqual(read);
-        if (!good)
-            Warning($"NA: {FormatSeperated(expected)} != {FormatSeperated(read)}");
-        return good;
+        if (!good) Warning($"NA: {FormatSeperated(expected)} != {FormatSeperated(read)}");
+        return (good, read);
     }
 
-    protected (bool, byte[]) Recv(params byte[] bytes)
-    {
-        var read = Recv(bytes.Length);
-        bool expected = Expected(bytes, read);
-        return (expected, read);
-    }
 
+    /// <summary>
+    ///     Logs the current transfer rate
+    /// </summary>
+    /// <param name="start">The start time</param>
+    /// <param name="stop">The end time</param>
+    /// <param name="length">The number of bytes transfered</param>
     void TransferRate(DateTime start, DateTime stop, int length)
     {
         var elapsed = stop - start;
@@ -88,6 +104,18 @@ public abstract class Protocol : NabuService, IProtocol
         Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
     }
 
+    /// <summary>
+    ///     Sends bytes to the NABU PC / Emulator.
+    ///     This method times and logs the transfer rate
+    ///     of all transfers larger than 128 bytes.
+    /// </summary>
+    /// <remarks>
+    ///     Anything smaller than 128 bytes sends at an
+    ///     impossible speed over serial or TCP. I believe
+    ///     thats the size of the underlying
+    ///     <ref>System.IO.Stream</ref>'s buffer.
+    /// </remarks>
+    /// <param name="bytes">The bytes to send</param>
     protected void Send(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
@@ -102,6 +130,11 @@ public abstract class Protocol : NabuService, IProtocol
     }
 
 
+    /// <summary>
+    ///     Provides a method to send data to the NABU PC / Emulator
+    ///     at a reduced speed.
+    /// </summary>
+    /// <param name="bytes">The bytes to send</param>
     protected void SlowerSend(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
@@ -122,12 +155,13 @@ public abstract class Protocol : NabuService, IProtocol
         Send(buffer);
     }
 
+
+
     protected void SendFramed(byte header, params IEnumerable<byte>[] buffer)
     {
         var head = new byte[] { header };
-        var wad = NabuLib.Concat(buffer).ToArray();
-        if (wad.Length is 0) SendFramed(head);   // Empty frame     
-        else SendFramed(NabuLib.Concat(head, wad).ToArray());
+        var frame = NabuLib.Frame(head, buffer);
+        SendFramed(frame.ToArray());
     }
 
     protected (short, byte[]) ReadFrame()
@@ -169,9 +203,22 @@ public abstract class Protocol : NabuService, IProtocol
 
     public abstract void OnListen();
     public abstract Task<bool> Listen(byte unhandled);
-    
+
+    void Cleanup(Task? trigger = null)
+    {
+        bool idle = trigger is not null;
+        Log($"Cleanup triggered, idle: {idle}");
+
+        GC.Collect();
+        if (idle) return;
+
+        // Shutdown...
+    }
+
     public async Task<bool> Listen(CancellationToken cancel, byte incoming)
     {
+        
+        
         OnListen();
         Debug($"v{Version} Running...");
         

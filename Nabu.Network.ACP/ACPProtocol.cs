@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Nabu.ACP;
 using Nabu.Adaptor;
 using System;
 using System.Reflection;
@@ -15,7 +14,7 @@ public class ACPProtocol : Protocol
         Storage = new(Logger, Settings);
     }
 
-    public override byte Identifier => 0xAF;
+    public override byte Command => 0xAF;
     protected override byte Version => 0x01;
 
     #region ACP Frames / Messages
@@ -160,6 +159,8 @@ public class ACPProtocol : Protocol
         Log($"v{Version} Started");
         StorageStarted();
     }
+
+    
 
     public override async Task<bool> Listen(byte command)
     {

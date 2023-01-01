@@ -1,7 +1,8 @@
-﻿using System.Data;
+﻿namespace Nabu;
 
-namespace Nabu;
-
+/// <summary>
+///    Constant values used through out the Emulator.
+/// </summary>
 internal static class Constants
 {
 

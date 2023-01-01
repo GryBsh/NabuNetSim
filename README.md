@@ -10,14 +10,20 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 ## Known Issues
 
 - > RetroNet support is temporarily unavailable.
-    Please try again later.
-    Your call is important to us.
-    Please stay on the line.
-- > HCCA-ACP support is experimental at best.
+- > HCCA-ACP support is experimental.
 - > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
   with one value when it's first connecting: `0x8F|0x05`, then when the program is
   first started another: `0x0F|0x05`. It seems to be signaling something, but what?
 - > I'm 100% sure there are more.
+
+## Systen Requirements
+
+- OS: Windows, macOS, or Linux
+- CPU: Average x64, arm, or arm64 CPU. (I've tested on a Raspberry Pi 3,4 and it works well.)
+- Memory: 30MB base, 10MB per emulated adaptor, it uses less in my tests.
+
+Realistically, a Pi 3 can serve a dozen or so adaptors, and a Pi 4 can handle 20+
+A PC can potentially serve hundreds.
 
 ## Configuration
 

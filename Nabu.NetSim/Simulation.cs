@@ -27,7 +27,7 @@ public class Simulation : BackgroundService
         {
             // We are going to keep track of the services that were defined
             // so if they stop, we can restart them
-            Task[] services = NabuLib.SetLength(
+            Span<Task> services = NabuLib.SetLength(
                 DefinedAdaptors.Length,
                 Array.Empty<Task>(),
                 Task.CompletedTask

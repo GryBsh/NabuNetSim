@@ -27,7 +27,7 @@ await   Host
                         )
                 );
                 services.AddHttpClient();
-                services.AddTransient<NetworkSimulator>();
+                services.AddTransient<NabuNetProtocolService>();
                 services.AddTransient<NabuNetProtocol>();
                 services.AddTransient<IProtocol, ACPProtocol>();
                 services.AddHostedService<Simulation>(); 

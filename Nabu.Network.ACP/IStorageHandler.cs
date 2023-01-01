@@ -1,4 +1,4 @@
-﻿namespace Nabu.ACP;
+﻿namespace Nabu.Network;
 
 public interface IStorageHandler
 {

@@ -19,7 +19,7 @@ public class TCPAdaptorServer
 
         if (!int.TryParse(settings.Port, out int port))
         {
-            port = 5919;
+            port = 16942;
         };
 
         settings.SendDelay ??= Constants.DefaultTCPSendDelay;
@@ -37,14 +37,14 @@ public class TCPAdaptorServer
                 var incoming = await socket.AcceptAsync(stopping);
 
                 using var stream = new NetworkStream(incoming);
-                var adaptor = new AdaptorEmulator(
+                var adaptor = new EmulatedAdaptor(
                      settings,
                      serviceProvider.GetRequiredService<NabuNetProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
                      stream
                  );
-                await adaptor.Emulate(stopping);
+                await adaptor.Run(stopping);
             }
             catch ( Exception ex )
             {

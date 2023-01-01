@@ -3,14 +3,14 @@ using Nabu.Patching;
 
 namespace Nabu.Network;
 
-public class NetworkSimulator : NabuService
+public class NabuNetProtocolService : NabuService
 {
     readonly HttpClient Http;
     AdaptorSettings? Settings;
     readonly NetworkState State = new();
 
-    public NetworkSimulator(
-        ILogger<NetworkSimulator> logger,
+    public NabuNetProtocolService(
+        ILogger<NabuNetProtocolService> logger,
         HttpClient http,
         Dictionary<string, ImageSourceDefinition> sources
     ) : base(logger)

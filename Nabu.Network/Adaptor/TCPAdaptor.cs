@@ -3,7 +3,6 @@ using Microsoft.Extensions.Logging;
 using Nabu.Network;
 using System.Net.Sockets;
 using System.Net;
-using Nabu.ACP;
 
 namespace Nabu.Adaptor;
 
@@ -45,15 +44,26 @@ public class TCPAdaptor
             }
 
         var stream = new NetworkStream(socket);
-        var adaptor = new AdaptorEmulator(
-             settings,
-             serviceProvider.GetRequiredService<NabuNetProtocol>(),
-             serviceProvider.GetServices<IProtocol>(),
-             logger,
-             stream
-         );
-
-        await adaptor.Emulate(stopping);
+        
+        while(stopping.IsCancellationRequested is false)
+            try
+            {
+                var adaptor = new EmulatedAdaptor(
+                     settings,
+                     serviceProvider.GetRequiredService<NabuNetProtocol>(),
+                     serviceProvider.GetServices<IProtocol>(),
+                     logger,
+                     stream
+                 );
+                logger.LogInformation($"Adaptor Started");
+                await adaptor.Run(stopping);
+            }
+            catch (Exception ex)
+            {
+                logger.LogError(ex, ex.Message);
+                if (socket.Connected is false) break;
+            }
+        
         stream.Dispose();
         socket.Close();
     }

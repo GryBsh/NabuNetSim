@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\Nabu.Network.ACP\Nabu.Network.ACP.csproj" />
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />
   </ItemGroup>
 

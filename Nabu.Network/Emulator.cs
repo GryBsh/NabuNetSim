@@ -1,5 +1,9 @@
 ﻿namespace Nabu;
 
+/// <summary>
+///     Version Numbers and adaptor Id
+///     Used in various places
+/// </summary>
 public static class Emulator
 {
     public const int Major = 0;

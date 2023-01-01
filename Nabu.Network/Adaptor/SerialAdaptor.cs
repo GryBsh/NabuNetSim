@@ -2,7 +2,6 @@
 using Microsoft.Extensions.Logging;
 using Nabu.Network;
 using System.IO.Ports;
-using Nabu.ACP;
 
 namespace Nabu.Adaptor;
 
@@ -51,15 +50,15 @@ public class SerialAdaptor
             }
         try
         {
-            var adaptor = new AdaptorEmulator(
+            var adaptor = new EmulatedAdaptor(
                 settings,
                 serviceProvider.GetRequiredService<NabuNetProtocol>(),
                 serviceProvider.GetServices<IProtocol>(),
                 logger,
                 serial.BaseStream
             );
-
-            await adaptor.Emulate(stopping);
+            logger.LogInformation($"Adaptor Started");
+            await adaptor.Run(stopping);
 
         }
         catch (Exception ex)

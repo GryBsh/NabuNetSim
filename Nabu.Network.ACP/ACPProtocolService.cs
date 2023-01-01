@@ -1,6 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 
-namespace Nabu.ACP;
+namespace Nabu.Network;
 
 public class ACPProtocolService : IACPProtocolService
 {

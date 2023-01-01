@@ -4,7 +4,13 @@ namespace Nabu;
 
 public static partial class NabuLib
 {
-    public static byte[] GenerateCRC(byte[] buffer)
+    /// <summary>
+    ///    Generates the CRC bytes of a packet
+    ///    from the CRC table.
+    /// </summary>
+    /// <param name="buffer">The packet data to generate a CRC for</param>
+    /// <returns>The CRC bytes for the packet</returns>
+    public static Span<byte> GenerateCRC(byte[] buffer)
     {
         short crc = -1; // 0xFFFF
         foreach (var byt in buffer)
@@ -14,29 +20,29 @@ public static partial class NabuLib
             crc ^= Constants.CRCTable[b];
         }
         return new byte[] {
-        (byte)(crc >> 8 & 0xFF ^ 0xFF),
-        (byte)(crc >> 0 & 0xFF ^ 0xFF)
-    };
+            (byte)(crc >> 8 & 0xFF ^ 0xFF),
+            (byte)(crc >> 0 & 0xFF ^ 0xFF)
+        };
 
     }
 
     /// <summary>
-    ///     Creates a packet for the requested segment
-    ///     from the provided buffer
+    ///     Slices a packet for the requested segment
+    ///     from the provided RAW program image
     /// </summary>
-    /// <param name="logger"></param>
-    /// <param name="segment"></param>
-    /// <param name="pak"></param>
-    /// <param name="buffer"></param>
+    /// <param name="logger">An ILogger instance for provide operational feedback</param>
+    /// <param name="segmentIndex">The index of the desired Segment</param>
+    /// <param name="pakId">The id of the desired PAK from which to draw the segment</param>
+    /// <param name="buffer">The RAW program image data to slice the packet from</param>
     /// <returns></returns>
-    public static (bool, byte[]) SliceRaw(
+    public static (bool, byte[]) SliceFromRaw(
         ILogger logger,
-        short segment,
-        int pak,
-        byte[] buffer
+        short segmentIndex,
+        int pakId,
+        Span<byte> buffer
     )
     {
-        int offset = segment * Constants.MaxPayloadSize;
+        int offset = segmentIndex * Constants.MaxPayloadSize;
         if (offset >= buffer.Length)
         {
             logger.LogError($"Packet Start {offset} is beyond the end of the buffer");
@@ -53,25 +59,27 @@ public static partial class NabuLib
         int idx = 0;
 
         /*
+         * 
          * [   Packet   ]
-         * [3           ]   Pak ID M-L
-         * [ 1          ]   Segment L
-         * [  1         ]   Owner 0x01
-         * [   4        ]   Tier 0x75 0xFF 0xFF 0xFF
-         * [    2       ]   Mystery 0x7F 0xFF
-         * [     1      ]   Type (See code below)
-         * [      2     ]   Segment LM
-         * [       2    ]   Offset ML
-         * [      <=991 ]   DATA up to 991 bytes
+         * [3           ]   Pak ID M-L                  ]
+         * [ 1          ]   Segment L                   ]
+         * [  1         ]   Owner 0x01                  ]
+         * [   4        ]   Tier 0x75 0xFF 0xFF 0xFF    ] - Packet
+         * [    2       ]   Mystery 0x7F 0xFF           ] - Header
+         * [     1      ]   Type (See code below)       ]
+         * [      2     ]   Segment LM                  ]
+         * [       2    ]   Offset ML                   ]
+         * [      <=991 ]   DATA up to 991 bytes        
          * [           2]   CRC
          * [     END    ]
+         * 
          */
 
         // 16 bytes of header
-        message[idx++] = (byte)(pak >> 16 & 0xFF);              //Pak MSB   
-        message[idx++] = (byte)(pak >> 8 & 0xFF);               //              
-        message[idx++] = (byte)(pak >> 0 & 0xFF);               //Pak LSB   
-        message[idx++] = (byte)(segment & 0xff);                //Segment LSB    
+        message[idx++] = (byte)(pakId >> 16 & 0xFF);              //Pak MSB   
+        message[idx++] = (byte)(pakId >> 8 & 0xFF);               //              
+        message[idx++] = (byte)(pakId >> 0 & 0xFF);               //Pak LSB   
+        message[idx++] = (byte)(segmentIndex & 0xff);                //Segment LSB    
         message[idx++] = 0x01;                                  //Owner         
         message[idx++] = 0x7F;                                  //Tier MSB      
         message[idx++] = 0xFF;
@@ -81,10 +89,10 @@ public static partial class NabuLib
         message[idx++] = 0x80;                                  //Mystery Byte
         message[idx++] = (byte)(                                //Packet Type
                             (lastPacket ? 0x10 : 0x00) |        //bit 4 (0x10) marks End of Segment
-                            (segment == 0 ? 0xA1 : 0x20)
+                            (segmentIndex == 0 ? 0xA1 : 0x20)
                          );
-        message[idx++] = (byte)(segment >> 0 & 0xFF);           //Segment # LSB
-        message[idx++] = (byte)(segment >> 8 & 0xFF);           //Segment # MSB
+        message[idx++] = (byte)(segmentIndex >> 0 & 0xFF);           //Segment # LSB
+        message[idx++] = (byte)(segmentIndex >> 8 & 0xFF);           //Segment # MSB
         message[idx++] = (byte)(offset >> 8 & 0xFF);            //Offset MSB
         message[idx++] = (byte)(offset >> 0 & 0xFF);            //Offset LSB
 
@@ -93,18 +101,25 @@ public static partial class NabuLib
 
         //CRC Footer
         var crc = GenerateCRC(message[0..idx]);
-        message[idx++] = crc[0];        //CRC MSB
-        message[idx++] = crc[1];        //CRC LSB
+        message[idx++] = crc[0];                                //CRC MSB
+        message[idx++] = crc[1];                                //CRC LSB
 
         return (lastPacket, message);
     }
 
-    public static (bool, byte[]) SlicePak(ILogger logger, short segment, byte[] buffer)
+    /// <summary>
+    ///    Slices a buffer into a segment and
+    /// </summary>
+    /// <param name="logger"></param>
+    /// <param name="segment"></param>
+    /// <param name="buffer"></param>
+    /// <returns></returns>
+    public static (bool, byte[]) SliceFromPak(ILogger logger, short segment, byte[] buffer)
     {
         /*
          *  [  Pak   ]
          *  [2       ]  Segment Length (X below) 
-         *  [ 16     ]  Usual Packet Header
+         *  [ 16     ]  Header
          *  [   XXXX ]  DATA
          *  [       2]  CRC
          *  [  NEXT  ]  The above over and over
