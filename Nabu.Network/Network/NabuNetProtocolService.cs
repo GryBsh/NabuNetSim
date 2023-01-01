@@ -3,6 +3,10 @@ using Nabu.Patching;
 
 namespace Nabu.Network;
 
+/// <summary>
+///    This is the backend service replicating functions
+///    that would be performed by the Nabu Network.
+/// </summary>
 public class NabuNetProtocolService : NabuService
 {
     readonly HttpClient Http;
@@ -132,7 +136,7 @@ public class NabuNetProtocolService : NabuService
                 var files = Directory.GetFiles(source.NabuRoot, "*.nabu");
                 foreach (var file in files)
                 {
-                    var name = file.Split('.')[0].Split(Path.DirectorySeparatorChar)[^1];
+                    var name = Path.GetFileNameWithoutExtension(file);
                     yield return new(
                         name,
                         name,

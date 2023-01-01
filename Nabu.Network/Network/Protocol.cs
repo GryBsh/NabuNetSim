@@ -217,8 +217,6 @@ public abstract class Protocol : NabuService, IProtocol
 
     public async Task<bool> Listen(CancellationToken cancel, byte incoming)
     {
-        
-        
         OnListen();
         Debug($"v{Version} Running...");
         
@@ -238,7 +236,6 @@ public abstract class Protocol : NabuService, IProtocol
             Error($"FAIL v{Version}: {ex.Message}");
             return false;
         }
-
     }
 
     public virtual void Detach()

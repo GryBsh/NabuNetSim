@@ -48,6 +48,7 @@ public class TCPAdaptor
         while(stopping.IsCancellationRequested is false)
             try
             {
+                if (socket.Connected is false) break;
                 var adaptor = new EmulatedAdaptor(
                      settings,
                      serviceProvider.GetRequiredService<NabuNetProtocol>(),
@@ -56,12 +57,12 @@ public class TCPAdaptor
                      stream
                  );
                 logger.LogInformation($"Adaptor Started");
-                await adaptor.Run(stopping);
+                await adaptor.WaitRun(stopping);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, ex.Message);
-                if (socket.Connected is false) break;
+                logger.LogError(ex.Message);
+                break;   
             }
         
         stream.Dispose();

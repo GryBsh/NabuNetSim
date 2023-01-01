@@ -51,7 +51,10 @@ public class EmulatedAdaptor : NabuService
             protocol.Detach();
     }
 
-    public virtual async Task Run(CancellationToken cancel)
+    public virtual async void HandleConnection(CancellationToken token)
+        => await WaitRun(token);
+
+    public virtual async Task WaitRun(CancellationToken cancel)
     {
         Task idleCleanup = Task.CompletedTask;
         CancellationTokenSource idle = CancellationTokenSource.CreateLinkedTokenSource(cancel);
@@ -75,10 +78,7 @@ public class EmulatedAdaptor : NabuService
 
                 if (handler.Attached && // If the handler has been attached to the adapter
                     await handler.Listen(cancel, incoming) // And the handler does not signal an abort.
-                )
-                {
-                    continue; // Then continue to the next command message
-                }
+                ) continue; // Then continue to the next command message
 
                 Trace("Adaptor Loop Break");
                 break;
@@ -87,16 +87,21 @@ public class EmulatedAdaptor : NabuService
             {
                 continue; // Timeouts are normal over serial connections
             }
+            catch (EndOfStreamException ex)
+            {
+                idle.Cancel();
+                Cleanup();
+                throw ex;
+            }
             catch (Exception ex)
             {
                 Error(ex.Message);
-                Cleanup(); // Force a clean up
                 break;
             }
-
         }
                 
         Log("Disconnected");
+        idle.Cancel();
         Cleanup();
     }
     #endregion

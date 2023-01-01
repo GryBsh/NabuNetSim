@@ -58,7 +58,7 @@ public class SerialAdaptor
                 serial.BaseStream
             );
             logger.LogInformation($"Adaptor Started");
-            await adaptor.Run(stopping);
+            await adaptor.WaitRun(stopping);
 
         }
         catch (Exception ex)

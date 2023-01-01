@@ -11,7 +11,7 @@ public class TCPAdaptorServer
     public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
     {
         var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptorServer>>();
-        var socket = new Socket(
+        using var socket = new Socket(
             AddressFamily.InterNetwork,
             SocketType.Stream,
             ProtocolType.Tcp
@@ -43,8 +43,8 @@ public class TCPAdaptorServer
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
                      stream
-                 );
-                await adaptor.Run(stopping);
+                );
+                adaptor.WaitRun(stopping);
             }
             catch ( Exception ex )
             {
