@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
 
 namespace Nabu.ACP;
 
@@ -32,11 +31,7 @@ public class RAMStorageHandler : IStorageHandler
     {
         try
         {
-            int l = length;
-            if (length > Buffer.Length)
-                l = Buffer.Length - offset;
-
-            var buffer = Buffer.AsSpan(offset, l).ToArray();
+            var (_, buffer) = NabuLib.Slice(Buffer, offset, length);
             return (true, string.Empty, buffer);
         }
         catch (Exception ex)

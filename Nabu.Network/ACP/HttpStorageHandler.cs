@@ -1,5 +1,4 @@
 using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
 
 namespace Nabu.ACP;
 

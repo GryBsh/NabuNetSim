@@ -27,7 +27,7 @@ public class AdaptorEmulator : NabuService
         NabuNet = nabu;
         //ACP = acp;
         Protocols = protocols;
-        
+
         Stream = stream;
         Reader = new BinaryReader(stream);
         NabuNet.Attach(Settings, Stream);
@@ -38,25 +38,25 @@ public class AdaptorEmulator : NabuService
 
 
     #region Adaptor Loop   
-        
+
     public virtual async Task Emulate(CancellationToken cancel)
     {
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {
-            
+
             try
             {
                 byte incoming = Reader.ReadByte();
-                
-                var handler = 
+
+                var handler =
                     Protocols.FirstOrDefault(p => p.Identifier == incoming) ??
                     NabuNet;
-                
+
                 if (handler.Attached &&
                     await handler.Listen(cancel, incoming)
-                )   continue;
-                
+                ) continue;
+
                 Trace("Adaptor Loop Break");
                 break;
             }

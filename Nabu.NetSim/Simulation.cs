@@ -25,7 +25,6 @@ public class Simulation : BackgroundService
     {
         await Task.Run(() =>
         {
-
             // We are going to keep track of the services that were defined
             // so if they stop, we can restart them
             Task[] services = NabuLib.SetLength(
@@ -37,7 +36,6 @@ public class Simulation : BackgroundService
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
-
 
             // Until the host tells us to stop
             while (stopping.IsCancellationRequested is false)
@@ -58,7 +56,7 @@ public class Simulation : BackgroundService
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, settings, stopping)),
-                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, stopping)),
+                            AdaptorType.TCP    => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, stopping)),
                             _ => throw new NotImplementedException()
                         };
                     }

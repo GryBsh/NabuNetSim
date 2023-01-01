@@ -63,8 +63,6 @@ public class ACPProtocol : Protocol
 
     #endregion
 
-    
-
     #region ACP Operations
     async Task Open(byte[] buffer)
     {
@@ -170,7 +168,7 @@ public class ACPProtocol : Protocol
             return false;
 
         (int next, command) = NabuLib.Pop(buffer, 0); 
-        var (_, message) = NabuLib.Slice(buffer, next, length);
+        var (_, message)    = NabuLib.Slice(buffer, next, length);
         
         switch (command)
         {

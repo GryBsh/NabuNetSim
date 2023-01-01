@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
 using Nabu.Patching;
 
 namespace Nabu.Network;

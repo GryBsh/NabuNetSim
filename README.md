@@ -1,4 +1,4 @@
-﻿# NABUNetSim
+﻿# NABU NetSim
 
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (MAME),
 and can host multiple instances of either. Making it possible to host a NABU Network from one
@@ -9,6 +9,10 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 ## Known Issues
 
+- > RetroNet support is temporarily unavailable.
+    Please try again later.
+    Your call is important to us.
+    Please stay on the line.
 - > HCCA-ACP support is experimental at best.
 - > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
   with one value when it's first connecting: `0x8F|0x05`, then when the program is

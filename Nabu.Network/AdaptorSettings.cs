@@ -1,15 +1,20 @@
-﻿
-namespace Nabu.Adaptor;
+﻿namespace Nabu;
 
 public enum AdaptorType
 {
     Unknown = 0,
     Serial,
-    TCP
+    TCP,
+    Server,
+    Relay
 }
 
+public record RelaySettings
+{
+    public bool Enabled { get; set; } = false;
+}
 
-public record AdaptorSettings()
+public record AdaptorSettings
 {
     public AdaptorType Type { get; set; } = AdaptorType.Unknown;
     public string Port { get; set; } = string.Empty;
