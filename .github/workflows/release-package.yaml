@@ -30,7 +30,7 @@ jobs:
         for arch in $linux_arch; 
         do
           BIN="bin/linux/$arch"
-          dotnet publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          dotnet ./Nabu.NetSim publish -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
           cp -r $PAK $BIN
           mkdir $BIN/NABUs
           mkdir $BIN/Files
@@ -43,7 +43,7 @@ jobs:
         for arch in $win_arch; 
         do
           BIN="bin/win/$arch"
-          dotnet publish -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          dotnet publish ./Nabu.NetSim -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
           cp -r $PAK $BIN
           mkdir $BIN/NABUs
           mkdir $BIN/Files
@@ -54,7 +54,7 @@ jobs:
     - name: Package MacOS
       run: |
         BIN="bin/macos/x64"
-        dotnet publish -r osx-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        dotnet publish ./Nabu.NetSim -r osx-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
         cp -r $PAK $BIN
         mkdir $BIN/NABUs
         mkdir $BIN/Files
@@ -63,7 +63,7 @@ jobs:
         zip -r nns-macos-x64.zip $BIN
 
         BIN="bin/macos/arm64"
-        dotnet publish -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        dotnet publish ./Nabu.NetSim -r osx.11.0-arm64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
         cp -r $PAK $BIN
         mkdir $BIN/NABUs
         mkdir $BIN/Files
