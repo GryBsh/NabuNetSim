@@ -23,7 +23,7 @@ public class ACPProtocol : Protocol
         SendFramed(
             0x80,
             NabuLib.FromShort(Version),
-            NabuLib.FromASCII(Emulator.Id)
+            NabuLib.FromSizedASCII(Emulator.Id)
         );
     }
 
@@ -31,7 +31,7 @@ public class ACPProtocol : Protocol
     {
         SendFramed(
             0x82,
-            NabuLib.FromASCII(message)
+            NabuLib.FromSizedASCII(message)
         );
     }
     void StorageLoaded(short index, int length)
@@ -146,8 +146,8 @@ public class ACPProtocol : Protocol
         var (_, date, time) = Storage.DateTime();
         SendFramed(
             0x85,
-            NabuLib.FromASCII(date),
-            NabuLib.FromASCII(time)
+            NabuLib.FromSizedASCII(date),
+            NabuLib.FromSizedASCII(time)
         );
         Log($"NA: DataTime Send");
     }
@@ -162,7 +162,7 @@ public class ACPProtocol : Protocol
 
     
 
-    public override async Task<bool> Listen(byte command)
+    public override async Task<bool> Handle(byte command, CancellationToken cancel)
     {
         var (length, buffer) = ReadFrame();
         if (length is 0)

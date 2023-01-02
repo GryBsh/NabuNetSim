@@ -72,7 +72,7 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffers"></param>
     /// <returns></returns>
-    public static IEnumerable<byte> Concat(params IEnumerable<byte>[] buffers)
+    public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] buffers)
     {
         foreach (var buffer in buffers)
             foreach (var b in buffer)

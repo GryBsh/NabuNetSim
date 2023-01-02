@@ -52,9 +52,9 @@ public class EmulatedAdaptor : NabuService
     }
 
     public virtual async void HandleConnection(CancellationToken token)
-        => await WaitRun(token);
+        => await Listen(token);
 
-    public virtual async Task WaitRun(CancellationToken cancel)
+    public virtual async Task Listen(CancellationToken cancel)
     {
         Task idleCleanup = Task.CompletedTask;
         CancellationTokenSource idle = CancellationTokenSource.CreateLinkedTokenSource(cancel);
@@ -77,7 +77,7 @@ public class EmulatedAdaptor : NabuService
                     NabuNet; // Defaults to NABUNet
 
                 if (handler.Attached && // If the handler has been attached to the adapter
-                    await handler.Listen(cancel, incoming) // And the handler does not signal an abort.
+                    await handler.Handle(incoming, cancel) // And the handler does not signal an abort.
                 ) continue; // Then continue to the next command message
 
                 Trace("Adaptor Loop Break");
