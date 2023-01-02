@@ -202,27 +202,16 @@ public abstract class Protocol : NabuService, IProtocol
     }
 
     public abstract void OnListen();
-    public abstract Task<bool> Listen(byte unhandled);
+    public abstract Task<bool> Handle(byte unhandled, CancellationToken cancel);
 
-    void Cleanup(Task? trigger = null)
-    {
-        bool idle = trigger is not null;
-        Log($"Cleanup triggered, idle: {idle}");
-
-        GC.Collect();
-        if (idle) return;
-
-        // Shutdown...
-    }
-
-    public async Task<bool> Listen(CancellationToken cancel, byte incoming)
+    public async Task<bool> Listen(byte incoming, CancellationToken cancel)
     {
         OnListen();
         Debug($"v{Version} Running...");
         
         try
         {
-            while (await Listen(incoming))
+            while (await Handle(incoming, cancel))
                 continue;
 
             Debug($"End {Version}");

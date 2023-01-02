@@ -107,7 +107,7 @@ public class NabuNetProtocolService : NabuService
 
             yield return new(
                 name,
-                path,
+                Path.GetFileNameWithoutExtension(path),
                 sourceName,
                 source.Type,
                 realPath,

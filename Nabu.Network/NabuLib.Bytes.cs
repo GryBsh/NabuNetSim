@@ -67,11 +67,12 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Converts a String to ASCII bytes
+    ///     Converts a String to ASCII bytes,
+    ///     prefixed by 1 byte for it's size
     /// </summary>
     /// <param name="str"></param>
     /// <returns></returns>
-    public static IEnumerable<byte> FromASCII(string str)
+    public static IEnumerable<byte> FromSizedASCII(string str)
     {
         yield return (byte)str.Length;
         foreach (byte b in Encoding.ASCII.GetBytes(str))
@@ -85,6 +86,14 @@ public static partial class NabuLib
     /// <returns></returns>
     public static string ToASCII(byte[] buffer) 
         => Encoding.ASCII.GetString(buffer);
+
+    // <summary>
+    ///     Converts  a String
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <returns></returns>
+    public static Span<byte> FromASCII(string buffer)
+        => Encoding.ASCII.GetBytes(buffer);
 
     /// <summary>
     ///     Converts a Boolean into a byte

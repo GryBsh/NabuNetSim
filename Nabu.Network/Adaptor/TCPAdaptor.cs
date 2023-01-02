@@ -12,11 +12,13 @@ public class TCPAdaptor
     public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
     {
         var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>();
-        var socket = new Socket(
+        using var socket = new Socket(
             AddressFamily.InterNetwork,
             SocketType.Stream,
             ProtocolType.Tcp
         );
+        socket.NoDelay = true;
+        socket.LingerState = new LingerOption(false, 0);
 
         if (!int.TryParse(settings.Port, out int port))
         {
@@ -57,7 +59,7 @@ public class TCPAdaptor
                      stream
                  );
                 logger.LogInformation($"Adaptor Started");
-                await adaptor.WaitRun(stopping);
+                await adaptor.Listen(stopping);
             }
             catch (Exception ex)
             {

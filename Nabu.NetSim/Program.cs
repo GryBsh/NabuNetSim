@@ -30,6 +30,7 @@ await   Host
                 services.AddTransient<NabuNetProtocolService>();
                 services.AddTransient<NabuNetProtocol>();
                 services.AddTransient<IProtocol, ACPProtocol>();
+                services.AddTransient<IProtocol, RetroNetTelnetProtocol>();
                 services.AddHostedService<Simulation>(); 
             }
         ).RunConsoleAsync();

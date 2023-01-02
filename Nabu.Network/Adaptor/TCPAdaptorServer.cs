@@ -16,7 +16,7 @@ public class TCPAdaptorServer
             SocketType.Stream,
             ProtocolType.Tcp
         );
-
+        socket.LingerState = new LingerOption(false, 0);
         if (!int.TryParse(settings.Port, out int port))
         {
             port = 16942;
@@ -44,7 +44,7 @@ public class TCPAdaptorServer
                      logger,
                      stream
                 );
-                adaptor.WaitRun(stopping);
+                adaptor.HandleConnection(stopping);
             }
             catch ( Exception ex )
             {

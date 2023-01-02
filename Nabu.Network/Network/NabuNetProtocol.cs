@@ -266,7 +266,7 @@ public class NabuNetProtocol : Protocol
         return true;
     }
 
-    public override async Task<bool> Listen(byte incoming)
+    public override async Task<bool> Handle(byte incoming, CancellationToken cancel)
     {
         switch (incoming)
         {
@@ -326,7 +326,7 @@ public class NabuNetProtocol : Protocol
                 break;
         }
 
-        return false;
+        return true;
     }
 
     public override void OnListen() { }
