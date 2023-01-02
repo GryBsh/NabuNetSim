@@ -36,38 +36,14 @@ public class EmulatedAdaptor : NabuService
 
 
     #region Adaptor Loop   
-    
-    void Cleanup(Task? trigger = null)
-    {
-        bool idle = trigger is not null;
-        Log($"Cleanup triggered, idle: {idle}");
-      
-        GC.Collect();
-        if (idle) return;
-        
-        // Shutdown...
-        NabuNet.Detach();
-        foreach (var protocol in Protocols)
-            protocol.Detach();
-    }
-
-    public virtual async void HandleConnection(CancellationToken token)
-        => await Listen(token);
 
     public virtual async Task Listen(CancellationToken cancel)
-    {
-        Task idleCleanup = Task.CompletedTask;
-        CancellationTokenSource idle = CancellationTokenSource.CreateLinkedTokenSource(cancel);
-        
+    {   
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {
             try
-            {
-                if (!idleCleanup.IsCompleted) idle.Cancel(); // Cancel the idle cleanup task
-                idleCleanup = Task.Delay(60000, idle.Token)
-                                  .ContinueWith(Cleanup, idle.Token);
-
+            {   
                 // Read the command message
                 byte incoming = Reader.ReadByte();
                 
@@ -76,9 +52,11 @@ public class EmulatedAdaptor : NabuService
                     Protocols.FirstOrDefault(p => p.Command == incoming) ?? // Protocols are bound to specific command messages
                     NabuNet; // Defaults to NABUNet
 
-                if (handler.Attached && // If the handler has been attached to the adapter
-                    await handler.Handle(incoming, cancel) // And the handler does not signal an abort.
-                ) continue; // Then continue to the next command message
+                if (handler.Attached) // If the handler has been attached to the adapter
+                {
+                    var shouldContinue = await handler.Listen(incoming, cancel);
+                    continue; // Then continue to the next command message
+                }
 
                 Trace("Adaptor Loop Break");
                 break;
@@ -87,11 +65,10 @@ public class EmulatedAdaptor : NabuService
             {
                 continue; // Timeouts are normal over serial connections
             }
-            catch (EndOfStreamException ex)
+            catch (EndOfStreamException)
             {
-                idle.Cancel();
-                Cleanup();
-                throw ex;
+                Log($"Disconnect Detected");
+                break;
             }
             catch (Exception ex)
             {
@@ -101,8 +78,10 @@ public class EmulatedAdaptor : NabuService
         }
                 
         Log("Disconnected");
-        idle.Cancel();
-        Cleanup();
+       
+        NabuNet.Detach();
+        foreach (var protocol in Protocols)
+            protocol.Detach();
     }
     #endregion
 

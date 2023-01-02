@@ -9,7 +9,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.NetSim", "Nabu.NetSim\
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.Network.ACP", "Nabu.Network.ACP\Nabu.Network.ACP.csproj", "{939F041D-A487-49B9-B14A-A6A8DB80B43F}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nabu.Sockets", "Nabu.Telnet\Nabu.Sockets.csproj", "{04B61AEF-D54C-4DED-BA98-BA0AADD7F419}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nabu.Sockets", "Nabu.Sockets\Nabu.Sockets.csproj", "{04B61AEF-D54C-4DED-BA98-BA0AADD7F419}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

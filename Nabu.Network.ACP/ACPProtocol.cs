@@ -23,7 +23,7 @@ public class ACPProtocol : Protocol
         SendFramed(
             0x80,
             NabuLib.FromShort(Version),
-            NabuLib.FromSizedASCII(Emulator.Id)
+            NabuLib.ToSizedASCII(Emulator.Id)
         );
     }
 
@@ -31,7 +31,7 @@ public class ACPProtocol : Protocol
     {
         SendFramed(
             0x82,
-            NabuLib.FromSizedASCII(message)
+            NabuLib.ToSizedASCII(message)
         );
     }
     void StorageLoaded(short index, int length)
@@ -146,56 +146,57 @@ public class ACPProtocol : Protocol
         var (_, date, time) = Storage.DateTime();
         SendFramed(
             0x85,
-            NabuLib.FromSizedASCII(date),
-            NabuLib.FromSizedASCII(time)
+            NabuLib.ToSizedASCII(date),
+            NabuLib.ToSizedASCII(time)
         );
         Log($"NA: DataTime Send");
     }
 
     #endregion
 
-    public override void OnListen()
+    public override async Task Handle(byte command, CancellationToken cancel)
     {
-        Log($"v{Version} Started");
         StorageStarted();
-    }
 
-    
+        while (cancel.IsCancellationRequested is false)
+            try
+            {
+                var (length, buffer) = ReadFrame();
+                if (length is 0)
+                    return;
 
-    public override async Task<bool> Handle(byte command, CancellationToken cancel)
-    {
-        var (length, buffer) = ReadFrame();
-        if (length is 0)
-            return false;
+                (int next, command) = NabuLib.Pop(buffer, 0);
+                var (_, message) = NabuLib.Slice(buffer, next, length);
 
-        (int next, command) = NabuLib.Pop(buffer, 0); 
-        var (_, message)    = NabuLib.Slice(buffer, next, length);
-        
-        switch (command)
-        {
-            case 0x00:
-                Warning($"v{Version} Received: 0, Aborting");
-                return false;
-            case 0xEF:
-                Log($"v{Version} Ending");
-                //Storage.End();
-                return false;
-            case 0x01:
-                await Open(message);
-                return true;
-            case 0x02:
-                Get(message);
-                return true;
-            case 0x03:
-                Put(message);
-                return true;
-            case 0x04:
-                DateTime();
-                return true;
-            default:
-                Warning($"Unsupported: {Format(command)}");
-                return true;
-        }
+                switch (command)
+                {
+                    case 0x00:
+                        Warning($"v{Version} Received: 0, Aborting");
+                        break;
+                    case 0xEF:
+                        break;
+                    case 0x01:
+                        await Open(message);
+                        continue;
+                    case 0x02:
+                        Get(message);
+                        continue;
+                    case 0x03:
+                        Put(message);
+                        continue;
+                    case 0x04:
+                        DateTime();
+                        continue;
+                    default:
+                        Warning($"Unsupported: {Format(command)}");
+                        continue;
+                }
+            }
+            catch (Exception ex)
+            {
+                Error(ex.Message);
+            }
+        return;
     }
 
     public override void Detach()

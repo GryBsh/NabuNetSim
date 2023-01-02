@@ -266,14 +266,14 @@ public class NabuNetProtocol : Protocol
         return true;
     }
 
-    public override async Task<bool> Handle(byte incoming, CancellationToken cancel)
+    public override async Task Handle(byte incoming, CancellationToken cancel)
     {
         switch (incoming)
         {
             #region NabuNet "Classic" Messages
             case 0:
                 Warning($"NA: Received 0, Aborting");
-                return false;
+                break;
             case Message.Reset:
                 Ack();
                 Log($"NPC: {nameof(Message.Reset)}, NA: {nameof(Message.ACK)} {nameof(StateMessage.Confirmed)}");
@@ -306,28 +306,10 @@ public class NabuNetProtocol : Protocol
                 ChannelChange();
                 break;
             #endregion
-
-            // RetroNet clashes with ACP - Dropping Support for the moment
-            #region RetroNET Messages
-            /*
-            case RetroNetMessage.RequestStoreHttpGet:
-                await RequestStoreHttpGet();
-                break;
-            case RetroNetMessage.RequestStoreGetSize:
-                RequestStoreGetSize();
-                break;
-            case RetroNetMessage.RequestStoreGetData:
-                RequestStoreGetData();
-                break;
-            */
-            #endregion
-
             default:
                 break;
         }
 
-        return true;
+        return;
     }
-
-    public override void OnListen() { }
 }

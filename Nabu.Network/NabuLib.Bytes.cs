@@ -72,7 +72,7 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="str"></param>
     /// <returns></returns>
-    public static IEnumerable<byte> FromSizedASCII(string str)
+    public static IEnumerable<byte> ToSizedASCII(string str)
     {
         yield return (byte)str.Length;
         foreach (byte b in Encoding.ASCII.GetBytes(str))

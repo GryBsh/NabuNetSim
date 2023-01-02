@@ -26,8 +26,10 @@ public record AdaptorSettings
     public string? Source { get; set; } // The name of the defined source to use for program images
     public string? Channel { get; set; } // The current "Channel", the name of the program image or pak folder to load.
     public int BaudRate { get; set; } = 115200; // 111865 or 111900 - I've seen both used;
-    public int? SendDelay { get; set; } // The send delay for SlowerSend
+    
+    public int SendDelay { get; set; } = 0; // The send delay for SlowerSend
     public int ReadTimeout { get; set; } = 1000; // The serial port timeout
+    
     public string StoragePath { get; set; } = "./Files"; //This folder is shipped IN zip with binaries.
 
 }

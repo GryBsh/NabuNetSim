@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Text;
+using System;
 
 namespace Nabu.Adaptor;
 
@@ -41,6 +42,12 @@ public abstract class Protocol : NabuService, IProtocol
         return b;
     }
 
+    protected async Task<byte[]> RecvAsync(int length) 
+    {
+        var buffer = new byte[length];
+        await Stream.ReadAsync(buffer.AsMemory(0, length));
+        return buffer;
+    }
 
     /// <summary>
     ///     Receives a byte and returns if it was the expected byte
@@ -61,7 +68,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// </summary>
     /// <param name="length"></param>
     /// <returns></returns>
-    protected byte[] Recv(int length = 1)
+    protected byte[] Recv(int length)
     {
         var buffer = Reader.ReadBytes(length);
         Trace($"NA: RCVD: {FormatSeperated(buffer)}");
@@ -166,7 +173,8 @@ public abstract class Protocol : NabuService, IProtocol
 
     protected (short, byte[]) ReadFrame()
     {
-        var length  = NabuLib.ToShort(Recv(2));
+        var ln = Recv(2);
+        var length = NabuLib.ToShort(ln);
         if (0 > length)
         {
             Warning($"NabuNet message detected in frame, aborting.");
@@ -195,26 +203,20 @@ public abstract class Protocol : NabuService, IProtocol
 
         Stream = stream;
         Settings = settings;
-        SendDelay = settings.SendDelay ?? 0;
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         return true;
     }
 
-    public abstract void OnListen();
-    public abstract Task<bool> Handle(byte unhandled, CancellationToken cancel);
+    public abstract Task Handle(byte unhandled, CancellationToken cancel);
 
     public async Task<bool> Listen(byte incoming, CancellationToken cancel)
-    {
-        OnListen();
-        Debug($"v{Version} Running...");
-        
+    { 
         try
         {
-            while (await Handle(incoming, cancel))
-                continue;
-
-            Debug($"End {Version}");
+            Log($"Start v{Version}");
+            await Handle(incoming, cancel);
+            Log($"End v{Version}");
             return true;
         }
         catch (TimeoutException) {

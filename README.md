@@ -9,7 +9,9 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 ## Known Issues
 
-- > RetroNet support is temporarily unavailable.
+- > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
+- > While using the X64 build on macOS, the serial port is not working, also a signing issue.
+- > The RetroNet Telnet app is supported, but no other parts. And it's experimental.
 - > HCCA-ACP support is experimental.
 - > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
   with one value when it's first connecting: `0x8F|0x05`, then when the program is

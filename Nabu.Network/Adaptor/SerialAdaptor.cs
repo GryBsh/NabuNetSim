@@ -24,12 +24,18 @@ public class SerialAdaptor
             Handshake = Handshake.None,
             RtsEnable = true,
             DtrEnable = true,
-            ReadTimeout = settings.ReadTimeout,
-            ReadBufferSize = 1024,
-            WriteBufferSize = 1024,
+            ReadBufferSize = 2,
+            WriteBufferSize = 2,
         };
 
-        settings.SendDelay ??= Constants.DefaultSerialSendDelay;
+        if (settings.ReadTimeout > 0)
+        {
+            serial.ReadTimeout = settings.ReadTimeout;
+        }
+
+        settings.SendDelay = settings.SendDelay > 0 ?
+                             settings.SendDelay :
+                             Constants.DefaultSerialSendDelay;
 
         logger.LogInformation(
             $"\n\t Port: {settings.Port}" +

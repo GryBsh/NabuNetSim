@@ -3,63 +3,84 @@ using Microsoft.Extensions.Logging;
 using Nabu.Network;
 using System.Net.Sockets;
 using System.Net;
+using System.Diagnostics;
 
 namespace Nabu.Adaptor;
 
 public class TCPAdaptor
 {
+
+
     private TCPAdaptor() { }
-    public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
+
+    public static Socket Socket()
     {
-        var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>();
-        using var socket = new Socket(
+        var socket = new Socket(
             AddressFamily.InterNetwork,
             SocketType.Stream,
             ProtocolType.Tcp
         );
         socket.NoDelay = true;
+        //socket.SendBufferSize = 2;
+        //socket.ReceiveBufferSize = 2;
         socket.LingerState = new LingerOption(false, 0);
+        return socket;
+    }
+
+    static async void ServerListen(ILogger logger, EmulatedAdaptor adaptor, Stream steam, CancellationToken stopping)
+    {
+        logger.LogInformation($"Adaptor Started");
+        await adaptor.Listen(stopping);
+    }
+    
+    public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
+    {
+        var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>();
+        var socket = Socket();
+        //socket.LingerState = new LingerOption(false, 0);
 
         if (!int.TryParse(settings.Port, out int port))
         {
             port = Constants.DefaultTCPPort;
         };
-
-        settings.SendDelay = settings.SendDelay ?? Constants.DefaultTCPSendDelay;
+        
+        settings.SendDelay = settings.SendDelay > 0 ?
+                             settings.SendDelay : 
+                             Constants.DefaultTCPSendDelay;
 
         logger.LogInformation(
             $"\n\t Port: {port}" +
             $"\n\t SendDelay: {settings.SendDelay}"
         );
-
-        while (socket.Connected is false)
-            try
-            {
-                socket.Connect(
-                    new IPEndPoint(IPAddress.Loopback, port)
-                );
-            }
-            catch (Exception ex)
-            {
-                logger.LogWarning(ex.Message);
-                Thread.Sleep(5000);
-            }
-
-        var stream = new NetworkStream(socket);
         
+        try
+        {
+            socket.Bind(new IPEndPoint(IPAddress.Any, port));
+            socket.Listen();
+            logger.LogInformation("Server Started.");
+        } catch (Exception ex)
+        {
+            logger.LogError(ex.Message);
+            return;
+        }
+           
         while(stopping.IsCancellationRequested is false)
             try
             {
-                if (socket.Connected is false) break;
+                Socket? incoming = await socket.AcceptAsync(stopping);
+                
+                var stream = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
                      settings,
                      serviceProvider.GetRequiredService<NabuNetProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
                      stream
-                 );
+                );
+                
                 logger.LogInformation($"Adaptor Started");
-                await adaptor.Listen(stopping);
+                ServerListen(logger, adaptor, stream, stopping);
+                logger.LogInformation($"Client Connected");
             }
             catch (Exception ex)
             {
@@ -67,7 +88,7 @@ public class TCPAdaptor
                 break;   
             }
         
-        stream.Dispose();
         socket.Close();
+        socket.Dispose();
     }
 }
