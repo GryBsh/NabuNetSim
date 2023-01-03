@@ -21,16 +21,16 @@ public class TCPAdaptor
             ProtocolType.Tcp
         );
         socket.NoDelay = true;
-        //socket.SendBufferSize = 2;
-        //socket.ReceiveBufferSize = 2;
+        socket.DontFragment = true;
         socket.LingerState = new LingerOption(false, 0);
         return socket;
     }
 
-    static async void ServerListen(ILogger logger, EmulatedAdaptor adaptor, Stream steam, CancellationToken stopping)
+    static async void ServerListen(ILogger logger, EmulatedAdaptor adaptor, Stream stream, CancellationToken stopping)
     {
         logger.LogInformation($"Adaptor Started");
         await adaptor.Listen(stopping);
+        await stream.DisposeAsync();
     }
     
     public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
@@ -63,13 +63,15 @@ public class TCPAdaptor
             logger.LogError(ex.Message);
             return;
         }
-           
-        while(stopping.IsCancellationRequested is false)
+        
+        logger.LogInformation($"Adaptor Started");
+        
+        while (stopping.IsCancellationRequested is false)
             try
             {
-                Socket? incoming = await socket.AcceptAsync(stopping);
+                Socket incoming = await socket.AcceptAsync(stopping);
                 
-                var stream = new NetworkStream(incoming);
+                var stream  = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
                      settings,
                      serviceProvider.GetRequiredService<NabuNetProtocol>(),
@@ -78,7 +80,7 @@ public class TCPAdaptor
                      stream
                 );
                 
-                logger.LogInformation($"Adaptor Started");
+                
                 ServerListen(logger, adaptor, stream, stopping);
                 logger.LogInformation($"Client Connected");
             }

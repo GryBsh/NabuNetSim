@@ -77,8 +77,9 @@ public class RetroNetTelnetProtocol : Protocol
                 WriteLine($"Capitalist Swine Detected, implemeting protocols...");
                 Log($"Opening Socket to {hostname}:{port}...");
                 WriteLine($"Connecting to {hostname}:{port}");
+                
                 using Socket socket = TCPAdaptor.Socket();
-                //socket.LingerState = new LingerOption(false, 0);
+                
                 try
                 {
                     await socket.ConnectAsync(
