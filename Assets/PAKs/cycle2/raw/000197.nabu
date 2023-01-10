@@ -1,0 +1,458 @@
+  FANCY FONT CTRL-V HELP.      1 of 19
+
+  This HELP contains summaries of the
+  Pfont ">>" instructions, the
+  parameters, and the format
+  commands.  See the FANCY FONT TUTOR
+  and the Fancy Font User's Reference 
+  Manual for more details and
+  learning assistance.
+
+  You can give an instruction in
+  response to the ">>" prompt.
+  Special HELP is given when you type
+  "?" in response to a parameter ">"
+  prompt.
+
+
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.      2 of 19
+
+         SUMMARY OF INSTRUCTIONS
+         =======================
+
+  ? -- from ">>", it displays a list
+  of allowed instructions and
+  parameters.  From a parameter
+  prompt ">", it shows allowed
+  settings.
+
+  & -- lists all parameters with
+  their current settings.  Most
+  useful.
+
+  < -- invoke parameter file.  You
+  are prompted for a filename.  File
+  must be on disk, containing valid
+  keystrokes.  Use Nabu Writer to
+  create parameter files.
+
+
+
+  FANCY FONT CTRL-V HELP.      3 of 19
+
+  GO -- when pressed alone in response
+  to a ">", ends your input.  To ">>",
+  starts printing.
+
+  CTRL-C -- resets all parameters to
+  their defaults.  Prompts for your
+  confirmation, first.
+
+  CTRL-U -- cancels current line you
+  entered to that point.
+
+  CTRL-V -- displays this HELP.
+
+  DELETE -- cancels last character
+  typed.
+
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.      4 of 19
+
+  Pressing GO to ">>" starts printing.
+  The following printing options take
+  effect after printing the current
+  line.  There won't be an instant
+  reaction.
+
+  CTRL-C -- Stop printing.  Use as a
+  "panic button".  It allows you to
+  either continue or quit.
+
+  CTRL-F -- Skip to next file in the
+  FI list.
+
+  CTRL-P -- Skip to next page.
+
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.      5 of 19
+
+          SUMMARY OF PARAMETERS
+             [with defaults]
+          =====================
+
+  "+" or "-" followed by a two-letter
+  parameter name.
+
+  BM -- Bottom margin [+BM 0.75]
+     Distance from bottom of text to
+  bottom of page, in inches.  Range
+  is 0.0 to 150.0 inches.
+
+  CF -- Concatenate files [+CF]
+     Text files to be printed without
+  any page break between them.  A -CF
+  inserts page breaks.
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.      6 of 19
+
+  CI -- Command indicator [+CI \]
+     Specify a character to be used 
+  to indicate commands embedded in
+  text files.
+
+  EP -- Epson fonts [-EP]
+     Setting "+EP" enables Epson
+  fonts, regardless of any Fancy
+  fonts in the FO parameter.
+
+  FI -- Text Filename(s) [-FI]
+     Default parameter, can specify
+  up to fifteen names of files to be
+  printed.
+
+  FL -- Footer line [-FL]
+     String to be printed at bottom
+  of each page. Can contain 
+  embedded commands.
+
+
+
+  FANCY FONT CTRL-V HELP.      7 of 19
+
+  FM -- Footer Margin [+FM 0.25]
+     Distance from bottom of footer
+  line to bottom of page in inches.
+  Range 0.0 to 150.0 inches.
+
+  FO -- Font filename(s) [-FO]
+     Contains up to ten names of
+  Fancy font files to use, in \f0,
+  \f1, \f2 sequence.
+
+  FP -- First page [-FP]
+     Selects only a portion of the
+  document print by suppressing all
+  pages before this one.  Give number
+  of first page to print.
+
+  HL -- Header line [-HL]
+     String to be printed at top of
+  each page. Can contain commands.
+
+
+
+  FANCY FONT CTRL-V HELP.      8 of 19
+
+  HM -- Header margin [+HM 0.25]
+     Distance from top of page to top
+  of header line in inches.  Range is
+  0.0 to 150.0 inches.
+
+  IS -- Initialization string [-IS]
+     String to be placed at the very
+  beginning of document when printed.
+  Usually contain embedded commands.
+
+  LM -- Left margin [+LM 1.0]
+     Location of left margin, in
+  inches, from left edge of page.
+  Range 0.0 to 8.0 inches.
+
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.      9 of 19
+
+  LP -- Last page [-LP]
+     Selects a portion of the
+  document to print by suppressing
+  all following pages.  Give page
+  number of last page to print.
+  Range 1 to 9999.
+
+  LW -- Line width [+LW 6.5]
+     Line width, in inches.  Line
+  begins at left margin (LM).  Range
+  is 0.0 to 8.0 inches.
+
+  NF -- Not on first page [-NF]
+     Suppress header and footer lines
+  from appearing on first page by
+  "+NF".
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    10 of 19
+
+  PF -- Process formfeeds [+PF]
+     Recognizes CTRL-L formfeed
+  characters from text file, as
+  created by "\d012".  Causes page
+  break without pagination.  Rarely
+  used.
+
+  PG -- Paginate enable [+PG]
+     Enables the TM, BM, HM, HL, FM,
+  FL, and PL parameters.  Rarely
+  changed.
+
+  PL -- Page length [+PL 11.0]
+     Length of page, in inches, for
+  pagination.  Range is 0.0 to 150.0
+  inches.
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    11 of 19
+
+  PN -- Page number [+PN 1]
+     Specify the number to be
+  associated with page.
+
+  PP -- Page pause [-PP]
+     Set "+PP" when feeding single
+  sheets during print.  It beeps for
+  paper and waits for a new sheet.
+
+  RD -- Rough draft [+RD 0]
+     Set "+RD 2" for fastest
+  printing.  Set "+RD 1" for more
+  detail.  Leave at "+RD 0" for
+  finest Fancy font print.
+
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    12 of 19
+
+  SD -- Screen display [-SD]
+     Preview document on screen
+  instead of printer with "+SD".
+  Displays font numbers.
+
+  SP -- Interline space [+SP 0.045]
+     Adjusts vertical spacing between
+  lines for entire document.  Double
+  space 12-point Fancy font with "+SP
+  0.1667".
+
+  SU -- Substitute strings [-SU]
+     List of strings to be
+  substituted during printing for
+  "\s0", "\s1", "\s2", etc.  Up to
+  10 strings can be listed. Give
+  them in sequence.
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    13 of 19
+
+  TB -- Tab stops [+TB 0.8]
+     One number is the interval
+  between tab stops, in inches.  A
+  list of two or more numbers gives
+  the absolute tab stops, in inches,
+  measured from the left margin.
+
+  TM -- Top margin [+TM 0.75]
+     Distance from top of page to top
+  of text body, in inches.
+  Range 0 to 150 inches.
+
+  See details and settings in "&".
+  When trying new settings, vary only
+  one parameter at a time to see its
+  effect.
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    14 of 19
+
+         FORMATTING COMMANDS
+         ===================
+
+  \a<4int> -- Absolute horizontal
+  position, <4int>/120 inches from
+  left margin.  Range is \a0000 to
+  \a0959.
+
+  \b -- Break from justification, for
+  current line only.
+
+  \c -- Center current line, up to \t
+  or \a, if any.
+
+  \d<3int> -- ASCII character, code
+  <3int>.  Range \d000 to \d127.
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    15 of 19
+
+  \f<int> -- Font selection.  Range
+  \f0 to \f9.  Use for FO parameter
+  list of Fancy fonts, or Epson
+  fonts.
+
+  \h -- Horizontal increment of 1/120
+  inch rightward.  Rarely used.
+
+  \i<3int> -- Relative horizontal
+  motion, <3int>/120 inches right.
+  Range \i000 to \i255.
+
+  \j -- Justification ON.  Begins
+  with current line until cancelled
+  by \k.
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    16 of 19
+
+  \k -- Justification OFF.  Ragged
+  right begins with current line.
+
+  \p -- New page.  Entire line on
+  next page.  Footer and header
+  printed, if any.
+
+  \r -- Right align current line
+  flush with right margin.  Only text
+  to right of "\r" is moved.
+
+  \s<int> -- Substitute string number
+  <int>.  Range \s0 to \s9.  Strings
+  must be given in the SU parameter
+  at print time.  Strings may contain
+  text, commands, or both.
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    17 of 19
+
+  sf -- Substitute filename,
+  including extension, of text file
+  being printed.
+
+  \s# -- Substitute current printing
+  page number.  Used chiefly in
+  header and footer lines, rather
+  than in main text.
+
+  \t -- Tab.  Horizontal move to next
+  tab stop defined in TB parameter.
+  Default is 0.8 inches, 8 normal
+  Epson characters.
+
+  \u -- Underlining ON or OFF.  Use
+  in pairs.  First "\u" switches ON;
+  second "\u" switches OFF; third
+  "\u" switches ON; and so on.
+
+
+
+
+  FANCY FONT CTRL-V HELP.    18 of 19
+
+  \v<4int> -- Relative vertical
+  motion.  Gives a space of <4int>/72
+  inches before current line,
+  regardless of position of \v within
+  line.  Range 0000 to 9999.
+
+  \w<4int> -- Absolute vertical
+  motion.  Locates the entire current
+  line downwards to <4int>/72 inches
+  from top of page.  Used for titles
+  and foot notes.  Range 0000 to 9999.
+
+
+
+
+
+
+
+
+
+
+
+  FANCY FONT CTRL-V HELP.    19 of 19
+
+  REMEMBER THESE TRICKS ...
+
+  ... when trying new features, make
+  one change at a time between
+  drafts.
+
+  ... check parameter settings with
+  "&" before printing.
+
+  ... use "+SD" to preview, "+RD 2"
+  for fast draft printing.
+
+  ... print out this HELP by entering
+  its filename, PFONT.HLP, to the
+  ">>" prompt followed by pressing
+  GO 3 times.  Before doing this,
+  change the command indicator to
+  something different from "\".
+
+
+
+"\u" switches ON;
+  second "\u" switches OFF; third
+  "\u" switches ON; and
