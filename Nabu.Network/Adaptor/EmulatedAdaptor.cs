@@ -5,21 +5,22 @@ namespace Nabu.Adaptor;
 
 public class EmulatedAdaptor : NabuService
 {
-    readonly AdaptorSettings Settings;
+    //readonly AdaptorSettings Settings;
     readonly Stream Stream;
     readonly BinaryReader Reader;
-    readonly NabuNetProtocol NabuNet;
+    readonly ClassicNabuProtocol NabuNet;
     //readonly ACPProtocol ACP;
     IEnumerable<IProtocol> Protocols { get; }
 
     public EmulatedAdaptor(
         AdaptorSettings settings,
-        NabuNetProtocol nabu,
+        ClassicNabuProtocol nabu,
         //ACPProtocol acp,
         IEnumerable<IProtocol> protocols,
         ILogger logger,
-        Stream stream
-    ) : base(logger)
+        Stream stream,
+        int index = -1
+    ) : base(logger, settings, index)
     {
         Settings = settings;
         NabuNet = nabu;
@@ -38,7 +39,8 @@ public class EmulatedAdaptor : NabuService
     #region Adaptor Loop   
 
     public virtual async Task Listen(CancellationToken cancel)
-    {   
+    {
+        
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {
@@ -65,11 +67,18 @@ public class EmulatedAdaptor : NabuService
             {
                 continue; // Timeouts are normal over serial connections
             }
-            catch (EndOfStreamException)
+            catch (IOException ex)
             {
-                Log($"Disconnect Detected");
-                break;
+                // There is a big in dotnet 7 where Stream throws an IOException
+                // instead of a TimeoutException.
+                if (ex.HResult == -2147023436) continue; // <-- Thats the HResult for a Timeout
+                else
+                {
+                    Log($"Adaptor Loop Error: {ex.Message}");
+                    break;
+                }
             }
+            
             catch (Exception ex)
             {
                 Error(ex.Message);

@@ -140,7 +140,7 @@ public static partial class NabuLib
         int offset = (2 * (segment + 1)) + (segment * length);
         var (next, message) = Slice(buffer, offset, length);
         
-        logger.LogDebug("Sending Packet from PAK");
+        logger.LogDebug("Slicing Packet from PAK");
         var crc = GenerateCRC(message[0..^2]);
         message[^2] = crc[0];    //CRC MSB
         message[^1] = crc[1];    //CRC LSB

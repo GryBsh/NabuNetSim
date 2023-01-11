@@ -36,12 +36,13 @@ public class FileStorageHandler : IStorageHandler
         }
     }
 
-    public (bool, string, byte[]) Get(int offset, short length)
+    public async Task<(bool, string, byte[])> Get(int offset, short length)
     {
         try
         {
             var buffer = new byte[length];
-            File?.OpenRead().Read(buffer, offset, length);
+            using var stream = File!.OpenRead();
+            await stream.ReadAsync(buffer, offset, length);
             return (true, string.Empty, buffer);
         }
         catch (Exception ex)
@@ -50,14 +51,14 @@ public class FileStorageHandler : IStorageHandler
         }
     }
 
-    public (bool, string) Put(int offset, byte[] buffer)
+    public async Task<(bool, string)> Put(int offset, byte[] buffer)
     {
         try
         {
             if (Flags.HasFlag(StorageFlags.ReadOnly))
                 return (false, "File Opened Read Only");
-
-            File?.OpenWrite().Write(buffer, offset, buffer.Length);
+            using var stream = File!.OpenWrite();
+            await stream.WriteAsync(buffer, offset, buffer.Length);
             return (true, string.Empty);
         }
         catch (Exception ex)
@@ -71,7 +72,7 @@ public class FileStorageHandler : IStorageHandler
         File = null;
     }
 
-    public (bool, string, byte, byte[]) Command(byte index, byte command, byte[] data)
+    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
     {
         throw new NotImplementedException();
     }

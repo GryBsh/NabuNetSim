@@ -6,10 +6,10 @@ using System.Text;
 
 namespace Nabu.Network;
 
-public class ACPProtocol : Protocol
+public class NHACPProtocol : Protocol
 {
     ACPProtocolService Storage { get; }
-    public ACPProtocol(ILogger<ACPProtocol> logger) : base(logger)
+    public NHACPProtocol(ILogger<NHACPProtocol> logger) : base(logger)
     {
         Storage = new(Logger, Settings);
     }
@@ -89,7 +89,7 @@ public class ACPProtocol : Protocol
         }
     }
 
-    void Get(byte[] buffer)
+    async Task Get(byte[] buffer)
     {
         Log($"NPC: Get");
         try
@@ -99,7 +99,7 @@ public class ACPProtocol : Protocol
             (i, short length)   = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
             OnPacketSliced(i, buffer.Length);
 
-            var (success, error, data) = Storage.Get(index, offset, length);
+            var (success, error, data) = await Storage.Get(index, offset, length);
             if (success is false) StorageError(error);
             else
             {
@@ -114,7 +114,7 @@ public class ACPProtocol : Protocol
 
     }
 
-    void Put(byte[] buffer)
+    async Task Put(byte[] buffer)
     {
         Log($"NPC: Put");
         try
@@ -125,7 +125,7 @@ public class ACPProtocol : Protocol
             (i, var data)       = NabuLib.Slice(buffer, i, length);
             OnPacketSliced(i, buffer.Length);
 
-            var (success, error) = Storage.Put(index, offset, data);
+            var (success, error) = await Storage.Put(index, offset, data);
             if (success)
             {
                 Log($"Put into slot {index}: OK");
@@ -140,10 +140,10 @@ public class ACPProtocol : Protocol
         }
 
     }
-    void DateTime()
+    async Task DateTime(byte[]? none)
     {
         Log($"NPC: DateTime");
-        var (_, date, time) = Storage.DateTime();
+        var (_, date, time) = await Storage.DateTime();
         SendFramed(
             0x85,
             NabuLib.ToSizedASCII(date),
@@ -154,10 +154,23 @@ public class ACPProtocol : Protocol
 
     #endregion
 
+    protected virtual IDictionary<byte, Func<byte[], Task>> PrepareHandlers()
+    {
+        var handlers = new Dictionary<byte, Func<byte[], Task>>()
+        {
+            { 0x01, Open },
+            { 0x02, Get },
+            { 0x03, Put },
+            { 0x04, DateTime }
+        };
+        return handlers;
+    }
+
     public override async Task Handle(byte command, CancellationToken cancel)
     {
+        Log($"Start v{Version}");
         StorageStarted();
-
+        var handlers = PrepareHandlers();
         while (cancel.IsCancellationRequested is false)
             try
             {
@@ -170,23 +183,15 @@ public class ACPProtocol : Protocol
 
                 switch (command)
                 {
+                    
                     case 0x00:
                         Warning($"v{Version} Received: 0, Aborting");
                         break;
                     case 0xEF:
                         break;
-                    case 0x01:
-                        await Open(message);
-                        continue;
-                    case 0x02:
-                        Get(message);
-                        continue;
-                    case 0x03:
-                        Put(message);
-                        continue;
-                    case 0x04:
-                        DateTime();
-                        continue;
+                    case var c when handlers.ContainsKey(c):
+                        await handlers[command](message);
+                        break;
                     default:
                         Warning($"Unsupported: {Format(command)}");
                         continue;
@@ -196,6 +201,8 @@ public class ACPProtocol : Protocol
             {
                 Error(ex.Message);
             }
+        
+        Log($"End v{Version}");
         return;
     }
 

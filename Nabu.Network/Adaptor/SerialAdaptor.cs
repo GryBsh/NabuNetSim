@@ -8,8 +8,12 @@ namespace Nabu.Adaptor;
 public class SerialAdaptor
 {
     private SerialAdaptor() { }
-    public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
-    {
+    public static async Task Start(
+        IServiceProvider serviceProvider, 
+        SerialAdaptorSettings settings, 
+        CancellationToken stopping,
+        int index = -1
+    ) {
         var logger = serviceProvider.GetRequiredService<ILogger<SerialAdaptor>>();
 
         var serial = new SerialPort(
@@ -33,15 +37,10 @@ public class SerialAdaptor
             serial.ReadTimeout = settings.ReadTimeout;
         }
 
-        settings.SendDelay = settings.SendDelay > 0 ?
-                             settings.SendDelay :
-                             Constants.DefaultSerialSendDelay;
-
         logger.LogInformation(
             $"\n\t Port: {settings.Port}" +
             $"\n\t BaudRate: {settings.BaudRate}" +
-            $"\n\t ReadTimeout: {settings.ReadTimeout}" +
-            $"\n\t SendDelay: {settings.SendDelay}"
+            $"\n\t ReadTimeout: {settings.ReadTimeout}"
         );
 
         while (serial.IsOpen is false)
@@ -58,10 +57,11 @@ public class SerialAdaptor
         {
             var adaptor = new EmulatedAdaptor(
                 settings,
-                serviceProvider.GetRequiredService<NabuNetProtocol>(),
+                serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                 serviceProvider.GetServices<IProtocol>(),
                 logger,
-                serial.BaseStream
+                serial.BaseStream,
+                index
             );
             logger.LogInformation($"Adaptor Started");
             await adaptor.Listen(stopping);

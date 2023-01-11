@@ -1,8 +1,18 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using System.Text;
 
 namespace Nabu;
+
+
+public enum ServiceShould
+{
+    Stop = 0,
+    Continue,
+    Restart
+}
+
 
 public class Simulation : BackgroundService
 {
@@ -17,22 +27,46 @@ public class Simulation : BackgroundService
     )
     {
         Logger = logger;
-        DefinedAdaptors = settings.Adaptors ?? Array.Empty<AdaptorSettings>();
+        DefinedAdaptors = NabuLib.Concat<AdaptorSettings>(
+            settings.Adaptors.Serial, 
+            settings.Adaptors.TCP
+        ).ToArray();
         ServiceProvider = serviceProvider;
     }
 
+    public Task[] Services { get; private set; } 
+        = Array.Empty<Task>();
+    public ServiceShould[] Next { get; private set; } 
+        = Array.Empty<ServiceShould>();
+    public CancellationTokenSource[] Cancel { get; private set; } 
+        = Array.Empty<CancellationTokenSource>();
+
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
+        
         await Task.Run(() =>
         {
             // We are going to keep track of the services that were defined
             // so if they stop, we can restart them
-            Span<Task> services = NabuLib.SetLength(
+            Span<Task> services = Services = NabuLib.SetLength(
                 DefinedAdaptors.Length,
                 Array.Empty<Task>(),
                 Task.CompletedTask
-            );
+            ).ToArray();
 
+            Span<ServiceShould> next = Next = NabuLib.SetLength(
+                DefinedAdaptors.Length,
+                Array.Empty<ServiceShould>(),
+                ServiceShould.Continue
+            ).ToArray();
+
+            Span<CancellationTokenSource> cancel = Cancel = NabuLib.SetLength(
+                DefinedAdaptors.Length,
+                Array.Empty<CancellationTokenSource>(),
+                () => CancellationTokenSource.CreateLinkedTokenSource(stopping)
+            ).ToArray();
+
+            
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
@@ -42,8 +76,17 @@ public class Simulation : BackgroundService
             {
                 for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
+                    if (Next[index] is ServiceShould.Restart or ServiceShould.Stop)
+                    {
+                        cancel[index].Cancel();
+                        services[index] = Task.CompletedTask;
+                        cancel[index] = CancellationTokenSource.CreateLinkedTokenSource(stopping);
+                    }
+                    if (Next[index] is ServiceShould.Restart)
+                        next[index] = ServiceShould.Continue;
+
                     // Is this service stopped?
-                    if (services[index].IsCompleted)
+                    if (services[index].IsCompleted && Next[index] is ServiceShould.Continue)
                     {
                         // If it was already started, increase the fails
                         //if (started) fails[index] += 1;
@@ -55,8 +98,8 @@ public class Simulation : BackgroundService
 
                         services[index] = settings.Type switch
                         {
-                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, settings, stopping)),
-                            AdaptorType.TCP    => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, stopping)),
+                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, stopping, index)),
+                            AdaptorType.TCP    => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, stopping, index)),
                             _ => throw new NotImplementedException()
                         };
                     }

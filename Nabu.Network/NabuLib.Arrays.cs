@@ -67,6 +67,27 @@ public static partial class NabuLib
     }
 
     /// <summary>
+    ///     Expands or contracts the provided array, 
+    ///     filling empty elements with the result of the
+    ///     provided Func[<typeparamref name="T"/>].
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="length"></param>
+    /// <param name="items"></param>
+    /// <param name="fill"></param>
+    /// <returns></returns>
+    public static Span<T> SetLength<T>(int length, Span<T> items, Func<T> fill)
+    {
+        if (items.Length == length) return items;
+
+        var result = new Span<T>(new T[length]);
+        length = length > items.Length ? items.Length : length;
+        items[..length].CopyTo(result);
+        result[length..].Fill(fill());
+        return result;
+    }
+
+    /// <summary>
     ///     Concatenates any number of collections of bytes into a
     ///     single collection of bytes in collection and byte order.
     /// </summary>

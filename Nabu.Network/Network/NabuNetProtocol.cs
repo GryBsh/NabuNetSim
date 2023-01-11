@@ -4,16 +4,16 @@ using Nabu.Messages;
 
 namespace Nabu.Network;
 
-public class NabuNetProtocol : Protocol
+public class ClassicNabuProtocol : Protocol
 {
-    NabuNetProtocolService Network { get; }
+    ProgramImageService Network { get; }
     NabuNetAdaptorState State;
     public override byte Command => 0x83;
     protected override byte Version => 0x01;
 
-    public NabuNetProtocol(
-        ILogger<NabuNetProtocol> logger,
-        NabuNetProtocolService network) : base(logger)
+    public ClassicNabuProtocol(
+        ILogger<ClassicNabuProtocol> logger,
+        ProgramImageService network) : base(logger)
     {
         Network = network;
         State = new();
@@ -213,44 +213,6 @@ public class NabuNetProtocol : Protocol
     }
     #endregion
 
-    #region RetroNet
-    async Task RequestStoreHttpGet()
-    {
-        byte index = Recv();
-        string url = Reader.ReadString();
-        Log($"RequestStore HTTP Get {index}: {url}");
-        var (success, _) = await Network.StorageOpen(index, url);
-        Send(NabuLib.FromBool(success));
-    }
-
-    void RequestStoreGetSize()
-    {
-        short index = Recv();
-
-        var size = Network.GetResponseSize(index);
-        Log($"RequestStore Get Size {index}: Size: {size}");
-        var sizes = NabuLib.FromShort((short)size);
-        Send(sizes);
-    }
-
-    void RequestStoreGetData()
-    {
-        short index = Recv();
-        short offset = NabuLib.ToShort(Recv(2));
-        short length = NabuLib.ToShort(Recv(2));
-        Log($"RequestStore.Get Response {index}: Offset: {offset}, Length: {length} ");
-        var data = Network.StorageGet(index, offset, length);
-        SlowerSend(data);
-    }
-
-    void Telnet()
-    {
-        Warning("A6 : Telnet not supported");
-        Send(0x00); // This should terminate receiving bytes until null (a null terminated string) 
-                    // on the NABU and any software looking for a 0x00 byte from a disconnect.
-        return;
-    }
-    #endregion
 
     public override bool Attach(AdaptorSettings settings, Stream stream)
     {

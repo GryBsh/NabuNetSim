@@ -6,7 +6,7 @@ namespace Nabu.Adaptor;
 
 public abstract class Protocol : NabuService, IProtocol
 {
-    protected AdaptorSettings Settings { get; private set; }
+    //protected AdaptorSettings Settings { get; private set; }
     protected Stream Stream { get; private set; } = Stream.Null;
     protected BinaryReader Reader { get; private set; }
     protected BinaryWriter Writer { get; private set; }
@@ -17,9 +17,9 @@ public abstract class Protocol : NabuService, IProtocol
     int SendDelay = 0;
     protected Protocol(
         ILogger logger
-    ) : base(logger)
+    ) : base(logger, new NullAdaptorSettings())
     {
-        Settings = new();
+        
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         
@@ -89,7 +89,7 @@ public abstract class Protocol : NabuService, IProtocol
         var good = expected.SequenceEqual(read);
         if (!good) Warning($"NA: {FormatSeperated(expected)} != {FormatSeperated(read)}");
         return (good, read);
-    }
+    }  
 
 
     /// <summary>
@@ -100,15 +100,20 @@ public abstract class Protocol : NabuService, IProtocol
     /// <param name="length">The number of bytes transfered</param>
     void TransferRate(DateTime start, DateTime stop, int length)
     {
+        var byteLength = Settings.Type switch
+        {
+            AdaptorType.Serial => 11, // 8 + 1 + 2
+            _ => 8
+        };
         var elapsed = stop - start;
-        var rate = 8 * length / elapsed.TotalSeconds / 1000;
-        var unit = "Kbps";
+        var rate = ((byteLength * length) - length) / (elapsed.TotalMilliseconds / 1000) / 1000;
+        var unit = "kb/s";
         if (rate > 1000)
         {
-            rate = rate / 1000;
-            unit = "Mbps";
+            rate /= 1000;
+            unit = "mb/s";
         }
-        Log($"NPC: Transfer Rate: {rate:0.00} {unit}");
+        Log($"NPC: Transfer Rate: {rate:0.00} {unit} in {elapsed.TotalSeconds:0.00} seconds");
     }
 
     /// <summary>
@@ -126,13 +131,21 @@ public abstract class Protocol : NabuService, IProtocol
     protected void Send(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeperated(bytes)}");
-        if (bytes.Length > 128) { // This doesn't work unless you fill the buffer
+        
+        if (bytes.Length > 128)
+        { // This doesn't work unless you fill the buffer
             DateTime start = DateTime.Now;
+            //Writer.Write(bytes);
+            //Writer.Flush();
             Writer.Write(bytes);
             DateTime end = DateTime.Now;
-            Task.Run(() => TransferRate(start, end, bytes.Length));
+            TransferRate(start, end, bytes.Length);
         }
-        else Writer.Write(bytes);
+        else
+        {
+            Writer.Write(bytes);
+        }
+        Task.Run(Writer.Flush);
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 
@@ -214,9 +227,9 @@ public abstract class Protocol : NabuService, IProtocol
     { 
         try
         {
-            Log($"Start v{Version}");
+            
             await Handle(incoming, cancel);
-            Log($"End v{Version}");
+            
             return true;
         }
         catch (TimeoutException) {
@@ -224,14 +237,14 @@ public abstract class Protocol : NabuService, IProtocol
         }
         catch (Exception ex)
         {
-            Error($"FAIL v{Version}: {ex.Message}");
+            Error($"FAIL: {ex.Message}");
             return false;
         }
     }
 
     public virtual void Detach()
     {
-        Settings = new();
+        Settings = new NullAdaptorSettings();
         Stream = Stream.Null;
         Reader = new BinaryReader(Stream);
         Writer = new BinaryWriter(Stream);

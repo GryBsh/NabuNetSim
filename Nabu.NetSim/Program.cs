@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using Nabu;
 using Nabu.Adaptor;
 using Nabu.Network;
-
+using NLog.Extensions.Logging;
 
 await   Host
         .CreateDefaultBuilder(args)
@@ -17,19 +17,12 @@ await   Host
                 services.AddSingleton(settings.Sources);
                 services.AddLogging(
                     logging =>
-                        logging.AddSimpleConsole(
-                            options =>
-                            {
-                                options.IncludeScopes = true;
-                                options.SingleLine = true;
-                                options.TimestampFormat = "HH:mm:ss ";
-                            }
-                        )
+                        logging.ClearProviders().AddNLog("nlog.config")
                 );
                 services.AddHttpClient();
-                services.AddTransient<NabuNetProtocolService>();
-                services.AddTransient<NabuNetProtocol>();
-                services.AddTransient<IProtocol, ACPProtocol>();
+                services.AddTransient<ProgramImageService>();
+                services.AddTransient<ClassicNabuProtocol>();
+                services.AddTransient<IProtocol, NHACPProtocol>();
                 services.AddTransient<IProtocol, RetroNetTelnetProtocol>();
                 services.AddHostedService<Simulation>(); 
             }

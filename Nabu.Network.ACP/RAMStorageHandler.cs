@@ -8,6 +8,8 @@ public class RAMStorageHandler : IStorageHandler
     protected AdaptorSettings Settings;
     protected byte[] Buffer = Array.Empty<byte>();
 
+    Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
+
     public RAMStorageHandler(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
@@ -19,28 +21,28 @@ public class RAMStorageHandler : IStorageHandler
         try
         {
             Buffer = new byte[0x100000];
-            return Task.FromResult((true, string.Empty, Buffer.Length));
+            return Task((true, string.Empty, Buffer.Length));
         }
         catch (Exception ex)
         {
-            return Task.FromResult((false, ex.Message, 0));
+            return Task((false, ex.Message, 0));
         }
     }
 
-    public (bool, string, byte[]) Get(int offset, short length)
+    public Task<(bool, string, byte[])> Get(int offset, short length)
     {
         try
         {
             var (_, buffer) = NabuLib.Slice(Buffer, offset, length);
-            return (true, string.Empty, buffer);
+            return Task((true, string.Empty, buffer));
         }
         catch (Exception ex)
         {
-            return (false, ex.Message, Array.Empty<byte>());
+            return Task((false, ex.Message, Array.Empty<byte>()));
         }
     }
 
-    public virtual (bool, string) Put(int offset, byte[] buffer)
+    public virtual Task<(bool, string)> Put(int offset, byte[] buffer)
     {
         try
         {
@@ -52,11 +54,11 @@ public class RAMStorageHandler : IStorageHandler
                 Buffer = temp;
             }
             buffer.AsSpan().CopyTo(Buffer.AsSpan(offset));
-            return (true, string.Empty);
+            return Task((true, string.Empty));
         }
         catch (Exception ex)
         {
-            return (false, ex.Message);
+            return Task((false, ex.Message));
         }
     }
 
@@ -65,7 +67,7 @@ public class RAMStorageHandler : IStorageHandler
         Buffer = Array.Empty<byte>();
     }
 
-    public (bool, string, byte, byte[]) Command(byte index, byte command, byte[] data)
+    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
     {
         throw new NotImplementedException();
     }

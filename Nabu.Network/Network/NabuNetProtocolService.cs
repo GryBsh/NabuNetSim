@@ -7,21 +7,21 @@ namespace Nabu.Network;
 ///    This is the backend service replicating functions
 ///    that would be performed by the Nabu Network.
 /// </summary>
-public class NabuNetProtocolService : NabuService
+public class ProgramImageService : NabuService
 {
     readonly HttpClient Http;
-    AdaptorSettings? Settings;
+    //AdaptorSettings? Settings;
     readonly NetworkState State = new();
 
-    public NabuNetProtocolService(
-        ILogger<NabuNetProtocolService> logger,
+    public ProgramImageService(
+        ILogger<ProgramImageService> logger,
         HttpClient http,
-        Dictionary<string, ImageSourceDefinition> sources
-    ) : base(logger)
+        List<SourceFolder> sources
+    ) : base(logger, new NullAdaptorSettings())
     {
-        Logger = logger;
         Http = http;
         State.SourceDefinitions = sources;
+        State.Sources = State.SourceDefinitions.ToDictionary(k => k.Name, v => v.Path);
     }
 
     #region PAK
@@ -36,10 +36,10 @@ public class NabuNetProtocolService : NabuService
         //Trace($"Segment Length: {npak.Length}");
         return npak;
     }
-    async Task<byte[]> FileGetPakBytes(string path, int pak)
+    async Task<byte[]> FileGetPakBytes(string path)
     {
-        var filename = NabuLib.PakName(pak);
-        path = Path.Join(path, $"{filename}.npak");
+        //var filename = NabuLib.PakName(pak);
+        //path = Path.Join(path, $"{filename}.npak");
         var npak = await File.ReadAllBytesAsync(path);
         Trace($"NPAK Length: {npak.Length}");
         npak = NabuLib.Unpak(npak);
@@ -56,7 +56,7 @@ public class NabuNetProtocolService : NabuService
     /// <param name="sourceName">The name of the source definition</param>
     /// <param name="root">A given folder</param>
     /// <returns></returns>
-    IEnumerable<ProgramImage> GetLocalPakSources(string sourceName, string root)
+    IEnumerable<ProgramImage> GetPakSubFolders(string sourceName, string root)
     {
         var folders = Directory.GetDirectories(root);
         foreach (var folder in folders)
@@ -78,173 +78,77 @@ public class NabuNetProtocolService : NabuService
             }
         }
     }
-
-    IEnumerable<ProgramImage> GetSourceFromList(string sourceName, ImageSourceDefinition source, string list)
+    
+    IEnumerable<ProgramImage> GetImageList(string sourceName, string path)
     {
-        var parts =
-                list.Split('\n')
-                    .Select(l => l.Split(';')
-                                    .Select(s => s.Trim())
-                                    .ToArray()
-                    ).Where(a => a.Length == 2);
-
-        foreach (var line in parts)
+        
+        if (path is null) yield break;
+        
+        var files = Directory.GetFiles(path, "*.npak");
+        foreach (var file in files)
         {
-            var name = line[^1];
-            var path = line[0];
-
-            if (name is null || path is null)
-            {
-                Warning($"Invalid from Source {sourceName}: Channel: {name}, Path: {path}");
-                continue;
-            }
-            var isNabuFile = path.ToLower().EndsWith(".nabu");
-            var root = isNabuFile ? source.NabuRoot : source.PakRoot;
-            var isRemote = (root ?? string.Empty).ToLower().StartsWith("http");
-            var pathSeperator = isRemote ? '/' : Path.DirectorySeparatorChar;
-            var realPath = $"{root}{pathSeperator}{path}";
-            var type = isRemote ? SourceType.Remote : SourceType.Local;
-
+            var name = Path.GetFileNameWithoutExtension(file);
             yield return new(
                 name,
-                Path.GetFileNameWithoutExtension(path),
+                name,
                 sourceName,
-                source.Type,
-                realPath,
-                type,
-                isNabuFile ? ImageType.Raw : ImageType.Pak,
+                DefinitionType.Folder,
+                file,
+                SourceType.Local,
+                ImageType.Pak,
                 new[] { new PassThroughPatch(Logger) }
             );
         }
-    }
-
-    async IAsyncEnumerable<ProgramImage> GetImageList(string sourceName, ImageSourceDefinition source)
-    {
-        if (source.Type is DefinitionType.Folder)
+            
+        files = Directory.GetFiles(path, "*.nabu");
+        foreach (var file in files)
         {
-            if (source.NabuRoot is null && source.PakRoot is null) yield break;
-            if (source.PakRoot is not null)
-            {
-                foreach (var channel in GetLocalPakSources(sourceName, source.PakRoot))
-                {
-                    yield return channel;
-                }
-            }
-
-            if (source.NabuRoot is not null)
-            {
-                var files = Directory.GetFiles(source.NabuRoot, "*.nabu");
-                foreach (var file in files)
-                {
-                    var name = Path.GetFileNameWithoutExtension(file);
-                    yield return new(
-                        name,
-                        name,
-                        sourceName,
-                        source.Type,
-                        file,
-                        SourceType.Local,
-                        ImageType.Raw,
-                        new[] { new PassThroughPatch(Logger) }
-                    );
-                }
-            }
+            var name = Path.GetFileNameWithoutExtension(file);
+            yield return new(
+                name,
+                name,
+                sourceName,
+                DefinitionType.Folder,
+                file,
+                SourceType.Local,
+                ImageType.Raw,
+                new[] { new PassThroughPatch(Logger) }
+            );
         }
-        else
-        {
-            if (source.ListUrl is null) yield break;
-            string list = string.Empty;
-            try
-            {
-
-                list = State.SourceCache.ContainsKey(sourceName) ?
-                            State.SourceCache[sourceName] :
-                            State.SourceCache[sourceName] = await Http.GetStringAsync(source.ListUrl);
-            }
-            catch (Exception ex)
-            {
-                Error(ex.Message);
-                yield break;
-            }
-
-            foreach (var channel in GetSourceFromList(sourceName, source, list))
-            {
-                yield return channel;
-            }
-        }
+        
+        
     }
     /// <summary>
     /// Refreshes the list of image sources from the current definition.
     /// </summary>
     /// <returns></returns>
-    async Task<bool> RefreshSources()
+    Task<bool> RefreshSources()
     {
-        Log($"Refresh Channel List from Source: {State.Source}");
-        if (State.HasChannels) return true;
-        if (State.SourceDefinitions is null) return false;
-        if (State.Source is null) return false;
-        if (State.SourceDefinitions.ContainsKey(State.Source) is false) return false;
-
-        var source = State.SourceDefinitions[State.Source];
-        if (source is null) return false;
-        State.Sources.Clear();
-        await foreach (var channel in GetImageList(State.Source, source))
+        return Task.Run(() =>
         {
-            Log($"Adding [{channel.Name}] {channel.DisplayName} from {channel.Source}");
-            State.Sources.Add(channel.Name, channel);
-        }
-        Log($"Refreshed ({State.Sources.Count} Channels)");
-        return true;
-    }
-    #endregion
+            Log($"Refresh Channel List from Source: {State.Source}");
+            State.Sources = State.SourceDefinitions.ToDictionary(k => k.Name, v => v.Path);
+            
+            if (State.FoundImages) return true;
+            if (State.SourceDefinitions is null) return false;
+            if (State.Source is null) return false;
+            if (State.Sources.Keys.Contains(State.Source) is false) return false;
+            
+            var source = State.Sources[State.Source];
+            if (source is null)
+                return false;
 
-    #region RetroNET
-
-    public async Task<(bool, string)> StorageOpen(short index, string url)
-    {
-        try
-        {
-            if (Settings is null) return (false, "Network initialized improperly");
-
-            var response = url.ToLower().StartsWith("http") switch
+            State.ProgramImages.Clear();
+            foreach (var channel in GetImageList(State.Source, source))
             {
-                true => await Http.GetByteArrayAsync(url),
-                false => await File.ReadAllBytesAsync(
-                    Path.Combine(Settings.StoragePath, url)
-                )
-            };
-            State.ACPStorage[index] = response;
-        }
-        catch (Exception ex)
-        {
-            Warning(ex.Message);
-            return (false, ex.Message);
-        }
-
-        return (true, string.Empty);
+                Log($"Adding [{channel.Name}] {channel.DisplayName} from {channel.Source}");
+                State.ProgramImages.Add(channel.Name, channel);
+            }
+            Log($"Refreshed ({State.ProgramImages.Count} Channels)");
+            State.LastUpdatedSource = State.Source;
+            return true;
+        });
     }
-
-    public int GetResponseSize(short index)
-        => State.ACPStorage[index].Length;
-
-    public byte[] StorageGet(short index, int offset, short length)
-    {
-        var (_, data) = NabuLib.Slice(State.ACPStorage[index], offset, length);
-        return data;
-    }
-
-    public (bool, string) StoragePut(short index, int offset, params byte[] bytes)
-    {
-        var data = State.ACPStorage[index];
-        var size = offset + bytes.Length;
-        if (size < data.Length) size = data.Length;
-        var buffer = new byte[size];
-        data.CopyTo(buffer, 0);
-        bytes.CopyTo(buffer, offset);
-        State.ACPStorage[index] = buffer;
-        return (true, string.Empty);
-    }
-
     #endregion
 
     /// <summary>
@@ -253,12 +157,13 @@ public class NabuNetProtocolService : NabuService
     /// <param name="settings"></param>
     public void SetState(AdaptorSettings settings)
     {
-        Log($"Source: {settings.Source}, Channel: {settings.Channel}");
+        Settings = settings;
+        Log($"Source: {settings.Source}, Channel: {settings.Image}");
         State.Source = settings.Source;
-        State.Channel = settings.Channel;
+        State.Image = settings.Image;
         State.ClearCache();
         Task.Run(RefreshSources);
-        Settings = settings;
+        
     }
 
     public void UncachePak(int pak)
@@ -270,6 +175,8 @@ public class NabuNetProtocolService : NabuService
         }
     }
 
+ 
+
     /// <summary>
     /// Requests a PAK from the Network Emulator
     /// </summary>
@@ -280,58 +187,65 @@ public class NabuNetProtocolService : NabuService
         if (Empty(State.Source))
         {
             Warning("NTWRK: No Source Defined");
-            return (ImageType.None, ZeroBytes());
+            return (ImageType.None, ZeroBytes);
         }
-        var channel = State.Channel ?? string.Empty;
+        var image = State.Image ?? string.Empty;
 
-        if (Empty(channel))
+        if (Empty(image))
         {
             var nabuName = FormatTriple(pak);
-            if (State.Sources.ContainsKey(nabuName))
+            var pakName = NabuLib.PakName(pak);
+            if (State.ProgramImages.ContainsKey(nabuName))
             {
-                Warning($"NTWRK: No channel defined, NABU Image Found: {pak}");
-                channel = nabuName;
+                Debug($"NTWRK: NABU Image Found: {pak}");
+                image = nabuName;
+            }
+            else if (State.ProgramImages.ContainsKey(pakName))
+            {
+                Debug($"NTWRK: NABU Image Found: {pak}");
+                image = pakName;
             }
             else
             {
-                Warning($"NTWRK: No Channel or NABU file for {pak}");
-                return (ImageType.None, ZeroBytes());
+                Error($"NTWRK: No Channel or NABU file for {pak}");
+                return (ImageType.None, ZeroBytes);
             }
         }
 
-        if (State.HasChannels is false)
+        if (State.FoundImages is false || 
+            State.LastUpdatedSource != Settings.Source)
         {
             State.ClearCache();
             if (!await RefreshSources())
             {
-                Warning("NTWRK: No Channel List");
-                return (ImageType.None, ZeroBytes());
+                Error("NTWRK: No Channel List");
+                return (ImageType.None, ZeroBytes);
             }
         }
 
-        var source = State.Sources[channel];
+        var source = State.ProgramImages[image];
 
-        if (State.PakCache.ContainsKey(pak))
+        if (State.PakCache.TryGetValue(pak, out var value))
         {
-            return (source.ImageType, State.PakCache[pak]);
+            return (source.ImageType, value);
         }
 
-        byte[] bytes = ZeroBytes();
+        byte[] bytes = ZeroBytes;
         try
         {
             bytes = (source.SourceType, source.ImageType) switch
             {
                 (SourceType.Remote, ImageType.Raw) => await Http.GetByteArrayAsync(source.Path),
                 (SourceType.Local, ImageType.Raw)  => await File.ReadAllBytesAsync(source.Path),
-                (SourceType.Remote, ImageType.Pak) => await HttpGetPakBytes(source.Path, pak),
-                (SourceType.Local, ImageType.Pak)  => await FileGetPakBytes(source.Path, pak),
-                _ => ZeroBytes()
+                //(SourceType.Remote, ImageType.Pak) => await HttpGetPakBytes(source.Path, pak),
+                (SourceType.Local, ImageType.Pak)  => await FileGetPakBytes(source.Path),
+                _ => ZeroBytes
             };
         }
         catch (Exception ex)
         {
             Warning(ex.Message);
-            return (ImageType.None, ZeroBytes());
+            return (ImageType.None, ZeroBytes);
         }
 
         foreach (var patch in source.Patches)

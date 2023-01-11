@@ -7,9 +7,7 @@ public class ACPProtocolService : IACPProtocolService
     ILogger Logger;
     AdaptorSettings Settings;
     Dictionary<byte, IStorageHandler> StorageSlots { get; } = new();
-
-    public string Protocol => throw new NotImplementedException();
-
+    Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
     public ACPProtocolService(ILogger logger, AdaptorSettings settings)
     {
         Logger = logger;
@@ -26,14 +24,14 @@ public class ACPProtocolService : IACPProtocolService
         return 0xFF;
     }
 
-    public (bool, string, string) DateTime()
+    public Task<(bool, string, string)> DateTime()
     {
         var now = System.DateTime.Now;
-        return (
+        return Task((
             true,
             now.ToString("yyyyMMdd"),
             now.ToString("HHmmss")
-        );
+        ));
     }
 
     public async Task<(bool, string, byte, int)> Open(byte index, short flags, string uri)
@@ -69,7 +67,7 @@ public class ACPProtocolService : IACPProtocolService
         }
     }
 
-    public (bool, string, byte[]) Get(byte index, int offset, short length)
+    public Task<(bool, string, byte[])> Get(byte index, int offset, short length)
     {
         try
         {
@@ -78,11 +76,11 @@ public class ACPProtocolService : IACPProtocolService
         }
         catch (Exception ex)
         {
-            return (false, ex.Message, Array.Empty<byte>());
+            return Task((false, ex.Message, Array.Empty<byte>()));
         }
     }
 
-    public (bool, string) Put(byte index, int offset, byte[] buffer)
+    public Task<(bool, string)> Put(byte index, int offset, byte[] buffer)
     {
         try
         {
@@ -91,11 +89,11 @@ public class ACPProtocolService : IACPProtocolService
         }
         catch (Exception ex)
         {
-            return (false, ex.Message);
+            return Task((false, ex.Message));
         }
     }
 
-    public (bool, string, byte, byte[]) Command(byte index, byte command, byte[] data)
+    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
     {
         throw new NotImplementedException();
     }

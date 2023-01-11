@@ -2,11 +2,15 @@
 
 public class NetworkState
 {
-    public Dictionary<string, ImageSourceDefinition>? SourceDefinitions { get; set; } = new();
+    public List<SourceFolder> SourceDefinitions { get; set; } = new();
+    public Dictionary<string, string> Sources { get; set; } = new();
     public string? Source { get; set; }
-    public Dictionary<string, ProgramImage> Sources { get; private set; } = new();
-    public bool HasChannels => Sources.Count > 0;
-    public string? Channel { get; set; }
+    public Dictionary<string, ProgramImage> ProgramImages { get; private set; } = new();
+    public bool FoundImages => ProgramImages.Count > 0;
+    public string? Image { get; set; }
+
+    public string LastUpdatedSource { get; set; }
+
     public Dictionary<string, string> SourceCache { get; private set; } = new();
     public Dictionary<int, byte[]> PakCache { get; private set; } = new();
 
@@ -20,7 +24,7 @@ public class NetworkState
         PakCache = new();
         SourceCache.Clear();
         SourceCache = new();
-        Sources.Clear();
-        Sources = new();
+        ProgramImages.Clear();
+        ProgramImages = new();
     }
 }

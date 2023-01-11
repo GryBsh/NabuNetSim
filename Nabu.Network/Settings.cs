@@ -1,11 +1,13 @@
+using Microsoft.Extensions.Logging;
 using Nabu;
 using Nabu.Network;
+using System.Text;
 
 /// <summary>
 ///     Emulators setings. This is merged with config on startup.
 /// </summary>
 public class Settings {
-    public RelaySettings Relay { get; set; } = new();
-    public Dictionary<string, ImageSourceDefinition> Sources { get; set; } = new();
-    public AdaptorSettings[] Adaptors { get; set; } = Array.Empty<AdaptorSettings>();
+    public AdaptorCollection Adaptors { get; set; } = new();
+    public List<SourceFolder> Sources { get; set; } = new();
 }
+

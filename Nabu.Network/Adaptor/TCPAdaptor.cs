@@ -13,19 +13,6 @@ public class TCPAdaptor
 
     private TCPAdaptor() { }
 
-    public static Socket Socket()
-    {
-        var socket = new Socket(
-            AddressFamily.InterNetwork,
-            SocketType.Stream,
-            ProtocolType.Tcp
-        );
-        socket.NoDelay = true;
-        socket.DontFragment = true;
-        socket.LingerState = new LingerOption(false, 0);
-        return socket;
-    }
-
     static async void ServerListen(ILogger logger, EmulatedAdaptor adaptor, Stream stream, CancellationToken stopping)
     {
         logger.LogInformation($"Adaptor Started");
@@ -33,10 +20,14 @@ public class TCPAdaptor
         await stream.DisposeAsync();
     }
     
-    public static async Task Start(IServiceProvider serviceProvider, AdaptorSettings settings, CancellationToken stopping)
-    {
+    public static async Task Start(
+        IServiceProvider serviceProvider, 
+        AdaptorSettings settings, 
+        CancellationToken stopping,
+        int index = -1
+    ){
         var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>();
-        var socket = Socket();
+        var socket = NabuLib.Socket();
         //socket.LingerState = new LingerOption(false, 0);
 
         if (!int.TryParse(settings.Port, out int port))
@@ -44,14 +35,9 @@ public class TCPAdaptor
             port = Constants.DefaultTCPPort;
         };
         
-        settings.SendDelay = settings.SendDelay > 0 ?
-                             settings.SendDelay : 
-                             Constants.DefaultTCPSendDelay;
+        
 
-        logger.LogInformation(
-            $"\n\t Port: {port}" +
-            $"\n\t SendDelay: {settings.SendDelay}"
-        );
+        logger.LogInformation($"Port: {port}");
         
         try
         {
@@ -74,12 +60,12 @@ public class TCPAdaptor
                 var stream  = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
                      settings,
-                     serviceProvider.GetRequiredService<NabuNetProtocol>(),
+                     serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
-                     stream
+                     stream,
+                     index
                 );
-                
                 
                 ServerListen(logger, adaptor, stream, stopping);
                 logger.LogInformation($"Client Connected");

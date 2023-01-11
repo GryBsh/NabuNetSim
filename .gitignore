@@ -12,3 +12,4 @@ obj/
 *.zip
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore
 .fake
+Nabu.NetSimWeb/
