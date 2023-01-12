@@ -16,7 +16,7 @@ public enum ImageType
     Pak
 }
 
-public record ProgramImage(
+public record NabuProgram(
     string DisplayName,
     string Name,
     string Source,

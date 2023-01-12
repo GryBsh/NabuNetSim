@@ -14,7 +14,7 @@ public class PassThroughPatch : IPakPatch
         Logger = logger;
     }
 
-    public Task<byte[]> Patch(ProgramImage source, byte[] program)
+    public Task<byte[]> Patch(NabuProgram source, byte[] program)
     {
         Logger.LogInformation($"Source {source.DisplayName}: Pass-Through");
         return Task.FromResult(program);

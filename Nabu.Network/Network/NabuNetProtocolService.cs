@@ -9,9 +9,15 @@ namespace Nabu.Network;
 /// </summary>
 public class ProgramImageService : NabuService
 {
-    readonly HttpClient Http;
-    //AdaptorSettings? Settings;
-    readonly NetworkState State = new();
+    HttpClient Http { get; }
+    Dictionary<(string, int), byte[]> PakCache { get; } = new();
+    Dictionary<string, NabuProgram> Programs { get; } = new();
+    List<SourceFolder> Sources { get; set; } = new();
+    string LastUpdatedSource { get; set; } = string.Empty;
+    bool IsWebSource(string path) => path.StartsWith("http");
+
+    SourceFolder Source() => Sources.First(s => s.Name.ToLower() == Settings.Source?.ToLower());
+    public string LastImage { get; private set; } = string.Empty;
 
     public ProgramImageService(
         ILogger<ProgramImageService> logger,
@@ -20,66 +26,77 @@ public class ProgramImageService : NabuService
     ) : base(logger, new NullAdaptorSettings())
     {
         Http = http;
-        State.SourceDefinitions = sources;
-        State.Sources = State.SourceDefinitions.ToDictionary(k => k.Name, v => v.Path);
+        Sources = sources;
+        
     }
 
-    #region PAK
+    #region File
+    async Task<byte[]> FileGetPakBytes(string path, int pak)
+    {
+        var filename = NabuLib.PakName(pak);
+        path = Path.Join(path, $"{filename}.npak");
+        var npak = await File.ReadAllBytesAsync(path);
+        //Trace($"NPAK Length: {npak.Length}");
+        npak = NabuLib.Unpak(npak);
+        //Trace($"Segment Length: {npak.Length}");
+        return npak;
+    }
+
+    async Task<byte[]> FileGetRawBytes(string path, int pak)
+    {
+        var filename = FormatTriple(pak);
+        path = Path.Join(path, $"{filename}.nabu");
+        var buffer = await File.ReadAllBytesAsync(path);
+        return buffer;
+    }
+
+    #endregion
+
+    #region HTTP
 
     async Task<byte[]> HttpGetPakBytes(string url, int pak)
     {
         var filename = NabuLib.PakName(pak);
         url = $"{url}/{filename}.npak";
         var npak = await Http.GetByteArrayAsync(url);
-        //Trace($"NPAK Length: {npak.Length}");
-        npak = NabuLib.Unpak(npak);
-        //Trace($"Segment Length: {npak.Length}");
-        return npak;
-    }
-    async Task<byte[]> FileGetPakBytes(string path)
-    {
-        //var filename = NabuLib.PakName(pak);
-        //path = Path.Join(path, $"{filename}.npak");
-        var npak = await File.ReadAllBytesAsync(path);
         Trace($"NPAK Length: {npak.Length}");
         npak = NabuLib.Unpak(npak);
         Trace($"Segment Length: {npak.Length}");
         return npak;
     }
-    #endregion
-
-    #region Source List
-
-    /// <summary>
-    /// Get the list of PAK sources from a given folder
-    /// </summary>
-    /// <param name="sourceName">The name of the source definition</param>
-    /// <param name="root">A given folder</param>
-    /// <returns></returns>
-    IEnumerable<ProgramImage> GetPakSubFolders(string sourceName, string root)
-    {
-        var folders = Directory.GetDirectories(root);
-        foreach (var folder in folders)
-        {
-            var files = Directory.GetFiles(folder, "*.npak");
-            if (files.Length > 0)
-            {
-                var name = folder.Split(Path.DirectorySeparatorChar)[^1];
-                yield return new(
-                    name,
-                    name,
-                    sourceName,
-                    DefinitionType.Folder,
-                    folder,
-                    SourceType.Local,
-                    ImageType.Pak,
-                    new[] { new PassThroughPatch(Logger) }
-                );
-            }
-        }
-    }
     
-    IEnumerable<ProgramImage> GetImageList(string sourceName, string path)
+
+    async Task<byte[]> HttpGetRawBytes(string url, int pak)
+    {
+        var filename = NabuLib.FormatTriple(pak);
+        url = $"{url}/{filename}.nabu";
+        var buffer = await Http.GetByteArrayAsync(url);
+        return buffer;
+    }
+    async Task<bool> HttpRawGetHead(string url, int pak)
+    {
+        var filename = NabuLib.FormatTriple(pak);
+        url = $"{url}/{filename}.nabu";
+        return await HttpGetHead(url);
+    }
+
+    async Task<bool> HttpPakGetHead(string url, int pak)
+    {
+        var filename = NabuLib.PakName(pak);
+        url = $"{url}/{filename}.npak";
+        return await HttpGetHead(url);
+    }
+
+    async Task<bool> HttpGetHead(string url)
+    {
+        var response = await Http.SendAsync(new(HttpMethod.Head, url));
+        return response.IsSuccessStatusCode;
+    }
+    #endregion
+    
+    #region Source List
+    
+    IEnumerable<NabuProgram> GetImageList(string sourceName, string path)
     {
         
         if (path is null) yield break;
@@ -126,30 +143,41 @@ public class ProgramImageService : NabuService
     {
         return Task.Run(() =>
         {
-            Log($"Refresh Channel List from Source: {State.Source}");
-            State.Sources = State.SourceDefinitions.ToDictionary(k => k.Name, v => v.Path);
-            
-            if (State.FoundImages) return true;
-            if (State.SourceDefinitions is null) return false;
-            if (State.Source is null) return false;
-            if (State.Sources.Keys.Contains(State.Source) is false) return false;
-            
-            var source = State.Sources[State.Source];
-            if (source is null)
-                return false;
+            if (LastUpdatedSource == Settings.Source)
+                return true;
 
-            State.ProgramImages.Clear();
-            foreach (var channel in GetImageList(State.Source, source))
+            Log($"Refresh Channel List from Source: {Settings.Source}");
+
+            if (Settings.Source is null)
+                return false;
+                        
+            var path = Source().Path;
+            if (path is null)
             {
-                Log($"Adding [{channel.Name}] {channel.DisplayName} from {channel.Source}");
-                State.ProgramImages.Add(channel.Name, channel);
+                Error($"Source {Settings.Source} is not defined");
+                return false;
             }
-            Log($"Refreshed ({State.ProgramImages.Count} Channels)");
-            State.LastUpdatedSource = State.Source;
+
+            if (IsWebSource(path) is false) { 
+                foreach (var channel in GetImageList(Settings.Source, path))
+                {
+                    Log($"Adding [{channel.Name}] {channel.DisplayName} from {channel.Source}");
+                    Programs.Add(channel.Name, channel);
+                }
+            }
+
+            LastUpdatedSource = Settings.Source;
             return true;
         });
     }
     #endregion
+
+    public void ClearCache()
+    {
+        PakCache.Clear();
+        LastUpdatedSource = string.Empty;
+        Programs.Clear();
+    }
 
     /// <summary>
     /// Sets the initial state of the Network Emulator
@@ -159,19 +187,16 @@ public class ProgramImageService : NabuService
     {
         Settings = settings;
         Log($"Source: {settings.Source}, Channel: {settings.Image}");
-        State.Source = settings.Source;
-        State.Image = settings.Image;
-        State.ClearCache();
         Task.Run(RefreshSources);
         
     }
 
-    public void UncachePak(int pak)
+    public void UncachePak(string image, int pak)
     {
-        if (State.PakCache.ContainsKey(pak))
+        if (PakCache.ContainsKey((image, pak)))
         {
             Log($"Removing pak {pak} from cache");
-            State.PakCache.Remove(pak);
+            PakCache.Remove((image, pak));
         }
     }
 
@@ -184,61 +209,97 @@ public class ProgramImageService : NabuService
     /// <returns></returns>
     public async Task<(ImageType, byte[])> Request(int pak)
     {
-        if (Empty(State.Source))
+        if (Empty(Settings.Source))
         {
             Warning("NTWRK: No Source Defined");
             return (ImageType.None, ZeroBytes);
         }
-        var image = State.Image ?? string.Empty;
-
+        
+        var source = Source().Path;
+        var image = Settings.Image ?? string.Empty;
+        
         if (Empty(image))
         {
             var nabuName = FormatTriple(pak);
             var pakName = NabuLib.PakName(pak);
-            if (State.ProgramImages.ContainsKey(nabuName))
+                        
+            if (Programs.ContainsKey(nabuName))
             {
                 Debug($"NTWRK: NABU Image Found: {pak}");
                 image = nabuName;
             }
-            else if (State.ProgramImages.ContainsKey(pakName))
+            else if (Programs.ContainsKey(pakName))
             {
                 Debug($"NTWRK: NABU Image Found: {pak}");
                 image = pakName;
             }
-            else
+            else if (IsWebSource(source))
+            {
+                if (await HttpRawGetHead(source, pak))
+                {
+                    Programs[nabuName] =
+                        new NabuProgram(
+                            image,
+                            image,
+                            Settings.Source!,
+                            DefinitionType.Folder,
+                            source,
+                            SourceType.Remote,
+                            ImageType.Raw,
+                            new[] { new PassThroughPatch(Logger) }
+                        );
+                    image = nabuName;
+                }
+                else if (await HttpPakGetHead(source, pak))
+                {
+                    Programs[pakName] =
+                        new NabuProgram(
+                            image,
+                            image,
+                            Settings.Source!,
+                            DefinitionType.Folder,
+                            source,
+                            SourceType.Remote,
+                            ImageType.Pak,
+                            new[] { new PassThroughPatch(Logger) }
+                        );
+                    image = pakName;
+                }
+            }
+
+            if (Empty(image))
             {
                 Error($"NTWRK: No Channel or NABU file for {pak}");
                 return (ImageType.None, ZeroBytes);
             }
         }
-
-        if (State.FoundImages is false || 
-            State.LastUpdatedSource != Settings.Source)
+        
+                
+        if (Programs.Count > 0)
         {
-            State.ClearCache();
             if (!await RefreshSources())
             {
                 Error("NTWRK: No Channel List");
                 return (ImageType.None, ZeroBytes);
             }
         }
+        
+        var prg = Programs[image];
 
-        var source = State.ProgramImages[image];
-
-        if (State.PakCache.TryGetValue(pak, out var value))
+        if (PakCache.TryGetValue((image, pak), out var value))
         {
-            return (source.ImageType, value);
+            return (prg.ImageType, value);
         }
 
         byte[] bytes = ZeroBytes;
         try
         {
-            bytes = (source.SourceType, source.ImageType) switch
+            bytes = (prg.SourceType, prg.ImageType) switch
             {
-                (SourceType.Remote, ImageType.Raw) => await Http.GetByteArrayAsync(source.Path),
-                (SourceType.Local, ImageType.Raw)  => await File.ReadAllBytesAsync(source.Path),
-                //(SourceType.Remote, ImageType.Pak) => await HttpGetPakBytes(source.Path, pak),
-                (SourceType.Local, ImageType.Pak)  => await FileGetPakBytes(source.Path),
+                (SourceType.Remote, ImageType.Raw) => await HttpGetRawBytes(source, pak),
+                (SourceType.Local, ImageType.Raw)  => await FileGetRawBytes(source, pak),
+                (SourceType.Remote, ImageType.Pak) => await HttpGetPakBytes(source, pak),
+                (SourceType.Local, ImageType.Pak)  => await FileGetPakBytes(source, pak),
                 _ => ZeroBytes
             };
         }
@@ -248,17 +309,17 @@ public class ProgramImageService : NabuService
             return (ImageType.None, ZeroBytes);
         }
 
-        foreach (var patch in source.Patches)
+        foreach (var patch in prg.Patches)
         {
             if (patch.Name is not nameof(PassThroughPatch))
                 Log($"NTWRK: Applying Patch: {patch.Name}");
 
-            bytes = await patch.Patch(source, bytes);
+            bytes = await patch.Patch(prg, bytes);
         }
 
-        State.PakCache[pak] = bytes;
-
-        return (source.ImageType, bytes);
+        PakCache[(image, pak)] = bytes;
+        LastImage = image;
+        return (prg.ImageType, bytes);
     }
 
 }

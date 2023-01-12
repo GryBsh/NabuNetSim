@@ -10,9 +10,9 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 ## Known Issues
 
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
-- > While using the X64 build on macOS, the serial port is not working, also a signing issue.
+- > While using the X64 build on macOS, the serial port may not work.
 - > The RetroNet Telnet app is supported, but no other parts. And it's experimental.
-- > HCCA-ACP support is experimental.
+- > NHACP support is experimental.
 - > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
   with one value when it's first connecting: `0x8F|0x05`, then when the program is
   first started another: `0x0F|0x05`. It seems to be signaling something, but what?
@@ -31,39 +31,25 @@ A PC can potentially serve hundreds.
 
 Can be set via command line arguments, in the usual dotnet way.
 
+### Adaptors
+
+#### All Types
+
+- Port: the name or path to the serial port to use.
+- Source: the name of the source to use for the adaptor.
+- Image: if the source contains multiple images, this is the one to use.
+- Enabled: if the adaptor should be enabled or not. (Default: true)
+- AdaptorChannel: setting this to 0 will show the channel prompt. (Default: 1)
+
+#### Serial Only
+
+- BaudRate: the baud rate to use for the serial port. (Default: 115200)
+- ReadTimeout: the read timeout for the serial port. (Default: 1000)
+
 ### Sources
 
-- SOURCENAME:
-  - Type (Folder, NabuRetroNet): The type of source
-  - ListUrl: the list url for this source (* NabuRetroNet only)
-  - NabuRoot: the root for NABU files
-  - PakRoot: the root for PAK files
-
-### Adaptors (Any number you'd like)
-
-- Type: Serial or TCP
-  - > Want something else? Open an issue and I'll see what I can do.
-- Port: Either a name or path for a Serial port OR a number for TCP port.
-  - > To use multiple instances of MAME, you'll need to start each one listening
-    on a different port. Then define an adapter for that port.
-- Enabled: Enables or disables the Adaptor
-- AdaptorChannel: The channel used by the adapter (for authenticity purposes only)
-  - > This will cause you NABU to show the channel prompt if set to 0, otherwise we
-  simulate signal lock regardless of channel.
-- Source: The source to pull channels and segments from
-  - > From the sources defined above.
-- Channel: The channel to send segments from.
-  - > The file name, sans .nabu, for NABU files, or the folder name for PAK files.
-- BaudRate (Serial Only): The send/receive rate of the serial adapter.
-  - > The "correct" rate is `111865`. However, you cannot set this baudrate on
-  macOS or Linux witht the dotnet's `System.IO.Ports`. So we're using a default of `115200`.
-  If you experience issues, try setting this to `111865` if your on Windows or .
-  - > !! This has no effect on the TCP Adaptor !!
-- SendDelay: The delay in iterations between each byte sent in "Slower Send" mode, for RetroNet.
-  - > For Serial the default is `500`, for TCP it is `130000`.
-  - > I don't know why MAME is 260x slower than the real thing, but it is.
-
-> !! It can run as many adaptors as you're system can handle. But you'll need to configure them all. !!
+- Name: the name of the source.
+- Path: the path to the source, either folder path or base URL.
 
 ### Logging
 

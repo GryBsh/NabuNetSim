@@ -38,9 +38,7 @@ public class SerialAdaptor
         }
 
         logger.LogInformation(
-            $"\n\t Port: {settings.Port}" +
-            $"\n\t BaudRate: {settings.BaudRate}" +
-            $"\n\t ReadTimeout: {settings.ReadTimeout}"
+            $"Port: {settings.Port}, BaudRate: {settings.BaudRate}, ReadTimeout: {settings.ReadTimeout}"
         );
 
         while (serial.IsOpen is false)

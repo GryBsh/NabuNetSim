@@ -27,10 +27,11 @@ public class NHACPProtocol : Protocol
         );
     }
 
-    void StorageError(string message)
+    void StorageError(short code, string message)
     {
         SendFramed(
             0x82,
+            NabuLib.FromShort(code),
             NabuLib.ToSizedASCII(message)
         );
     }
@@ -81,11 +82,11 @@ public class NHACPProtocol : Protocol
                 StorageLoaded(slot, length);
             }
             else
-                StorageError(error);
+                StorageError(0, error);
         }
         catch (Exception ex)
         {
-            StorageError(ex.Message);
+            StorageError(0, ex.Message);
         }
     }
 
@@ -100,7 +101,7 @@ public class NHACPProtocol : Protocol
             OnPacketSliced(i, buffer.Length);
 
             var (success, error, data) = await Storage.Get(index, offset, length);
-            if (success is false) StorageError(error);
+            if (success is false) StorageError(0, error);
             else
             {
                 Log($"NA: Get from slot {index}:{offset}->{length} bytes");
@@ -109,7 +110,7 @@ public class NHACPProtocol : Protocol
         }
         catch (Exception ex)
         {
-            StorageError(ex.Message);
+            StorageError(0, ex.Message);
         }
 
     }
@@ -132,11 +133,11 @@ public class NHACPProtocol : Protocol
                 SendFramed(0x81); // OK
             }
             else
-                StorageError(error);
+                StorageError(0, error);
         }
         catch (Exception ex)
         {
-            StorageError(ex.Message);
+            StorageError(0, ex.Message);
         }
 
     }

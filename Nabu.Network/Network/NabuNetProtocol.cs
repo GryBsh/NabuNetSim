@@ -207,7 +207,7 @@ public class ClassicNabuProtocol : Protocol
         Finished();                      //Epilog
         if (last)
         {
-            Network.UncachePak(pak);
+            Network.UncachePak(Network.LastImage, pak);
             GC.Collect();
         }
     }

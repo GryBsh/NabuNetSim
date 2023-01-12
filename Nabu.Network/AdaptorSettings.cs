@@ -8,19 +8,6 @@ public enum AdaptorType
     Relay
 }
 
-
-public class AdaptorCollection
-{
-    public List<SerialAdaptorSettings> Serial { get; } = new();
-    public List<TCPAdaptorSettings> TCP { get; } = new();
-}
-
-public record SourceFolder
-{
-    public string Name { get; set; } = string.Empty;
-    public string Path { get; set; } = string.Empty;
-}
-
 public abstract record AdaptorSettings
 {
     public abstract AdaptorType Type { get; }
