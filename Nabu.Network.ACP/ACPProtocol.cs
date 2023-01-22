@@ -14,7 +14,7 @@ public class NHACPProtocol : Protocol
         Storage = new(Logger, Settings);
     }
 
-    public override byte Command => 0xAF;
+    public override byte[] Commands { get; } = new byte[] { 0xAF };
     protected override byte Version => 0x01;
 
     #region ACP Frames / Messages
@@ -82,11 +82,11 @@ public class NHACPProtocol : Protocol
                 StorageLoaded(slot, length);
             }
             else
-                StorageError(0, error);
+                StorageError((short)length, error);
         }
         catch (Exception ex)
         {
-            StorageError(0, ex.Message);
+            StorageError(500, ex.Message);
         }
     }
 
@@ -110,7 +110,7 @@ public class NHACPProtocol : Protocol
         }
         catch (Exception ex)
         {
-            StorageError(0, ex.Message);
+            StorageError(500, ex.Message);
         }
 
     }
@@ -133,11 +133,11 @@ public class NHACPProtocol : Protocol
                 SendFramed(0x81); // OK
             }
             else
-                StorageError(0, error);
+                StorageError(500, error);
         }
         catch (Exception ex)
         {
-            StorageError(0, ex.Message);
+            StorageError(500, ex.Message);
         }
 
     }
@@ -155,16 +155,15 @@ public class NHACPProtocol : Protocol
 
     #endregion
 
-    protected virtual IDictionary<byte, Func<byte[], Task>> PrepareHandlers()
+    protected virtual Dictionary<byte, Func<byte[], Task>> PrepareHandlers()
     {
-        var handlers = new Dictionary<byte, Func<byte[], Task>>()
+        return new()
         {
             { 0x01, Open },
             { 0x02, Get },
             { 0x03, Put },
             { 0x04, DateTime }
         };
-        return handlers;
     }
 
     public override async Task Handle(byte command, CancellationToken cancel)

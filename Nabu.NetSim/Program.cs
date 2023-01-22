@@ -19,11 +19,11 @@ await   Host
                     logging =>
                         logging.ClearProviders().AddNLog("nlog.config")
                 );
+                
                 services.AddHttpClient();
-                services.AddTransient<ProgramImageService>();
-                services.AddTransient<ClassicNabuProtocol>();
-                services.AddTransient<IProtocol, NHACPProtocol>();
-                services.AddTransient<IProtocol, RetroNetTelnetProtocol>();
-                services.AddHostedService<Simulation>(); 
+                Emulator.Register(services)
+                        .AddTransient<IProtocol, NHACPProtocol>()
+                        .AddTransient<IProtocol, RetroNetTelnetProtocol>()
+                        .AddHostedService<Simulation>(); 
             }
         ).RunConsoleAsync();

@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/NabuAdaptorEmulator/NabuAdaptorEmulator.csproj",
+                "${workspaceFolder}/Nabu.NetSimWeb/Nabu.NetSimWeb.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -19,7 +19,7 @@
             "type": "process",
             "args": [
                 "publish",
-                "${workspaceFolder}/NabuAdaptorEmulator/NabuAdaptorEmulator.csproj",
+                "${workspaceFolder}/Nabu.NetSimWeb/Nabu.NetSimWeb.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
             ],
@@ -33,7 +33,7 @@
                 "watch",
                 "run",
                 "--project",
-                "${workspaceFolder}/NabuAdaptorEmulator/NabuAdaptorEmulator.csproj"
+                "${workspaceFolder}/Nabu.NetSimWeb/Nabu.NetSimWeb.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

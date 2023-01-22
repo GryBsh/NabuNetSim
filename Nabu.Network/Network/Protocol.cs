@@ -11,7 +11,7 @@ public abstract class Protocol : NabuService, IProtocol
     protected BinaryReader Reader { get; private set; }
     protected BinaryWriter Writer { get; private set; }
     protected abstract byte Version { get; }
-    public abstract byte Command { get; }
+    public abstract byte[] Commands { get; } 
     public bool Attached => Stream != Stream.Null;
     
     int SendDelay = 0;
@@ -145,7 +145,7 @@ public abstract class Protocol : NabuService, IProtocol
         {
             Writer.Write(bytes);
         }
-        Task.Run(Writer.Flush);
+        //Task.Run(Writer.Flush);
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 

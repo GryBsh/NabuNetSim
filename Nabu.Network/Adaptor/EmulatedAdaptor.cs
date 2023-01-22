@@ -24,13 +24,11 @@ public class EmulatedAdaptor : NabuService
     {
         Settings = settings;
         NabuNet = nabu;
-        //ACP = acp;
         Protocols = protocols;
 
         Stream = stream;
         Reader = new BinaryReader(stream);
         NabuNet.Attach(Settings, Stream);
-        //ACP.Attach(Settings, Stream);
         foreach (var protocol in Protocols)
             protocol.Attach(Settings, Stream);
     }
@@ -51,7 +49,7 @@ public class EmulatedAdaptor : NabuService
                 
                 // Locate the protocol handler for this command message
                 var handler =
-                    Protocols.FirstOrDefault(p => p.Command == incoming) ?? // Protocols are bound to specific command messages
+                    Protocols.FirstOrDefault(p => p.Commands.Contains(incoming)) ?? // Protocols are bound to specific command messages
                     NabuNet; // Defaults to NABUNet
 
                 if (handler.Attached) // If the handler has been attached to the adapter
@@ -69,19 +67,18 @@ public class EmulatedAdaptor : NabuService
             }
             catch (IOException ex)
             {
-                // There is a big in dotnet 7 where Stream throws an IOException
+                // There is a big fail in dotnet 7 where Stream throws an IOException
                 // instead of a TimeoutException.
-                if (ex.HResult == -2147023436) continue; // <-- Thats the HResult for a Timeout
+                if (ex.HResult == -2147023436) continue; // <-- That's the HResult for a Timeout
                 else
                 {
                     Log($"Adaptor Loop Error: {ex.Message}");
                     break;
                 }
             }
-            
             catch (Exception ex)
             {
-                Error(ex.Message);
+                Log($"Adaptor Loop Error: {ex.Message}");
                 break;
             }
         }

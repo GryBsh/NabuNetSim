@@ -13,7 +13,7 @@ public abstract record AdaptorSettings
     public abstract AdaptorType Type { get; }
     public string Port { get; set; } = string.Empty;
     public bool Enabled { get; set; } = true;
-    public string? Source { get; set; }
+    public string Source { get; set; } = string.Empty;
     public string? Image { get; set; }
     public string StoragePath { get; set; } = "./Files";
     public short AdapterChannel { get; set; } = 0x0001;

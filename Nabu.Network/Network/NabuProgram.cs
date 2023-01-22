@@ -2,19 +2,7 @@
 
 namespace Nabu.Network;
 
-public enum SourceType
-{
-    Unknown = 0,
-    Local,
-    Remote
-}
 
-public enum ImageType
-{
-    None = 0,
-    Raw,
-    Pak
-}
 
 public record NabuProgram(
     string DisplayName,
@@ -24,5 +12,5 @@ public record NabuProgram(
     string Path,
     SourceType SourceType,
     ImageType ImageType,
-    IPakPatch[] Patches
+    IProgramPatch[] Patches
 );

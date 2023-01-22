@@ -14,28 +14,10 @@ using System.Threading.Tasks;
 
 namespace Nabu.Network;
 
-/*
-[ FRAME ]
-[2      ]       Size     
-[   1   ]       Command
-[    XXX]       Message (Remainder)
-[  END  ]        
-*/
 
-public class NabuNetSocketProtocol : Protocol
+public static class ErrorCodes
 {
-    public NabuNetSocketProtocol(ILogger logger) : base(logger)
-    {
-    }
-
-    public override byte Command => 0xA6;
-
-    protected override byte Version => 0x01;
-
-    public override Task Handle(byte unhandled, CancellationToken cancel)
-    {
-        return Task.CompletedTask;
-    }
+    public const short Duplicate = 409;
 }
 
 
@@ -45,7 +27,7 @@ public class RetroNetTelnetProtocol : Protocol
     {
     }
 
-    public override byte Command => 0xA6;
+    public override byte[] Commands { get; } = new byte[] { 0xA6 };
 
     protected override byte Version => 0x01;
 
@@ -71,7 +53,8 @@ public class RetroNetTelnetProtocol : Protocol
                 line += incoming[0];
                 if (echoOff is false)
                 {
-                    if (replacement is not null) Send(FromCharacters(replacement.Value));
+                    if (replacement is not null) 
+                        Send(FromCharacters(replacement.Value));
                     else Send((byte)incoming[0]);
                 }
             }
@@ -89,37 +72,36 @@ public class RetroNetTelnetProtocol : Protocol
     public override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         WriteLine("Socialist Workers Terminal vL.T.S");
-        WriteLine("\"It works for us now comrad!\"");
+        WriteLine("\"It works for us now comrade!\"");
         WriteLine();
         while (cancel.IsCancellationRequested is false)
             try
             {
                 var hostname = Prompt("Hostname");
                 var port = Prompt("Port");
-                WriteLine($"Capitalist Swine Detected, implemeting protocols...");
+                WriteLine($"Capitalist Swine Detected, engage protocols...");
                 Log($"Opening Socket to {hostname}:{port}...");
                 WriteLine($"Connecting to {hostname}:{port}");
                 
                 using Socket socket = NabuLib.Socket();
                 
-                try
+                if (int.TryParse(hostname, out var portNumber))
                 {
                     await socket.ConnectAsync(
-                        new DnsEndPoint(hostname, int.Parse(port))
+                        new DnsEndPoint(hostname, portNumber)
                     );
                     Log($"Connected!");
                     WriteLine("Connected!");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Warning(ex.Message);
-                    WriteLine();
-                    WriteLine($"ERROR: {ex.Message}");
+                    WriteLine($"ERROR: bad port");
                     continue;
                 }
 
                 var stream = new NetworkStream(socket);
                 Log($"Relaying Telnet to {hostname}:{port}");
+
                 await Task.WhenAny(
                     Stream.CopyToAsync(stream, cancel),
                     stream.CopyToAsync(Stream, cancel)
@@ -137,3 +119,4 @@ public class RetroNetTelnetProtocol : Protocol
     }
         
 }
+

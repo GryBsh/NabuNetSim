@@ -21,12 +21,12 @@ public class HttpStorageHandler : RAMStorageHandler
             }
             else
             {
-                return (false, response.ReasonPhrase ?? string.Empty, 0);
+                return (false, response.ReasonPhrase ?? string.Empty, (int)response.StatusCode);
             }
         }
         catch (Exception ex)
         {
-            return (false, ex.Message, 0);
+            return (false, ex.Message, 500);
         }
     }
 

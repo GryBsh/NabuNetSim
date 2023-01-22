@@ -133,7 +133,14 @@ public static partial class NabuLib
          *  BECAUSE: From a performance standpoint, it's less work, and theoretically
          *  faster.
          */
-
+        
+        for (short current = 1; current <= segment; current++)
+        {
+            (int i, short segLength) = Slice(buffer, 0, 2, ToShort);
+            
+        }
+        
+        
         int length = Constants.TotalPayloadSize;
 
                      // 2 bytes/seg         //Segment Offset

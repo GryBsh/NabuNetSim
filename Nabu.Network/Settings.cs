@@ -8,6 +8,6 @@ using System.Text;
 /// </summary>
 public class Settings {
     public AdaptorCollection Adaptors { get; set; } = new();
-    public List<SourceFolder> Sources { get; set; } = new();
+    public List<ProgramSource> Sources { get; set; } = new();
 }
 

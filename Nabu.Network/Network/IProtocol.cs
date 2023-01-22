@@ -2,7 +2,7 @@
 
 public interface IProtocol
 {
-    byte Command { get; }
+    byte[] Commands { get; }
     bool Attached { get; }
     bool Attach(AdaptorSettings settings, Stream stream);
     Task<bool> Listen(byte unhandled, CancellationToken cancel);
