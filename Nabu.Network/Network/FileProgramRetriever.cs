@@ -34,8 +34,10 @@ public class FileProgramRetriever : ProgramRetriever
         var filename = image switch
         {
             null => NabuLib.FormatTriple(pak),
-            _ => image
+            not null when pak is 1 => image,
+            _ => NabuLib.FormatTriple(pak)
         };
+
         path = Path.Join(path, $"{filename}.nabu");
         var buffer = await File.ReadAllBytesAsync(path);
         return buffer;

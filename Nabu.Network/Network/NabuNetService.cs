@@ -138,7 +138,11 @@ public partial class NabuNetService : NabuService
         }
         var source = Source(Settings);
         var path = source.Path;
-        var image = Empty(Settings.Image) ? NabuLib.FormatTriple(1) : Settings.Image!;
+        var image = pak switch {
+
+            > 1 => FormatTriple(pak),
+            _ => Empty(Settings.Image) ? NabuLib.FormatTriple(1) : Settings.Image!
+        };
 
         if (SourceCache.ContainsKey(source) is false) return (ImageType.None, ZeroBytes); 
 
