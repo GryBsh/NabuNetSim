@@ -49,6 +49,8 @@ public abstract class Protocol : NabuService, IProtocol
         return buffer;
     }
 
+    protected async Task<byte> RecvAsync() => (await RecvAsync(1))[0];
+
     /// <summary>
     ///     Receives a byte and returns if it was the expected byte
     ///     and the actual byte received.
@@ -62,6 +64,11 @@ public abstract class Protocol : NabuService, IProtocol
         if (!good) Warning($"NA: {Format(expected)} != {Format(read)}");
         return (good, read);
     }
+
+    public int RecvInt() => NabuLib.ToInt(Reader.ReadBytes(4));
+    public short RecvShort() => NabuLib.ToShort(Reader.ReadBytes(2));
+
+    public string RecvString() => Reader.ReadString();
 
     /// <summary>
     ///     Receives the specified bytes.
@@ -251,5 +258,12 @@ public abstract class Protocol : NabuService, IProtocol
     }
 
     #endregion
+
+    public virtual void Reset() { }
+
+    public virtual bool ShouldAccept(byte unhandled)
+    {
+        return Commands.Contains(unhandled);    
+    }
 }
 

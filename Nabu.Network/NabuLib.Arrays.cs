@@ -1,4 +1,6 @@
-﻿namespace Nabu;
+﻿using static System.Runtime.InteropServices.JavaScript.JSType;
+
+namespace Nabu;
 
 public static partial class NabuLib
 {
@@ -81,9 +83,12 @@ public static partial class NabuLib
         if (items.Length == length) return items;
 
         var result = new Span<T>(new T[length]);
-        length = length > items.Length ? items.Length : length;
-        items[..length].CopyTo(result);
-        result[length..].Fill(fill());
+        var count = items.Length;
+        items[..count].CopyTo(result);
+        for (int i = count; i < length; i++)
+        {
+            result[i] = fill();
+        }
         return result;
     }
 
@@ -98,5 +103,43 @@ public static partial class NabuLib
         foreach (var buffer in buffers)
             foreach (var b in buffer)
                 yield return b;
+    }
+
+    public static Span<byte> Append(Span<byte> buffer, Span<byte> data)
+    {
+        Span<byte> r = new byte[buffer.Length + data.Length];
+        buffer.CopyTo(r);
+        data.CopyTo(r[buffer.Length..(buffer.Length+data.Length)]);
+        return r;
+    }
+
+    public static Span<byte> Insert(Span<byte> buffer, int offset, Span<byte> data)
+    {
+        var end = offset + data.Length;
+        var length = end > data.Length ? end : data.Length;
+        Span<byte> r = new byte[length];
+        buffer[..offset].CopyTo(r);
+        data.CopyTo(r[offset..(offset + data.Length)]);
+        buffer[offset..].CopyTo(r[end..]);
+        return r;
+    }
+
+    public static Span<byte> Delete(Span<byte> buffer, int offset, int length)
+    {
+        var end = offset + length;   
+        Span<byte> r = new byte[length];
+        buffer[..offset].CopyTo(r);
+        buffer[end..].CopyTo(r[offset..]);
+        return r;
+    }
+
+    public static Span<byte> Replace(Span<byte> buffer, int offset, Span<byte> data)
+    {
+        var size = offset + data.Length;
+        var length = size > buffer.Length ? size : buffer.Length;
+        var r = SetLength<byte>(length, buffer, 0x00);
+
+        data.CopyTo(r[offset..(offset+data.Length)]);   
+        return r;
     }
 }

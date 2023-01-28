@@ -1,17 +1,16 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Network;
+using Nabu.Network.NHACP;
+using Nabu.Network.RetroNet;
 using System.Text;
 
 namespace Nabu;
 
 
-public enum ServiceShould
-{
-    Stop = 0,
-    Continue,
-    Restart
-}
+
 
 
 public class Simulation : BackgroundService
@@ -34,13 +33,32 @@ public class Simulation : BackgroundService
         ServiceProvider = serviceProvider;
     }
 
-    public Task[] Services { get; private set; } 
-        = Array.Empty<Task>();
-    public ServiceShould[] Next { get; private set; } 
-        = Array.Empty<ServiceShould>();
-    public CancellationTokenSource[] Cancel { get; private set; } 
-        = Array.Empty<CancellationTokenSource>();
+    Task[] Services { get; set; } = Array.Empty<Task>();
+    static ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
+    CancellationTokenSource[] Cancel { get; set; } = Array.Empty<CancellationTokenSource>();
 
+    public void StartAdaptor(AdaptorSettings settings)
+    {
+        int index = Array.IndexOf(DefinedAdaptors, settings);
+        if (index >= 0)
+            Next[index] = ServiceShould.Restart;
+    }
+
+    public void StopAdaptor(AdaptorSettings settings)
+    {
+        int index = Array.IndexOf(DefinedAdaptors, settings);
+        if (index >= 0)
+            Next[index] = ServiceShould.Stop;
+    }
+
+    public void ToggleAdaptor(AdaptorSettings settings)
+    {
+        int index = Array.IndexOf(DefinedAdaptors, settings);
+        if (index >= 0)
+            Next[index] = Next[index] == ServiceShould.Continue ? ServiceShould.Stop : ServiceShould.Continue;
+        
+    }
+        
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         
@@ -76,38 +94,48 @@ public class Simulation : BackgroundService
             {
                 for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
-                    if (Next[index] is ServiceShould.Restart or ServiceShould.Stop)
+                    var settings = DefinedAdaptors[index];
+                    
+                    if (settings.Next is ServiceShould.Restart or ServiceShould.Stop)
                     {
                         cancel[index].Cancel();
                         services[index] = Task.CompletedTask;
                         cancel[index] = CancellationTokenSource.CreateLinkedTokenSource(stopping);
                     }
-                    if (Next[index] is ServiceShould.Restart)
-                        next[index] = ServiceShould.Continue;
+                    if (settings.Next is ServiceShould.Restart)
+                        settings.Next = ServiceShould.Continue;
 
                     // Is this service stopped?
-                    if (services[index].IsCompleted && Next[index] is ServiceShould.Continue)
+                    if (services[index].IsCompleted && settings.Next is ServiceShould.Continue && settings.Enabled)
                     {
-                        // If it was already started, increase the fails
-                        //if (started) fails[index] += 1;
-
                         // If so, restart it
-                        var settings = DefinedAdaptors[index];
-                        if (settings.Enabled is false) //but not if it's disabled
-                            continue;
-
+                        var cncl = cancel[index].Token;
                         services[index] = settings.Type switch
                         {
-                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, stopping, index)),
-                            AdaptorType.TCP    => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, stopping, index)),
+                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, cncl, index)),
+                            AdaptorType.TCP    => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, cncl, index)),
                             _ => throw new NotImplementedException()
                         };
+                        settings.Running = true;
                     }
                     
                 }
                 //started = true;
-                Thread.Sleep(100); // Lazy Wait, we don't care how long it takes to resume
+                Thread.Sleep(10); // Lazy Wait, we don't care how long it takes to resume
             }
         }, stopping);
+    }
+
+    public static IServiceCollection Register(IServiceCollection services)
+    {
+        services.AddTransient<HttpProgramRetriever>()
+                .AddTransient<FileProgramRetriever>()
+                .AddTransient<NabuNetService>()
+                .AddTransient<ClassicNabuProtocol>()
+                //.AddTransient<IProtocol, NHACPProtocol>()
+                .AddTransient<IProtocol, RetroNetTelnetProtocol>()
+                .AddTransient<IProtocol, RetroNetProtocol>()
+                .AddHostedService<Simulation>();
+        return services;
     }
 }

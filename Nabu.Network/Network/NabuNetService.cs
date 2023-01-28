@@ -5,11 +5,12 @@ using static System.Net.Mime.MediaTypeNames;
 namespace Nabu.Network;
 
 
-public partial class NabuNetService : NabuService
+public class NabuNetService : NabuService
 {
     HttpProgramRetriever Http { get; }
     FileProgramRetriever File { get; }
-    List<ProgramSource> Sources { get; set; } = new();
+    Settings SimulationSettings {get;}
+    List<ProgramSource> Sources => SimulationSettings.Sources;
     public Dictionary<ProgramSource,IEnumerable<NabuProgram>> SourceCache { get; } = new();
     Dictionary<int, Memory<byte>> ProgramCache { get; } = new();
     Dictionary<(string?, int), byte[]> PakCache { get; } = new();
@@ -18,12 +19,13 @@ public partial class NabuNetService : NabuService
         ILogger<NabuNetService> logger,
         HttpProgramRetriever http,
         FileProgramRetriever file,
-        List<ProgramSource> sources
+        Settings settings
     ) : base(logger, new NullAdaptorSettings())
     {
         Http = http;
         File = file;
-        Sources = sources;
+        SimulationSettings = settings;
+        
         Task.Run(() => RefreshSources());
     }
 

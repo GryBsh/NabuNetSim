@@ -69,12 +69,9 @@ public class SerialAdaptor
         {
             logger.LogError(ex.Message, ex);
         }
-        finally
-        {
-            serial.Close();
-            serial.Dispose();
-        }
 
+        serial.Close();
+        serial.Dispose();
 
     }
 

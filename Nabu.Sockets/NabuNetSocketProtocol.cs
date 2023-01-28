@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Network.RetroNet;
 using System.Net.Sockets;
 
 
@@ -10,7 +11,7 @@ public class NabuNetSocketProtocol : Protocol
     Dictionary<byte, Socket> Sockets { get; } = new();
     public NabuNetSocketProtocol(ILogger<NabuNetSocketProtocol> logger) : base(logger)
     {
-        
+
     }
 
     public override byte[] Commands { get; } = new byte[] { 0xA1 };
@@ -66,7 +67,7 @@ public class NabuNetSocketProtocol : Protocol
 
     void OnPacketSliced(int next, long length)
     {
-        if (next > 0) 
+        if (next > 0)
             Warning($"Packet length {length - next} != Frame length {length}");
     }
 
@@ -84,8 +85,9 @@ public class NabuNetSocketProtocol : Protocol
             (i, string uri) = NabuLib.Slice(buffer, i, uriLength, NabuLib.ToASCII);
             OnPacketSliced(i, buffer.Length);
 
-            
-            if (index is not 0xFF) {
+
+            if (index is not 0xFF)
+            {
                 if (Sockets.ContainsKey(index))
                 {
                     Error(ErrorCodes.Duplicate, $"Socket {index} already exists");
@@ -102,7 +104,7 @@ public class NabuNetSocketProtocol : Protocol
             var uriParts = uri.Split(':', 2, StringSplitOptions.TrimEntries);
             if (uriParts.Length < 2)
                 Error(400, "Invalid URI");
-            
+
             var host = uriParts[0];
             if (!int.TryParse(uriParts[1], out var port))
                 Error(400, "Invalid Port");
@@ -110,11 +112,11 @@ public class NabuNetSocketProtocol : Protocol
             var socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
             await socket.ConnectAsync(host, port);
             Sockets[index] = socket;
-            
+
             Log($"NA: Adding socket into slot {index}: {uri}");
-                
+
             Loaded(index);
-            
+
         }
         catch (Exception ex)
         {
@@ -133,13 +135,13 @@ public class NabuNetSocketProtocol : Protocol
 
             if (Sockets.ContainsKey(index) is false)
                 Error(404, "Socket not found");
-            
+
             var data = new byte[length];
             await Sockets[index].ReceiveAsync(data.AsMemory(), cancel);
-            
+
             Log($"NA: Read from slot {index}:{length} bytes");
             DataBuffer(data);
-            
+
         }
         catch (Exception ex)
         {
@@ -157,12 +159,12 @@ public class NabuNetSocketProtocol : Protocol
             (i, short length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
             (i, var data) = NabuLib.Slice(buffer, i, length);
             OnPacketSliced(i, buffer.Length);
-                       
+
             await Sockets[index].SendAsync(data.AsMemory(), cancel);
-            
+
             Log($"Writing to slot {index}: OK");
             SendFramed(0x81); // OK
-            
+
         }
         catch (Exception ex)
         {
@@ -232,7 +234,8 @@ public class NabuNetSocketProtocol : Protocol
 
     public override void Detach()
     {
-        foreach (var socket in Sockets.Values) {
+        foreach (var socket in Sockets.Values)
+        {
             socket.Close();
             socket.Dispose();
         }

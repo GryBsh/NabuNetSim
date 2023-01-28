@@ -21,9 +21,6 @@ await   Host
                 );
                 
                 services.AddHttpClient();
-                Emulator.Register(services)
-                        .AddTransient<IProtocol, NHACPProtocol>()
-                        .AddTransient<IProtocol, RetroNetTelnetProtocol>()
-                        .AddHostedService<Simulation>(); 
+                Simulation.Register(services);
             }
         ).RunConsoleAsync();

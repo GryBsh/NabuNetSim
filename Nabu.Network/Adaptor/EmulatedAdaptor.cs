@@ -36,6 +36,13 @@ public class EmulatedAdaptor : NabuService
 
     #region Adaptor Loop   
 
+    IProtocol HandlerFor(byte incoming)
+    {
+        return
+            Protocols.FirstOrDefault(p => p.ShouldAccept(incoming)) ??
+            NabuNet; // Defaults to NABUNet
+    }
+
     public virtual async Task Listen(CancellationToken cancel)
     {
         
@@ -46,14 +53,17 @@ public class EmulatedAdaptor : NabuService
             {   
                 // Read the command message
                 byte incoming = Reader.ReadByte();
-                
+
                 // Locate the protocol handler for this command message
-                var handler =
-                    Protocols.FirstOrDefault(p => p.Commands.Contains(incoming)) ?? // Protocols are bound to specific command messages
-                    NabuNet; // Defaults to NABUNet
+                var handler = HandlerFor(incoming);
 
                 if (handler.Attached) // If the handler has been attached to the adapter
                 {
+                    if (handler is ClassicNabuProtocol)
+                    {
+                        foreach (var p in Protocols)
+                            p.Reset();
+                    }
                     var shouldContinue = await handler.Listen(incoming, cancel);
                     continue; // Then continue to the next command message
                 }
@@ -88,6 +98,7 @@ public class EmulatedAdaptor : NabuService
         NabuNet.Detach();
         foreach (var protocol in Protocols)
             protocol.Detach();
+        Stream.Dispose();
     }
     #endregion
 

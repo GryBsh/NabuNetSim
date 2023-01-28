@@ -7,4 +7,6 @@ public interface IProtocol
     bool Attach(AdaptorSettings settings, Stream stream);
     Task<bool> Listen(byte unhandled, CancellationToken cancel);
     void Detach();
+    void Reset();
+    bool ShouldAccept(byte unhandled);
 }

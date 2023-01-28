@@ -6,7 +6,7 @@ namespace Nabu.Network;
 
 public class ClassicNabuProtocol : Protocol
 {
-    NabuNetService Network { get; }
+    public NabuNetService Network { get; }
     NabuNetAdaptorState State;
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     protected override byte Version => 0x84;
@@ -108,8 +108,7 @@ public class ClassicNabuProtocol : Protocol
         Log($"NPC: Segment: {segment:x04}, PAK: {FormatTriple(pak)}, NA: {nameof(StateMessage.Confirmed)}");
         Confirmed();
         if (segment == 0x00 &&
-            pak == Message.TimePak
-        )
+            pak == Message.TimePak)
         {
             Log("NPC: What Time it is?");
             SendPacket(pak,TimePacket(), last: true);

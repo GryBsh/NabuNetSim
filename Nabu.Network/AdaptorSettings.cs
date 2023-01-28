@@ -1,12 +1,6 @@
 ﻿namespace Nabu;
 
-public enum AdaptorType
-{
-    Unknown = 0,
-    Serial,
-    TCP,
-    Relay
-}
+
 
 public abstract record AdaptorSettings
 {
@@ -17,6 +11,9 @@ public abstract record AdaptorSettings
     public string? Image { get; set; }
     public string StoragePath { get; set; } = "./Files";
     public short AdapterChannel { get; set; } = 0x0001;
+    public bool Running { get; set; }
+    public ServiceShould Next { get; set; }
+    
 }
 
 public record NullAdaptorSettings : AdaptorSettings
