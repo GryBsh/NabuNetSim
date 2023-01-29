@@ -1,5 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Patching;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace Nabu.Network;
@@ -27,6 +29,9 @@ public class NabuNetService : NabuService
         SimulationSettings = settings;
         
         Task.Run(() => RefreshSources());
+        Observable.Interval(TimeSpan.FromMinutes(1))
+                  .SubscribeOn(ThreadPoolScheduler.Instance)
+                  .Subscribe(async _ => await RefreshSources(true));
     }
 
     bool IsNabu(string path) => path.EndsWith(".nabu");
@@ -71,20 +76,19 @@ public class NabuNetService : NabuService
     /// Refreshes the list of image sources from the current definition.
     /// </summary>
     /// <returns></returns>
-    public async Task RefreshSources()
+    public async Task RefreshSources(bool skipRemote = false)
     {
-        ClearCache();
         foreach (var source in Sources)
         {
             var pak = 1;
             var nabuName = FormatTriple(pak);
             var pakName = NabuLib.PakName(pak);
-            if (HttpProgramRetriever.IsWebSource(source.Path))
+            if (!skipRemote && HttpProgramRetriever.IsWebSource(source.Path))
             {
+                source.SourceType = SourceType.Remote;
                 if (await Http.FoundRaw(source.Path, pak))
                 {
-                    SourceCache.Add(
-                        source,
+                    SourceCache[source] =
                         new NabuProgram[] {
                             new(
                                 nabuName,
@@ -96,16 +100,14 @@ public class NabuNetService : NabuService
                                 ImageType.Raw,
                                 new[] { new PassThroughPatch(Logger) }
                             )
-                        }
-                    );
+                        };
                 }
                 else
                 {
                     var (found, url) = await Http.FoundPak(source.Path, pak);
                     if (found)
                     {
-                        SourceCache.Add(
-                            source,
+                        SourceCache[source] =
                             new NabuProgram[] {
                             new(
                                 nabuName,
@@ -117,15 +119,54 @@ public class NabuNetService : NabuService
                                 ImageType.Pak,
                                 new[] { new PassThroughPatch(Logger) }
                             )
-                            }
-                        );
+                        };
                     }
                 }
             }
-            else SourceCache.Add(source, new FileSystemObserver(Logger, source));
+            else if (!HttpProgramRetriever.IsWebSource(source.Path)) {
+                source.SourceType = SourceType.Local;
+                SourceCache[source] = Refresh(source); 
+            }
         }
     }
-    
+
+    public IEnumerable<NabuProgram> Refresh(ProgramSource source)
+    {
+        if (source.Path is null) yield break;
+
+        var files = Directory.GetFiles(source.Path, "*.npak");
+        foreach (var file in files)
+        {
+            var name = Path.GetFileNameWithoutExtension(file);
+            yield return new(
+                name,
+                name,
+                source.Name,
+                DefinitionType.Folder,
+                file,
+                SourceType.Local,
+                ImageType.Pak,
+                new[] { new PassThroughPatch(Logger) }
+            );
+        }
+
+        files = Directory.GetFiles(source.Path, "*.nabu");
+        foreach (var file in files)
+        {
+            var name = Path.GetFileNameWithoutExtension(file);
+            yield return new(
+                name,
+                name,
+                source.Name,
+                DefinitionType.Folder,
+                file,
+                SourceType.Local,
+                ImageType.Raw,
+                new[] { new PassThroughPatch(Logger) }
+            );
+        }
+    }
+
     /// <summary>
     /// Requests a PAK from the Network Emulator
     /// </summary>
@@ -138,6 +179,7 @@ public class NabuNetService : NabuService
             Warning("NTWRK: No Source Defined");
             return (ImageType.None, ZeroBytes);
         }
+        
         var source = Source(Settings);
         var path = source.Path;
         var image = pak switch {

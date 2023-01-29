@@ -11,11 +11,9 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
-- > The RetroNet Telnet app is supported, but no other parts. And it's experimental.
+- > RetroNet support, including Cloud CP/M is experimental
 - > NHACP support is experimental.
-- > The purpose of the `Magical Mystery Message` is still unknown. It's sent by the NABU PC
-  with one value when it's first connecting: `0x8F|0x05`, then when the program is
-  first started another: `0x0F|0x05`. It seems to be signaling something, but what?
+- > The MagicalMysteryPacket confirms the GetStatus message, as documented, is backwards. The adaptor is sending status not asking for it.
 - > I'm 100% sure there are more.
 
 ## Systen Requirements
@@ -29,34 +27,39 @@ A PC can potentially serve hundreds.
 
 ## Configuration
 
-Can be set via command line arguments, in the usual dotnet way.
-
-### Adaptors
-
-#### All Types
-
-- Port: the name or path to the serial port to use.
-- Source: the name of the source to use for the adaptor.
-- Image: if the source contains multiple images, this is the one to use.
-- Enabled: if the adaptor should be enabled or not. (Default: true)
-- AdaptorChannel: setting this to 0 will show the channel prompt. (Default: 1)
-
-#### Serial Only
-
-- BaudRate: the baud rate to use for the serial port. (Default: 115200)
-- ReadTimeout: the read timeout for the serial port. (Default: 1000)
-
-### Sources
-
-- Name: the name of the source.
-- Path: the path to the source, either folder path or base URL.
-
-### Logging
-
-This app supports the standard dotnet logging section. Various components logging levels can be changed
-this way.
-
-> The default is `Information, Error, Warning` for all components.
+```json
+{
+  "Settings": {
+    "Adaptors": {
+      "Serial": [
+        {
+          "Port": "COM3",                 // Port, COM for Windows, /dev/... for Linux/macOS
+          "Source": "Local Cycle 1",      // The name of the source, defined below
+          "StoragePath": "./Files"        // The storage root, where Retronet looks for files
+        }
+      ],
+      "TCP": [
+        {
+          "Port": 5816,
+          "Source": "Local Cycle 1",
+          "StoragePath": "./Files" 
+        }
+      ]
+    },
+    "Sources": [
+      {
+        "Name": "Local Cycle 2EX",        // Source Name
+        "Path": "./PAKs/cycle2ex"         // Soruce Path
+      },
+      {
+        "Name": "Nabu.Ca Cloud CP/M",
+        "Path": "https://cloud.nabu.ca/HomeBrew/titles/CPM22.nabu",
+        "EnableRetroNet": true           // Enable RetroNet support for this source
+      }
+    ]
+  }
+}
+```
 
 ## Special Thanks
 
