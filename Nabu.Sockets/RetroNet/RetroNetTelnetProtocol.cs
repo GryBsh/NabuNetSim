@@ -15,12 +15,6 @@ using System.Threading.Tasks;
 namespace Nabu.Network.RetroNet;
 
 
-public static class ErrorCodes
-{
-    public const short Duplicate = 409;
-}
-
-
 public class RetroNetTelnetProtocol : Protocol
 {
     public RetroNetTelnetProtocol(ILogger<RetroNetTelnetProtocol> logger) : base(logger)
@@ -45,7 +39,10 @@ public class RetroNetTelnetProtocol : Protocol
             else if (incoming[0] is '\b')
             {
                 if (!string.IsNullOrEmpty(line))
+                {
                     line = new(line.AsSpan()[..^1].ToArray());
+                }
+                Send((byte)incoming[0]);
                 continue;
             }
             else
@@ -87,7 +84,7 @@ public class RetroNetTelnetProtocol : Protocol
 
                 using Socket socket = NabuLib.Socket();
 
-                if (int.TryParse(hostname, out var portNumber))
+                if (int.TryParse(port, out var portNumber))
                 {
                     await socket.ConnectAsync(
                         new DnsEndPoint(hostname, portNumber)
@@ -105,12 +102,13 @@ public class RetroNetTelnetProtocol : Protocol
                 Log($"Relaying Telnet to {hostname}:{port}");
 
                 Cancel = CancellationTokenSource.CreateLinkedTokenSource(cancel, CancellationToken.None);
-
+                
                 var sender = Task.Run(() =>
                 {
                     int startupCount = 0;
                     while (Cancel.IsCancellationRequested is false)
                     {
+                        
                         var b = (byte)Stream.ReadByte();
 
                         if (b == 0x03)
@@ -119,7 +117,7 @@ public class RetroNetTelnetProtocol : Protocol
 
                         if (b is 0x83)
                             startupCount++;
-                        if (startupCount == 3)
+                        if (startupCount == 2)
                             break;
 
                         stream.WriteByte(b);
@@ -133,10 +131,14 @@ public class RetroNetTelnetProtocol : Protocol
                 {
                     while (Cancel.IsCancellationRequested is false && stream.CanRead)
                     {
+                        while (socket.Available == 0) Thread.SpinWait(10);
                         var b = (byte)stream.ReadByte();
                         Stream.WriteByte(b);
                     }
                 }, Cancel.Token);
+                
+
+
 
                 await Task.WhenAny(
                     sender,
@@ -148,7 +150,7 @@ public class RetroNetTelnetProtocol : Protocol
                 Error(ex.Message);
                 return;
             }
-        Cancel = new CancellationTokenSource();
+       
         return;
 
 
@@ -156,7 +158,7 @@ public class RetroNetTelnetProtocol : Protocol
 
     public override void Reset()
     {
-        Cancel.Cancel();
+        Cancel?.Cancel();
 
     }
 }

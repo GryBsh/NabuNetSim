@@ -3,5 +3,6 @@
 public enum DefinitionType
 {
     Unknown = 0,
-    Folder
+    Folder,
+    NabuCaList
 }

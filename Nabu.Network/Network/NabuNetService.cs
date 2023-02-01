@@ -86,6 +86,11 @@ public class NabuNetService : NabuService
             if (!skipRemote && HttpProgramRetriever.IsWebSource(source.Path))
             {
                 source.SourceType = SourceType.Remote;
+                var (isList, items) = await Http.FoundNabuCaList(source.Name, source.Path);
+                if (isList)
+                {
+                    SourceCache[source] = items;
+                }
                 if (await Http.FoundRaw(source.Path, pak))
                 {
                     SourceCache[source] =
@@ -203,10 +208,10 @@ public class NabuNetService : NabuService
         {
             bytes = (prg.SourceType, prg.ImageType) switch
             {
-                (SourceType.Remote, ImageType.Raw) => await Http.GetRawBytes(path, pak),
-                (SourceType.Local, ImageType.Raw)  => await File.GetRawBytes(path, pak, image),
-                (SourceType.Remote, ImageType.Pak) => await Http.GetPakBytes(path, pak),
-                (SourceType.Local, ImageType.Pak)  => await File.GetPakBytes(path, pak),
+                (SourceType.Remote, ImageType.Raw) => await Http.GetRawBytes(prg.Path, pak),
+                (SourceType.Local, ImageType.Raw)  => await File.GetRawBytes(prg.Path, pak, image),
+                (SourceType.Remote, ImageType.Pak) => await Http.GetPakBytes(prg.Path, pak),
+                (SourceType.Local, ImageType.Pak)  => await File.GetPakBytes(prg.Path, pak),
                 _ => ZeroBytes
             };
         }

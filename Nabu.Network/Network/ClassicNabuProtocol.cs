@@ -128,10 +128,10 @@ public class ClassicNabuProtocol : Protocol
         bool last = false;
         byte[] payload = Array.Empty<byte>();
 
-        if (type == ImageType.Raw)
-            (last, payload) = NabuLib.SliceFromRaw(Logger, segment, pak, segmentData);
-        else
-            (last, payload) = NabuLib.SliceFromPak(Logger, segment, segmentData);
+        //if (type == ImageType.Raw)
+        (last, payload) = NabuLib.SliceFromRaw(Logger, segment, pak, segmentData);
+        //else
+        //(last, payload) = NabuLib.SliceFromPak(Logger, segment, segmentData);
 
         if (payload.Length == 0) Unauthorized();
         else SendPacket(pak, payload, last: last);

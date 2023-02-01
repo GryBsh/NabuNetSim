@@ -7,7 +7,6 @@ public record ProgramSource
     public SourceType SourceType { get; internal set; }
     public ImageType ImageType { get; set; }
     public bool EnableRetroNet { get; set; }
-
 }
 
 

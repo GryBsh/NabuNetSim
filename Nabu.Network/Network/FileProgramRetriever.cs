@@ -20,8 +20,11 @@ public class FileProgramRetriever : ProgramRetriever
     #region File
     public async Task<byte[]> GetPakBytes(string path, int pak, bool encrypted = true)
     {
-        var filename = NabuLib.PakName(pak);
-        path = Path.Join(path, $"{filename}.npak");
+        if (!IsPak(path))
+        {
+            var filename = NabuLib.PakName(pak);
+            path = Path.Join(path, $"{filename}.npak");
+        }
         var npak = await File.ReadAllBytesAsync(path);
         //Trace($"NPAK Length: {npak.Length}");
         npak = NabuLib.Unpak(npak);
@@ -31,14 +34,17 @@ public class FileProgramRetriever : ProgramRetriever
 
     public async Task<byte[]> GetRawBytes(string path, int pak, string? image = null)
     {
-        var filename = image switch
+        if (!IsNabu(path))
         {
-            null => NabuLib.FormatTriple(pak),
-            not null when pak is 1 => image,
-            _ => NabuLib.FormatTriple(pak)
-        };
+            var filename = image switch
+            {
+                null => NabuLib.FormatTriple(pak),
+                not null when pak is 1 => image,
+                _ => NabuLib.FormatTriple(pak)
+            };
 
-        path = Path.Join(path, $"{filename}.nabu");
+            path = Path.Join(path, $"{filename}.nabu");
+        }
         var buffer = await File.ReadAllBytesAsync(path);
         return buffer;
     }

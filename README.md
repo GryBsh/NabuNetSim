@@ -7,6 +7,11 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
+## Whats New
+
+- > Since even Nabu.Ca is using raw cycle files now, NetSim no longer supports encrypted PAK files.
+- > Restores support for RetroNet, including new support for Cloud CP/M.
+
 ## Known Issues
 
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
@@ -49,11 +54,11 @@ A PC can potentially serve hundreds.
     "Sources": [
       {
         "Name": "Local Cycle 2EX",        // Source Name
-        "Path": "./PAKs/cycle2ex"         // Soruce Path
+        "Path": "./PAKs/cycle2ex"         // Source Path
       },
       {
-        "Name": "Nabu.Ca Cloud CP/M",
-        "Path": "https://cloud.nabu.ca/HomeBrew/titles/CPM22.nabu",
+        "Name": "Nabu.Ca",
+        "Path": "https://cloud.nabu.ca/HomeBrew/titles/filesv2.txt",
         "EnableRetroNet": true           // Enable RetroNet support for this source
       }
     ]
@@ -63,7 +68,7 @@ A PC can potentially serve hundreds.
 
 ## Special Thanks
 
-- DJ Sures: for his tireless work on the official recreation
+- DJ Sures: For his work on Nabu.Ca
 - Leo Binkowski: for preserving all that sweet hardware and software
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome

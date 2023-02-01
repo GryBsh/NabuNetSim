@@ -21,7 +21,7 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
-    - name: Package Linux
+    - name: Package NetSim Linux
       run: |
         for arch in $linux_arch; 
         do
@@ -35,7 +35,7 @@ jobs:
           rm -f $BIN/*.pdb
           zip -r nns-linux-$arch.zip $BIN
         done
-    - name: Package Windows
+    - name: Package NetSim Windows
       run: |
         for arch in $win_arch; 
         do
@@ -49,7 +49,7 @@ jobs:
           rm -f $BIN/*.pdb
           zip -r nns-win-$arch.zip $BIN
         done
-    - name: Package MacOS
+    - name: Package NetSim MacOS
       run: |
         BIN="bin/macos/x64"
         dotnet publish ./Nabu.NetSim -r osx.10.10-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
@@ -80,6 +80,56 @@ jobs:
         #cp -f README.md $BIN
         #rm -f $BIN/*.pdb
         #zip -r nns-macos-arm64.zip $BIN
+    - name: Package NetSim Web Linux
+      run: |
+        for arch in $linux_arch; 
+        do
+          BIN="bin/linux/$arch"
+          dotnet publish ./Nabu.NetSimWeb -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          cp -r $PAK $BIN
+          mkdir $BIN/NABUs
+          mkdir $BIN/Files
+          cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
+          cp -f README.md $BIN
+          rm -f $BIN/*.pdb
+          zip -r nnsweb-linux-$arch.zip $BIN
+        done
+    - name: Package NetSim Web Windows
+      run: |
+        for arch in $win_arch; 
+        do
+          BIN="bin/win/$arch"
+          dotnet publish ./Nabu.NetSimWebWeb -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          cp -r $PAK $BIN
+          mkdir $BIN/NABUs
+          mkdir $BIN/Files
+          cp -f $CONFIG/appsettings.win.json $BIN/appsettings.json
+          cp -f README.md $BIN
+          rm -f $BIN/*.pdb
+          zip -r nnsweb-win-$arch.zip $BIN
+        done
+    - name: Package NetSim MacOS
+      run: |
+        BIN="bin/macos/x64"
+        dotnet publish ./Nabu.NetSimWeb -r osx.10.10-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        cp -r $PAK $BIN
+        mkdir $BIN/NABUs
+        mkdir $BIN/Files
+        cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
+        cp -f README.md $BIN
+        rm -f $BIN/*.pdb
+        zip -r nnsweb-macos.10.10-x64.zip $BIN
+
+        rm -rf $BIN;
+        dotnet publish ./Nabu.NetSimWeb -r osx.11.0-x64 -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        cp -r $PAK $BIN
+        mkdir $BIN/NABUs
+        mkdir $BIN/Files
+        cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
+        cp -f README.md $BIN
+        rm -f $BIN/*.pdb
+        zip -r nnsweb-macos.11+-x64.zip $BIN
+
         
     - name: Release
       uses: softprops/action-gh-release@v1

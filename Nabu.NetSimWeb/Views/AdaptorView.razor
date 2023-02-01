@@ -1,0 +1,80 @@
+﻿@using ReactiveUI;
+@using Splat
+@inherits ReactiveComponentBase<HomeViewModel>
+
+<div class="row table-row adpt-tray">
+    <div class="col col-2">
+        <label>Status</label>
+    </div>
+    <div class="col col-3">
+        <label>Port</label>
+    </div>
+    <div class="col col-5">
+        <label>Source</label>
+    </div>
+    <div class="col col-2">
+        <label>Actions</label>
+    </div>
+</div>
+<Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
+    <div class="row">
+        <div class="col col-2">
+            <label>@ViewModel!.AdaptorStatus(context)</label>
+        </div>
+        <div class="col col-3 adpt-label">
+            <Select TValue="string" @bind-SelectedValue="@context.Port">
+                @foreach (var serial in ViewModel!.SerialPortNames)
+                {
+                    <option value="@serial">@serial</option>
+                }
+            </Select>
+        </div>
+        <div class="col col-5">
+            <Select TValue="string" SelectedValue="@context.Source" SelectedValueChanged="@(v => { context.Source = v; context.Image = string.Empty; })">
+                @foreach (var source in ViewModel!.SourceNames) {
+                    <option value="@source">@source</option>
+                }
+            </Select>
+        </div>
+        <div class="col col-2 d-flex">
+            <Button Class="btn btn-success btn-sm d-flex"
+                    Clicked="@(() => ViewModel!.ToggleSelector(@context))">
+                <small>&nbsp</small><Icon Name="IconName.FolderOpen" /><small>&nbsp</small>
+            </Button>
+            <small>&nbsp</small>
+            <Button Class="@ViewModel!.AdaptorButtonClass(context)" Clicked="@(() => ViewModel!.ToggleAdaptor(context))">
+                <small>&nbsp</small><Icon Name="@ViewModel!.AdaptorButtonIcon(context)" /><small>&nbsp</small>
+            </Button>
+        </div>
+    </div>
+</Virtualize>
+<Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
+    <div class="row">
+        <div class="col col-2">
+            <label>@ViewModel!.AdaptorStatus(context)</label>
+        </div>
+        <div class="col col-3 adpt-label">
+           <TextEdit @bind-Text="@context.Port" />
+        </div>
+        <div class="col col-5">
+            <Select TValue="string" SelectedValue="@context.Source" SelectedValueChanged="@(v => { context.Source = v; context.Image = string.Empty; })">
+                @foreach (var source in ViewModel!.SourceNames)
+                {
+                    <option value="@source">@source</option>
+                }
+            </Select>
+        </div>
+        <div class="col col-2 d-flex">
+            <Button Class="btn btn-success btn-sm d-flex"
+                    Clicked="@(() => ViewModel!.ToggleSelector(@context))">
+                <small>&nbsp</small><Icon Name="IconName.FolderOpen" /><small>&nbsp</small>
+            </Button>
+            <small>&nbsp</small>
+            <Button Class="@ViewModel!.AdaptorButtonClass(context)" Clicked="@(() => ViewModel!.ToggleAdaptor(context))">
+                <small>&nbsp</small><Icon Name="@ViewModel!.AdaptorButtonIcon(context)" /><small>&nbsp</small>
+            </Button>
+        </div>
+    </div>
+</Virtualize>
+
+
