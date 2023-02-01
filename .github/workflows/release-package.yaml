@@ -80,6 +80,8 @@ jobs:
         #cp -f README.md $BIN
         #rm -f $BIN/*.pdb
         #zip -r nns-macos-arm64.zip $BIN
+    - name: Clear BIN
+      run: rm -rf ./bin
     - name: Package NetSim Web Linux
       run: |
         for arch in $linux_arch; 
