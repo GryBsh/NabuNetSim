@@ -1,5 +1,7 @@
 ﻿# NABU NetSim
 
+![NABU NetSim](./Assets/ui.png)
+
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (MAME),
 and can host multiple instances of either. Making it possible to host a NABU Network from one
 Computer. The adaptor emulator is complete in that it handles all known messages from the NABU.
@@ -11,6 +13,7 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 - > Since even Nabu.Ca is using raw cycle files now, NetSim no longer supports encrypted PAK files.
 - > Restores support for RetroNet, including new support for Cloud CP/M.
+- > Experimental Web UI.
 
 ## Known Issues
 
