@@ -101,7 +101,7 @@ jobs:
         for arch in $win_arch; 
         do
           BIN="bin/win/$arch"
-          dotnet publish ./Nabu.NetSimWebWeb -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          dotnet publish ./Nabu.NetSimWeb -r win-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
           cp -r $PAK $BIN
           mkdir $BIN/NABUs
           mkdir $BIN/Files
