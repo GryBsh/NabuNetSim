@@ -57,9 +57,9 @@ public class HttpProgramRetriever : ProgramRetriever
                 name,
                 source,
                 DefinitionType.NabuCaList,
-                isNabu ? $"https://cloud.nabu.ca/HomeBrew/titles/{name}" : $"https://cloud.nabu.ca/{name}",
+                $"https://cloud.nabu.ca/HomeBrew/titles/{name}",
                 SourceType.Remote,
-                isNabu ? ImageType.Raw : ImageType.Pak,
+                ImageType.Raw,
                 new[] { new PassThroughPatch(Logger) }
             ));
         }
