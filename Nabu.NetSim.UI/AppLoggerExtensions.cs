@@ -1,7 +1,9 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Configuration;
 
-namespace Nabu.NetSimWeb;
+namespace Nabu.NetSim.UI;
 
 public static class AppLoggerExtensions
 {
@@ -15,7 +17,7 @@ public static class AppLoggerExtensions
 
         LoggerProviderOptions.RegisterProviderOptions
             <AppLogConfiguration, AppLogProvider>(builder.Services);
-        
+
         return builder;
     }
 

@@ -1,6 +1,6 @@
 ﻿using ReactiveUI;
 
-namespace Nabu.NetSimWeb.ViewModels;
+namespace Nabu.NetSim.UI.ViewModels;
 
 public class MainLayoutViewModel : ReactiveObject
 {

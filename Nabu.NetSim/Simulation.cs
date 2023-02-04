@@ -13,7 +13,7 @@ namespace Nabu;
 
 
 
-public class Simulation : BackgroundService
+public class Simulation : BackgroundService, ISimulation
 {
     readonly ILogger Logger;
     readonly AdaptorSettings[] DefinedAdaptors;
@@ -27,7 +27,7 @@ public class Simulation : BackgroundService
     {
         Logger = logger;
         DefinedAdaptors = NabuLib.Concat<AdaptorSettings>(
-            settings.Adaptors.Serial, 
+            settings.Adaptors.Serial,
             settings.Adaptors.TCP
         ).ToArray();
         ServiceProvider = serviceProvider;
@@ -56,12 +56,12 @@ public class Simulation : BackgroundService
         int index = Array.IndexOf(DefinedAdaptors, settings);
         if (index >= 0)
             Next[index] = Next[index] == ServiceShould.Continue ? ServiceShould.Stop : ServiceShould.Continue;
-        
+
     }
-        
+
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        
+
         await Task.Run(() =>
         {
             // We are going to keep track of the services that were defined
@@ -84,7 +84,7 @@ public class Simulation : BackgroundService
                 () => CancellationTokenSource.CreateLinkedTokenSource(stopping)
             ).ToArray();
 
-            
+
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
             Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
@@ -95,7 +95,7 @@ public class Simulation : BackgroundService
                 for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
                     var settings = DefinedAdaptors[index];
-                    
+
                     if (settings.Next is ServiceShould.Restart or ServiceShould.Stop)
                     {
                         cancel[index].Cancel();
@@ -113,12 +113,12 @@ public class Simulation : BackgroundService
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, cncl, index)),
-                            AdaptorType.TCP    => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, cncl, index)),
+                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, cncl, index)),
                             _ => throw new NotImplementedException()
                         };
                         settings.Running = true;
                     }
-                    
+
                 }
                 //started = true;
                 Thread.Sleep(10); // Lazy Wait, we don't care how long it takes to resume
@@ -132,7 +132,7 @@ public class Simulation : BackgroundService
                 .AddTransient<FileProgramRetriever>()
                 .AddTransient<NabuNetService>()
                 .AddTransient<ClassicNabuProtocol>()
-                //.AddTransient<IProtocol, NHACPProtocol>()
+                .AddTransient<IProtocol, NHACPProtocol>()
                 .AddTransient<IProtocol, RetroNetTelnetProtocol>()
                 .AddTransient<IProtocol, RetroNetProtocol>()
                 .AddHostedService<Simulation>();

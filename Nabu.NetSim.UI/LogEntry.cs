@@ -1,4 +1,6 @@
-namespace Nabu.NetSimWeb;
+using Microsoft.Extensions.Logging;
+
+namespace Nabu.NetSim.UI;
 
 public record LogEntry
 {

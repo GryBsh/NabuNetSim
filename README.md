@@ -71,10 +71,11 @@ A PC can potentially serve hundreds.
 
 ## Special Thanks
 
-- DJ Sures: For his work on Nabu.Ca
-- Leo Binkowski: for preserving all that sweet hardware and software
+- [Leo "The Undipsuted God-Legend" Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
+- [Geek with Social Skils](https://www.youtube.com/@geekwithsocialskills)
+- DJ Sures: For his work on Nabu.Ca
 - RetroNET and Discord Chaters (in no particular order):
   - Sark
   - Nath (The legend who decrypted NPAK files)

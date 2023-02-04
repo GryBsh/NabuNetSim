@@ -1,7 +1,8 @@
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 
-namespace Nabu.NetSimWeb;
+namespace Nabu.NetSim.UI;
 
 public class AppLogConfiguration
 {
@@ -15,18 +16,20 @@ public class AppLogProvider : ILoggerProvider
     public AppLogProvider(
         AppLog appLog,
         IOptionsMonitor<AppLogConfiguration> config
-    ){
+    )
+    {
         AppLog = appLog;
-        Config = config; 
+        Config = config;
     }
 
-    public ILogger CreateLogger(string categoryName) 
+    public ILogger CreateLogger(string categoryName)
         => Loggers.GetOrAdd(
-            categoryName, 
+            categoryName,
             name => new AppLogger(name, AppLog, this, Config.CurrentValue)
         );
 
-    public void Dispose() { 
+    public void Dispose()
+    {
         foreach (var logger in Loggers)
         {
             Loggers.Clear();

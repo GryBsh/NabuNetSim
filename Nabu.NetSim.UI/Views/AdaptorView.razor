@@ -22,7 +22,7 @@
             <label>@ViewModel!.AdaptorStatus(context)</label>
         </div>
         <div class="col col-3 adpt-label">
-            <Select TValue="string" @bind-SelectedValue="@context.Port">
+            <Select TValue="string" @bind-value="@context.Port">
                 @foreach (var serial in ViewModel!.SerialPortNames)
                 {
                     <option value="@serial">@serial</option>

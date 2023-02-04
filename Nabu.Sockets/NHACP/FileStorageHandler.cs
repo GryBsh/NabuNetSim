@@ -13,22 +13,16 @@ public class FileStorageHandler : IStorageHandler
         Settings = settings;
     }
 
-    string CombinePath(string uri)
-    {
-        var path = uri.Split("://").Last();
-        if (string.IsNullOrEmpty(path)) return string.Empty;
-
-        return Path.Combine(Settings.StoragePath, path);
-    }
 
     public Task<(bool, string, int)> Open(short flags, string uri)
     {
         Flags = (StorageFlags)flags;
-        var path = CombinePath(uri);
+        var path = Path.Combine(Settings.StoragePath, uri);
         try
         {
             File = new FileInfo(path);
-            return Task.FromResult((true, string.Empty, (int)File.Length));
+            var length = File.Exists ? (int)File.Length : 0;
+            return Task.FromResult((true, string.Empty, length));
         }
         catch (Exception ex)
         {
@@ -41,7 +35,15 @@ public class FileStorageHandler : IStorageHandler
         try
         {
             var buffer = new byte[length];
-            using var stream = File!.OpenRead();
+            using var stream = new FileStream(
+                File!.FullName,
+                FileMode.OpenOrCreate,
+                Flags is StorageFlags.ReadOnly ? FileAccess.Read : FileAccess.ReadWrite,
+                FileShare.Read
+            );
+            var end = offset + length;
+            if (end > stream.Length)
+                length = (short)(stream.Length - offset);
             await stream.ReadAsync(buffer, offset, length);
             return (true, string.Empty, buffer);
         }

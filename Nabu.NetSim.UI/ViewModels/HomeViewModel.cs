@@ -1,8 +1,8 @@
 ﻿using Blazorise;
-using Blazorise.DataGrid;
 using DynamicData;
 using DynamicData.Binding;
-using Microsoft.Extensions.ObjectPool;
+using Microsoft.Extensions.Hosting;
+using Nabu.NetSim.UI;
 using Nabu.Network;
 using ReactiveUI;
 using System.Collections.Generic;
@@ -10,25 +10,25 @@ using System.IO.Ports;
 using System.Reactive;
 using System.Reactive.Linq;
 
-namespace Nabu.NetSimWeb.ViewModels;
+namespace Nabu.NetSim.UI.ViewModels;
 
 public class HomeViewModel : ReactiveObject
 {
-    
-    AppLog AppLog { get;  }
+
+    AppLog AppLog { get; }
     Settings Settings { get; }
     NabuNetService Images { get; }
     public IEnumerable<string> Entries { get; set; }
 
-    Simulation? Simulation { get; }
+    ISimulation? Simulation { get; }
 
     public HomeViewModel(AppLog appLog, Settings settings, NabuNetService images, IHostedService simulation)
     {
         AppLog = appLog;
         Settings = settings;
         Images = images;
-        Simulation = simulation as Simulation;
-        
+        Simulation = simulation as ISimulation;
+
         var sort = SortExpressionComparer<LogEntry>.Descending(e => e.Timestamp);
         var throttle = TimeSpan.FromSeconds(1);
 
@@ -57,7 +57,7 @@ public class HomeViewModel : ReactiveObject
         get => Settings.Adaptors.TCP;
     }
 
-    
+
     public string AdaptorButtonClass(AdaptorSettings settings)
     {
         return settings.Next switch
@@ -93,14 +93,14 @@ public class HomeViewModel : ReactiveObject
 
     public void ToggleAdaptor(AdaptorSettings settings)
     {
-       settings.Next = settings.Next is ServiceShould.Continue ? 
-                       ServiceShould.Stop : 
-                       ServiceShould.Continue;
+        settings.Next = settings.Next is ServiceShould.Continue ?
+                        ServiceShould.Stop :
+                        ServiceShould.Continue;
     }
 
     public bool AllAdaptorsCanStop
     {
-        get => Serial.Any(s => s.Next is ServiceShould.Continue) || 
+        get => Serial.Any(s => s.Next is ServiceShould.Continue) ||
                TCP.Any(t => t.Next is ServiceShould.Continue);
     }
 
@@ -119,15 +119,15 @@ public class HomeViewModel : ReactiveObject
     {
         foreach (var s in Serial)
         {
-            s.Next = s.Next is ServiceShould.Continue ? 
-                     ServiceShould.Stop : 
+            s.Next = s.Next is ServiceShould.Continue ?
+                     ServiceShould.Stop :
                      ServiceShould.Continue;
         }
 
         foreach (var t in TCP)
         {
-            t.Next = t.Next is ServiceShould.Continue ? 
-                     ServiceShould.Stop : 
+            t.Next = t.Next is ServiceShould.Continue ?
+                     ServiceShould.Stop :
                      ServiceShould.Continue;
         }
     }
@@ -140,7 +140,7 @@ public class HomeViewModel : ReactiveObject
 
     public string[] SourceNames { get; set; } = Array.Empty<string>();
     public string[] SerialPortNames { get; set; } = SerialPort.GetPortNames();
-    public IEnumerable<(string,string)> AvailableImages { get; private set; } = Array.Empty<(string, string)>();
+    public IEnumerable<(string, string)> AvailableImages { get; private set; } = Array.Empty<(string, string)>();
 
     public bool SettingsVisible { get; set; } = false;
     public void ToggleSettings()
@@ -151,7 +151,7 @@ public class HomeViewModel : ReactiveObject
     public string LogButtonClass { get => LogVisible ? "btn btn-danger btn-sm" : "btn btn-success btn-sm"; }
     public string LogButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
 
-    public bool LogVisible {get; set; } = false;
+    public bool LogVisible { get; set; } = false;
     public void ToggleLog()
     {
         LogVisible = !LogVisible;
@@ -161,10 +161,11 @@ public class HomeViewModel : ReactiveObject
     public AdaptorSettings[] SelectorAdaptor { get; set; } = Array.Empty<AdaptorSettings>();
     public void ToggleSelector(AdaptorSettings? settings)
     {
-        
+
         if (SelectorVisible is false && settings is not null)
-        {   
-            Task.Run(async () => {
+        {
+            Task.Run(async () =>
+            {
                 await Images.RefreshSources();
                 SelectorAdaptor = new[] { settings };
                 AvailableImages = Images.Programs(settings).Select(p => (p.DisplayName, p.Name));
@@ -181,13 +182,9 @@ public class HomeViewModel : ReactiveObject
             SelectorAdaptor = Array.Empty<AdaptorSettings>();
             AvailableImages = Array.Empty<(string, string)>();
         }
-  
+
     }
 
-    public void ChangeProgram<T>(CellEditContext<T?> context, string program) where T : AdaptorSettings
-    {
-        context.CellValue = program;
-        context.Item!.Image = string.Empty;
-    }
+    
 }
 

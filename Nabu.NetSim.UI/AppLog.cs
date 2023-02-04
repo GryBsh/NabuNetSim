@@ -1,34 +1,35 @@
 ﻿using DynamicData;
 using DynamicData.Binding;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Logging;
 using ReactiveUI;
 using System.Collections.ObjectModel;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Text.Json;
 
-namespace Nabu.NetSimWeb;
+namespace Nabu.NetSim.UI;
 
 public sealed class AppLog
 {
     // This is some Blazor Server quirk, it only works right on both sides
     // Like this...
     static SourceList<LogEntry> LogEntries = new() { };
-    static SemaphoreSlim LogLock = new(1,1);
+    static SemaphoreSlim LogLock = new(1, 1);
     public SourceList<LogEntry> Entries => LogEntries;
     static IEnumerable<LogEntry> PendingRemoval { get; set; }
     public static int Interval { get; } = 30;
-    
+
     public AppLog(Settings settings)
     {
         LogEntries.Connect()
                   .Bind(out var pending)
                   .Subscribe();
-        
+
         PendingRemoval = pending.Where(RemovalFilter);
 
         Observable.Interval(TimeSpan.FromMinutes(Interval))
-                  .ObserveOn(ThreadPoolScheduler.Instance) 
+                  .ObserveOn(ThreadPoolScheduler.Instance)
                   .SubscribeOn(RxApp.MainThreadScheduler)
                   .Subscribe(_ => LogCycle());
     }
@@ -47,13 +48,14 @@ public sealed class AppLog
             null
         );
 
-        lock(LogLock) {
+        lock (LogLock)
+        {
             LogEntries.RemoveMany(PendingRemoval);
         }
 
         GC.Collect();
     }
-    
+
     public void Add(LogEntry entry)
     {
         lock (LogLock) LogEntries.Add(entry);
@@ -67,8 +69,9 @@ public sealed class AppLog
         string name,
         string message,
         Exception? exception
-    ) {
-         Add(new(guid,timestamp,logLevel,eventId,name,message,exception));
+    )
+    {
+        Add(new(guid, timestamp, logLevel, eventId, name, message, exception));
     }
 
 }

@@ -1,0 +1,84 @@
+﻿
+@using ReactiveUI
+@inherits ReactiveComponentBase<HomeViewModel>
+
+<div class="main-menu container-fluid">
+    <div class="row">
+        <div class="col flex-fill center title-col">
+            <div class="container-fluid title-box">
+                <div class="row d-flex">
+                    <div class="col flecx-column center">
+                        <Image class="logo" Source="_content/Nabu.NetSim.UI/nabu.png" />
+                    </div>    
+                    <div class="col border-left">
+                        <div class="row row-divider" />
+                        <div class="row adpt-tray">
+                            <AdaptorView ViewModel="@(ViewModel!)" />
+                        </div>
+                        <div class="row row-divider" />
+                        <div class="row title-row d-flex">
+                            <div class="col col-4 flex-column">
+                                <Button Class="btn btn-danger btn-sm" Disabled=@(!ViewModel!.AllAdaptorsCanStop) Clicked=@(ViewModel!.ToggleAllAdaptors)>
+                                    Stop All
+                                </Button>
+                            </div>
+                            <div class="col col-4 flex-column">
+                                        
+                            </div>
+                            <div class="col col-4 flex-column">
+                                <!--<Button Class="btn btn-primary btn-sm">
+                                    Add New
+                                </Button>-->
+                                <Button Class="@ViewModel!.LogButtonClass" Clicked="@ViewModel!.ToggleLog">
+                                    @ViewModel!.LogButtonText
+                                </Button>
+                            </div>
+                        </div>
+                    </div>    
+                </div>
+                        
+            </div>
+        </div>
+    </div>
+    <Div Class="row row-divider" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)"/>
+    <Div Class="row" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
+        <div class="log-frame col flex-lg-column">
+            <div class="log-view flex-grow-0">
+                @foreach (var line in ViewModel!.Entries.ToArray())
+                {
+                    <div>@line</div>
+                }
+            </div>
+        </Div>
+    </Div>
+    <Div Class="row row-divider" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)"/>
+            
+</div>
+ 
+
+<Modal @bind-Visible="@ViewModel.SelectorVisible">
+    <ModalHeader>
+        <ModalTitle>Load Program</ModalTitle>
+        <CloseButton />
+    </ModalHeader>
+    <ModalBody>
+        <Virtualize TItem="AdaptorSettings" Items="@ViewModel!.SelectorAdaptor">
+            <Select TValue="string" @bind-SelectedValue="@context.Image">
+                <option value=""></option>
+                @foreach (var (displayName, name) in ViewModel!.AvailableImages)
+                {
+                    <option value="@name">@displayName</option>
+                }
+            </Select>
+        </Virtualize>
+    </ModalBody>
+    <ModalFooter>
+        <Button Class="btn btn-danger btn-small"
+                Clicked="@(() => ViewModel!.ToggleSelector(null))">
+            Close
+        </Button>
+    </ModalFooter>
+</Modal>
+@code {
+    
+}

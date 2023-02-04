@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Messages;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -41,8 +42,8 @@ public class RetroNetTelnetProtocol : Protocol
                 if (!string.IsNullOrEmpty(line))
                 {
                     line = new(line.AsSpan()[..^1].ToArray());
+                    Send((byte)incoming[0]);
                 }
-                Send((byte)incoming[0]);
                 continue;
             }
             else
@@ -110,13 +111,11 @@ public class RetroNetTelnetProtocol : Protocol
                     {
                         
                         var b = (byte)Stream.ReadByte();
-
                         if (b == 0x03)
                             //CTRL+C
                             break;
 
-                        if (b is 0x83)
-                            startupCount++;
+                        if (b is Message.StartUp) startupCount++;
                         if (startupCount == 2)
                             break;
 
@@ -133,6 +132,7 @@ public class RetroNetTelnetProtocol : Protocol
                     {
                         while (socket.Available == 0) Thread.SpinWait(10);
                         var b = (byte)stream.ReadByte();
+
                         Stream.WriteByte(b);
                     }
                 }, Cancel.Token);

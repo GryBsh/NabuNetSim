@@ -84,6 +84,7 @@ public class NHACPProtocol : Protocol
                 StorageLoaded(slot, length);
             }
             else
+                Log($"NA: Loading into slot {index}: {uri} failed: {error}");
                 StorageError((short)length, error);
         }
         catch (Exception ex)

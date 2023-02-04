@@ -6,7 +6,7 @@ using Blazorise;
 using Microsoft.Extensions.Logging;
 using System;
 
-namespace Nabu.NetSimWeb;
+namespace Nabu.NetSim.UI;
 
 public class AppLogger : ILogger
 {
@@ -19,32 +19,34 @@ public class AppLogger : ILogger
         AppLog appLog,
         AppLogProvider provider,
         AppLogConfiguration settings
-    ){
+    )
+    {
         Name = name.Split('.')[^1];
         AppLog = appLog;
         Provider = provider;
         Settings = settings;
     }
 
-    public IDisposable BeginScope<TState>(TState state) 
-        where TState : notnull 
+    public IDisposable BeginScope<TState>(TState state)
+        where TState : notnull
         => default!;
 
-    public bool IsEnabled(LogLevel logLevel) 
+    public bool IsEnabled(LogLevel logLevel)
         => logLevel >= Settings.LogLevel;
 
     public void Log<TState>(
-        LogLevel logLevel, 
-        EventId eventId, 
-        TState state, 
-        Exception? exception, 
+        LogLevel logLevel,
+        EventId eventId,
+        TState state,
+        Exception? exception,
         Func<TState, Exception?, string> formatter
-    ) {
+    )
+    {
         if (!IsEnabled(logLevel)) return;
 
         if (eventId.Name?.StartsWith("System.Net.Http") is false) return;
 
-        Task.Run(() => 
+        Task.Run(() =>
             AppLog.Add(
                 Guid.NewGuid(),
                 DateTime.Now,

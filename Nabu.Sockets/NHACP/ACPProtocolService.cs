@@ -46,13 +46,11 @@ public class NHACPProtocolService : IACPProtocolService
         {
             IStorageHandler? handler = uri.ToLower() switch
             {
-                var path when path.StartsWith("file")
-                    => new FileStorageHandler(Logger, Settings),
                 var path when path.StartsWith("http") || path.StartsWith("https")
                     => new HttpStorageHandler(Logger, Settings),
                 var path when path.StartsWith("ram")
                     => new RAMStorageHandler(Logger, Settings),
-                _ => null
+                _ => new FileStorageHandler(Logger, Settings)
             };
             if (handler is null)
                 return (false, "Unknown URI Type", 0xFF, 0);

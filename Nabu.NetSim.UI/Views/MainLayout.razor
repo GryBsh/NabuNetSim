@@ -1,0 +1,30 @@
+﻿@using Splat
+@inherits ReactiveLayoutComponentBase<MainLayoutViewModel>
+
+@code {
+    Bar? Sidebar;
+}
+
+<PageTitle>Welcome to 1984</PageTitle>
+
+
+<div id="page" class="container">
+    <main id="main-content" class="content">
+        @Body
+    </main>
+    <div class="row">
+        <small class="center">NABU NetSim (c) 2022-2023 - Nick Daniels</small>
+    </div>
+</div>
+<div class="clear-fix" />
+
+
+
+@code {
+    
+    public MainLayout()
+    {
+        ViewModel = Locator.Current.GetService<MainLayoutViewModel>();
+    }
+    
+}
