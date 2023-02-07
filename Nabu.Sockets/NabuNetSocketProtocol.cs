@@ -9,7 +9,7 @@ namespace Nabu.Network;
 public class NabuNetSocketProtocol : Protocol
 {
     Dictionary<byte, Socket> Sockets { get; } = new();
-    public NabuNetSocketProtocol(ILogger<NabuNetSocketProtocol> logger) : base(logger)
+    public NabuNetSocketProtocol(IConsole<NabuNetSocketProtocol> logger) : base(logger)
     {
 
     }

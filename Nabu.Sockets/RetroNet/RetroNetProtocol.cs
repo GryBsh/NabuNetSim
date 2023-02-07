@@ -13,7 +13,7 @@ public partial class RetroNetProtocol : Protocol
     Dictionary<byte, IRetroNetFileHandle> Slots { get; } = new();
     FileDetails[]? CurrentList { get; set; }
     HttpClient HttpClient { get; }
-    NabuNetService NabuNet { get; }
+    ProgramSourceService NabuNet { get; }
     Dictionary<string, byte[]> Cache { get; } = new();
     byte NextIndex()
     {
@@ -26,9 +26,9 @@ public partial class RetroNetProtocol : Protocol
     }
 
     public RetroNetProtocol(
-        ILogger<RetroNetProtocol> logger,
+        IConsole<RetroNetProtocol> logger,
         HttpClient httpClient,
-        NabuNetService nabuNet
+        ProgramSourceService nabuNet
     ) : base(logger)
     {
         HttpClient = httpClient;
@@ -125,8 +125,8 @@ public partial class RetroNetProtocol : Protocol
     {
         return filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings),
-            _ => new RetroNetFileHandler(Logger, Settings)
+            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, settings),
+            _ => new RetroNetFileHandler(Logger, settings)
         };
     }
 
@@ -218,7 +218,7 @@ public partial class RetroNetProtocol : Protocol
     public override bool ShouldAccept(byte unhandled)
     {
         var command = base.ShouldAccept(unhandled);
-        var source = NabuNet.Source(Settings);
+        var source = NabuNet.Source(settings);
         var enabled = source.EnableRetroNet;
 
         return command && enabled;

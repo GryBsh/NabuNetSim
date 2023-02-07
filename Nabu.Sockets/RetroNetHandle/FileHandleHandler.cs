@@ -5,7 +5,7 @@ namespace Nabu.Network.RetroNetHandle;
 
 public class FileHandleHandler : NabuService, IRetroNetFileHandle
 {
-    public FileHandleHandler(ILogger logger, AdaptorSettings settings) : base(logger, settings)
+    public FileHandleHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
     {
 
     }
@@ -76,7 +76,7 @@ public class FileHandleHandler : NabuService, IRetroNetFileHandle
     {
         Flags = flags;
         if (!Path.IsPathRooted(filename))
-            filename = Path.Combine(Settings.StoragePath, filename);
+            filename = Path.Combine(settings.StoragePath, filename);
         FileHandle = new FileInfo(filename);
         return Task.FromResult(true);
     }

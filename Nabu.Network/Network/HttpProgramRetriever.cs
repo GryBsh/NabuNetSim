@@ -16,10 +16,10 @@ public enum ProgramListType
 
 public class HttpProgramRetriever : ProgramRetriever
 {
-    public ILogger<ProgramRetriever> Logger { get; }
+    public IConsole<ProgramRetriever> Logger { get; }
     public HttpClient Http { get; }
 
-    public HttpProgramRetriever(ILogger<ProgramRetriever> logger, HttpClient http)
+    public HttpProgramRetriever(IConsole<ProgramRetriever> logger, HttpClient http)
     {
         Logger = logger;
         Http = http;
@@ -48,7 +48,12 @@ public class HttpProgramRetriever : ProgramRetriever
             var parts = line.Split(';');
             var name = parts[0].Trim();
             var isNabu = name.EndsWith(".nabu");
-            if (isNabu is false) continue;
+            var url = $"https://cloud.nabu.ca/HomeBrew/titles/{name}";
+            if (isNabu is false)
+            {
+                (var isPak, url) = await FoundPak($"https://cloud.nabu.ca/{name}", 1);
+                if (isPak is false) continue;
+            }
 
             var displayName = parts[1].Trim();
 
@@ -57,7 +62,7 @@ public class HttpProgramRetriever : ProgramRetriever
                 name,
                 source,
                 DefinitionType.NabuCaList,
-                $"https://cloud.nabu.ca/HomeBrew/titles/{name}",
+                url,
                 SourceType.Remote,
                 ImageType.Raw,
                 new[] { new PassThroughPatch(Logger) }
@@ -100,9 +105,9 @@ public class HttpProgramRetriever : ProgramRetriever
 
         var npak = await Http.GetByteArrayAsync(url);
 
-        Logger.LogTrace($"NPAK Length: {npak.Length}");
+        Logger.WriteVerbose($"NPAK Length: {npak.Length}");
         npak = NabuLib.Unpak(npak);
-        Logger.LogTrace($"Segment Length: {npak.Length}");
+        Logger.WriteVerbose($"Segment Length: {npak.Length}");
         return npak;
     }
     public async Task<(bool, string)> FoundPak(string url, int pak)
@@ -127,10 +132,10 @@ public class HttpProgramRetriever : ProgramRetriever
         var buffer = await Http.GetByteArrayAsync(url);
         return buffer;
     }
-    public async Task<bool> FoundRaw(string url, int pak, string? image = null)
+    public async Task<(bool, string)> FoundRaw(string url, int pak, string? image = null)
     {
         if (!IsNabu(url)) url = NabuUrl(url, pak, image);
-        return await GetHead(url);
+        return (await GetHead(url), url);
     }
 
     async Task<bool> GetHead(string url)

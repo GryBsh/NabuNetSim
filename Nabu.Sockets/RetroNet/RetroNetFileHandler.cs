@@ -5,7 +5,7 @@ namespace Nabu.Network.RetroNet;
 
 public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
 {
-    public RetroNetFileHandler(ILogger logger, AdaptorSettings settings) : base(logger, settings)
+    public RetroNetFileHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
     {
     }
 
@@ -79,7 +79,7 @@ public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
 
     public Task<int> Size(string filename)
     {
-        if (!Path.IsPathRooted(filename)) filename = Path.Combine(Settings.StoragePath, filename);
+        if (!Path.IsPathRooted(filename)) filename = Path.Combine(settings.StoragePath, filename);
         var file = new FileInfo(filename);
         int length = -2;
         if (file!.Exists) length = (int)file.Length;

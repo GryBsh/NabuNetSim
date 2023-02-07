@@ -13,9 +13,9 @@ public class TCPAdaptor
 
     private TCPAdaptor() { }
 
-    static async void ServerListen(ILogger logger, EmulatedAdaptor adaptor, Stream stream, CancellationToken stopping)
+    static async void ServerListen(IConsole logger, EmulatedAdaptor adaptor, Stream stream, CancellationToken stopping)
     {
-        logger.LogInformation($"Adaptor Started");
+        logger.Write($"Adaptor Started");
         await adaptor.Listen(stopping);
         await stream.DisposeAsync();
     }
@@ -26,7 +26,7 @@ public class TCPAdaptor
         CancellationToken stopping,
         int index = -1
     ){
-        var logger = serviceProvider.GetRequiredService<ILogger<TCPAdaptor>>();
+        var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
         var socket = NabuLib.Socket();
         //socket.LingerState = new LingerOption(false, 0);
 
@@ -37,20 +37,20 @@ public class TCPAdaptor
         
         
 
-        logger.LogInformation($"Port: {port}");
+        logger.Write($"Port: {port}");
         
         try
         {
             socket.Bind(new IPEndPoint(IPAddress.Any, port));
             socket.Listen();
-            logger.LogInformation("Server Started.");
+            logger.Write("Server Started.");
         } catch (Exception ex)
         {
-            logger.LogError(ex.Message);
+            logger.WriteError(ex.Message);
             return;
         }
         
-        logger.LogInformation($"Adaptor Started");
+        logger.Write($"Adaptor Started");
         
         while (stopping.IsCancellationRequested is false)
             try
@@ -68,11 +68,11 @@ public class TCPAdaptor
                 );
                 
                 ServerListen(logger, adaptor, stream, stopping);
-                logger.LogInformation($"Client Connected");
+                logger.Write($"Client Connected");
             }
             catch (Exception ex)
             {
-                logger.LogError(ex.Message);
+                logger.WriteError(ex.Message);
                 break;   
             }
         

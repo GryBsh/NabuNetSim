@@ -17,30 +17,28 @@ public class EmulatedAdaptor : NabuService
         ClassicNabuProtocol nabu,
         //ACPProtocol acp,
         IEnumerable<IProtocol> protocols,
-        ILogger logger,
+        IConsole logger,
         Stream stream,
         int index = -1
     ) : base(logger, settings, index)
     {
-        Settings = settings;
+        base.settings = settings;
         NabuNet = nabu;
         Protocols = protocols;
 
         Stream = stream;
         Reader = new BinaryReader(stream);
-        NabuNet.Attach(Settings, Stream);
+        NabuNet.Attach(base.settings, Stream);
         foreach (var protocol in Protocols)
-            protocol.Attach(Settings, Stream);
+            protocol.Attach(base.settings, Stream);
     }
 
 
     #region Adaptor Loop   
 
-    IProtocol HandlerFor(byte incoming)
+    IProtocol? HandlerFor(byte incoming)
     {
-        return
-            Protocols.FirstOrDefault(p => p.ShouldAccept(incoming)) ??
-            NabuNet; // Defaults to NABUNet
+        return Protocols.FirstOrDefault(p => p.ShouldAccept(incoming));
     }
 
     public virtual async Task Listen(CancellationToken cancel)
@@ -56,16 +54,18 @@ public class EmulatedAdaptor : NabuService
 
                 // Locate the protocol handler for this command message
                 var handler = HandlerFor(incoming);
-
-                if (handler.Attached) // If the handler has been attached to the adapter
+                if (handler is null) handler = NabuNet;
+                if (handler?.Attached is true) // If the handler has been attached to the adapter
                 {
                     if (handler is ClassicNabuProtocol)
                     {
                         foreach (var p in Protocols)
                             p.Reset();
                     }
-                    var shouldContinue = await handler.Listen(incoming, cancel);
-                    continue; // Then continue to the next command message
+
+                    if (await handler.Listen(incoming, cancel))
+                        continue; // Then continue to the next command message
+                    else break;
                 }
 
                 Trace("Adaptor Loop Break");
@@ -80,11 +80,10 @@ public class EmulatedAdaptor : NabuService
                 // There is a big fail in dotnet 7 where Stream throws an IOException
                 // instead of a TimeoutException.
                 if (ex.HResult == -2147023436) continue; // <-- That's the HResult for a Timeout
-                else
-                {
-                    Log($"Adaptor Loop Error: {ex.Message}");
-                    break;
-                }
+                
+                Log($"Adaptor Loop Error: {ex.Message}");
+                break;
+                
             }
             catch (Exception ex)
             {

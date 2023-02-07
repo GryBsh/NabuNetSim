@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.NetSimWeb", "Nabu.NetS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.NetSim.UI", "Nabu.NetSim.UI\Nabu.NetSim.UI.csproj", "{15DA10F0-0D14-45D2-A66F-B16089E4C964}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nabu.NetSimDesktop", "Nabu.NetSimDesktop\Nabu.NetSimDesktop.csproj", "{C197321C-61ED-4DAA-967D-70E1EB63F6F0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibNabu", "LibNabu\LibNabu.csproj", "{E6A5E449-C011-460E-A4B7-E4767BF3BF46}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,12 +41,10 @@ Global
 		{15DA10F0-0D14-45D2-A66F-B16089E4C964}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{15DA10F0-0D14-45D2-A66F-B16089E4C964}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{15DA10F0-0D14-45D2-A66F-B16089E4C964}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C197321C-61ED-4DAA-967D-70E1EB63F6F0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{C197321C-61ED-4DAA-967D-70E1EB63F6F0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{C197321C-61ED-4DAA-967D-70E1EB63F6F0}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
-		{C197321C-61ED-4DAA-967D-70E1EB63F6F0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{C197321C-61ED-4DAA-967D-70E1EB63F6F0}.Release|Any CPU.Build.0 = Release|Any CPU
-		{C197321C-61ED-4DAA-967D-70E1EB63F6F0}.Release|Any CPU.Deploy.0 = Release|Any CPU
+		{E6A5E449-C011-460E-A4B7-E4767BF3BF46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E6A5E449-C011-460E-A4B7-E4767BF3BF46}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E6A5E449-C011-460E-A4B7-E4767BF3BF46}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E6A5E449-C011-460E-A4B7-E4767BF3BF46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

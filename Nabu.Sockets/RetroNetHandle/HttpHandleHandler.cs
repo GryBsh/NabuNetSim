@@ -5,7 +5,7 @@ namespace Nabu.Network.RetroNetHandle;
 
 public class HttpHandleHandler : RetroNetMemoryHandle
 {
-    public HttpHandleHandler(ILogger logger, AdaptorSettings settings) : base(logger, settings)
+    public HttpHandleHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
     {
 
     }

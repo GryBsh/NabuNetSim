@@ -6,7 +6,7 @@ namespace Nabu.Network.RetroNet;
 
 public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 {
-    public RetroNetHttpHandler(ILogger logger, HttpClient client, AdaptorSettings settings) : base(logger, settings)
+    public RetroNetHttpHandler(IConsole logger, HttpClient client, AdaptorSettings settings) : base(logger, settings)
     {
         Client = client;
     }

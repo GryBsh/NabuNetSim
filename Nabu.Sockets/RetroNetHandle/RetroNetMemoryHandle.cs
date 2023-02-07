@@ -7,7 +7,7 @@ namespace Nabu.Network.RetroNetHandle;
 
 public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
 {
-    public RetroNetMemoryHandle(ILogger logger, AdaptorSettings settings, byte[]? buffer = null) : base(logger, settings)
+    public RetroNetMemoryHandle(IConsole logger, AdaptorSettings settings, byte[]? buffer = null) : base(logger, settings)
     {
         if (buffer is not null) Buffer = buffer;
     }

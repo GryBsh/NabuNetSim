@@ -16,7 +16,7 @@ public abstract class Protocol : NabuService, IProtocol
     
     int SendDelay = 0;
     protected Protocol(
-        ILogger logger
+        IConsole logger
     ) : base(logger, new NullAdaptorSettings())
     {
         
@@ -78,7 +78,7 @@ public abstract class Protocol : NabuService, IProtocol
     protected byte[] Recv(int length)
     {
         var buffer = Reader.ReadBytes(length);
-        Trace($"NA: RCVD: {FormatSeperated(buffer)}");
+        Trace($"NA: RCVD: {FormatSeparated(buffer)}");
         Debug($"NA: RCVD: {buffer.Length} bytes");
         return buffer;
     }
@@ -94,7 +94,7 @@ public abstract class Protocol : NabuService, IProtocol
     {
         var read = Recv(expected.Length);
         var good = expected.SequenceEqual(read);
-        if (!good) Warning($"NA: {FormatSeperated(expected)} != {FormatSeperated(read)}");
+        if (!good) Warning($"NA: {FormatSeparated(expected)} != {FormatSeparated(read)}");
         return (good, read);
     }  
 
@@ -107,7 +107,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// <param name="length">The number of bytes transfered</param>
     void TransferRate(DateTime start, DateTime stop, int length)
     {
-        var byteLength = Settings.Type switch
+        var byteLength = settings.Type switch
         {
             AdaptorType.Serial => 11, // 8 + 1 + 2
             _ => 8
@@ -137,7 +137,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// <param name="bytes">The bytes to send</param>
     protected void Send(params byte[] bytes)
     {
-        Trace($"NA: SEND: {FormatSeperated(bytes)}");
+        Trace($"NA: SEND: {FormatSeparated(bytes)}");
         
         if (bytes.Length > 128)
         { // This doesn't work unless you fill the buffer
@@ -164,7 +164,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// <param name="bytes">The bytes to send</param>
     protected void SlowerSend(params byte[] bytes)
     {
-        Trace($"NA: SEND: {FormatSeperated(bytes)}");
+        Trace($"NA: SEND: {FormatSeparated(bytes)}");
         for (int i = 0; i < bytes.Length; i++)
         {
             Writer.Write(bytes[i]);
@@ -222,7 +222,7 @@ public abstract class Protocol : NabuService, IProtocol
         ) return false;
 
         Stream = stream;
-        Settings = settings;
+        base.settings = settings;
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         return true;
@@ -251,7 +251,7 @@ public abstract class Protocol : NabuService, IProtocol
 
     public virtual void Detach()
     {
-        Settings = new NullAdaptorSettings();
+        settings = new NullAdaptorSettings();
         Stream = Stream.Null;
         Reader = new BinaryReader(Stream);
         Writer = new BinaryWriter(Stream);

@@ -8,11 +8,11 @@ namespace Nabu.Network.NHACP;
 
 public class NHACPProtocol : Protocol
 {
-    NabuNetService NabuNet { get; }
+    ProgramSourceService NabuNet { get; }
     NHACPProtocolService Storage { get; }
-    public NHACPProtocol(ILogger<NHACPProtocol> logger, NabuNetService nabuNet) : base(logger)
+    public NHACPProtocol(IConsole<NHACPProtocol> logger, ProgramSourceService nabuNet) : base(logger)
     {
-        Storage = new(Logger, Settings);
+        Storage = new(Logger, settings);
         NabuNet = nabuNet;
     }
 
@@ -217,7 +217,7 @@ public class NHACPProtocol : Protocol
 
     public override bool ShouldAccept(byte unhandled)
     {
-        return base.ShouldAccept(unhandled) && !NabuNet.Source(Settings).EnableRetroNet;
+        return base.ShouldAccept(unhandled) && !NabuNet.Source(settings).EnableRetroNet;
     }
 
 }

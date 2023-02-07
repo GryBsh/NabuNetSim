@@ -6,14 +6,16 @@ namespace Nabu.Network;
 
 public class ClassicNabuProtocol : Protocol
 {
-    public NabuNetService Network { get; }
+    ProgramSourceService Network { get; }
     NabuNetAdaptorState State;
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     protected override byte Version => 0x84;
 
+    AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
+
     public ClassicNabuProtocol(
-        ILogger<ClassicNabuProtocol> logger,
-        NabuNetService network) : base(logger)
+        IConsole<ClassicNabuProtocol> logger,
+        ProgramSourceService network) : base(logger)
     {
         Network = network;
         State = new();
@@ -116,7 +118,7 @@ public class ClassicNabuProtocol : Protocol
         }
 
         // Network Emulator
-        var (type, segmentData) = await Network.Request(pak);
+        var (type, segmentData) = await Network.Request(Settings, pak);
 
         if (type is ImageType.None)
         {
@@ -206,7 +208,7 @@ public class ClassicNabuProtocol : Protocol
         Finished();                      //Epilog
         if (last)
         {
-            Network.UncachePak(Settings.Source, pak);
+            Network.UncachePak(settings.Source, pak);
             GC.Collect();
         }
     }
@@ -221,8 +223,8 @@ public class ClassicNabuProtocol : Protocol
         {
             Channel = settings.AdapterChannel
         };
-        Network.Attach(settings);
 
+        Settings = settings;
         return true;
     }
 
@@ -241,7 +243,7 @@ public class ClassicNabuProtocol : Protocol
                 break;
             case Message.MagicalMysteryMessage:
                 Ack();
-                Log($"NPC: {nameof(Message.MagicalMysteryMessage)}: {FormatSeperated(Recv(2))}, NA: {nameof(StateMessage.Confirmed)}");
+                Log($"NPC: {nameof(Message.MagicalMysteryMessage)}: {FormatSeparated(Recv(2))}, NA: {nameof(StateMessage.Confirmed)}");
                 Confirmed();
                 break;
             case Message.GetStatus:
@@ -267,6 +269,7 @@ public class ClassicNabuProtocol : Protocol
                 break;
             #endregion
             default:
+                Warning($"Unsupported: {Format(incoming)}");
                 break;
         }
 

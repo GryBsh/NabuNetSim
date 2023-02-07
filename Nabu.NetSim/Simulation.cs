@@ -9,18 +9,14 @@ using System.Text;
 
 namespace Nabu;
 
-
-
-
-
 public class Simulation : BackgroundService, ISimulation
 {
-    readonly ILogger Logger;
+    readonly IConsole Logger;
     readonly AdaptorSettings[] DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
 
     public Simulation(
-        ILogger<Simulation> logger,
+        IConsole<Simulation> logger,
         Settings settings,
         IServiceProvider serviceProvider
     )
@@ -34,7 +30,7 @@ public class Simulation : BackgroundService, ISimulation
     }
 
     Task[] Services { get; set; } = Array.Empty<Task>();
-    static ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
+    ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
     CancellationTokenSource[] Cancel { get; set; } = Array.Empty<CancellationTokenSource>();
 
     public void StartAdaptor(AdaptorSettings settings)
@@ -87,7 +83,7 @@ public class Simulation : BackgroundService, ISimulation
 
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
-            Logger.LogInformation($"Defined Adaptors: {DefinedAdaptors.Length}");
+            Logger.Write($"Defined Adaptors: {DefinedAdaptors.Length}");
 
             // Until the host tells us to stop
             while (stopping.IsCancellationRequested is false)
@@ -95,6 +91,12 @@ public class Simulation : BackgroundService, ISimulation
                 for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
                     var settings = DefinedAdaptors[index];
+
+                    if (settings.Enabled is false)
+                    {
+                        settings.Next = ServiceShould.Stop;
+                        continue;
+                    }
 
                     if (settings.Next is ServiceShould.Restart or ServiceShould.Stop)
                     {
@@ -109,11 +111,11 @@ public class Simulation : BackgroundService, ISimulation
                     if (services[index].IsCompleted && settings.Next is ServiceShould.Continue && settings.Enabled)
                     {
                         // If so, restart it
-                        var cncl = cancel[index].Token;
+                        var token = cancel[index].Token;
                         services[index] = settings.Type switch
                         {
-                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, cncl, index)),
-                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, cncl, index)),
+                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token, index)),
+                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token, index)),
                             _ => throw new NotImplementedException()
                         };
                         settings.Running = true;
@@ -130,11 +132,13 @@ public class Simulation : BackgroundService, ISimulation
     {
         services.AddTransient<HttpProgramRetriever>()
                 .AddTransient<FileProgramRetriever>()
-                .AddTransient<NabuNetService>()
+                .AddTransient<ProgramSourceService>()
                 .AddTransient<ClassicNabuProtocol>()
+                .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
                 .AddTransient<IProtocol, NHACPProtocol>()
                 .AddTransient<IProtocol, RetroNetTelnetProtocol>()
                 .AddTransient<IProtocol, RetroNetProtocol>()
+                .AddSingleton<ISimulation, Simulation>()
                 .AddHostedService<Simulation>();
         return services;
     }

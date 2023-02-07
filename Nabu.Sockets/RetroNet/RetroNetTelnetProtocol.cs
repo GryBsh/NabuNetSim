@@ -18,7 +18,7 @@ namespace Nabu.Network.RetroNet;
 
 public class RetroNetTelnetProtocol : Protocol
 {
-    public RetroNetTelnetProtocol(ILogger<RetroNetTelnetProtocol> logger) : base(logger)
+    public RetroNetTelnetProtocol(IConsole<RetroNetTelnetProtocol> logger) : base(logger)
     {
     }
 

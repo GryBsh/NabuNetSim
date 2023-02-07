@@ -8,7 +8,7 @@ public class FileStorageHandler : IStorageHandler
     StorageFlags Flags = StorageFlags.ReadWrite;
     FileInfo? File;
 
-    public FileStorageHandler(ILogger logger, AdaptorSettings settings)
+    public FileStorageHandler(IConsole logger, AdaptorSettings settings)
     {
         Settings = settings;
     }

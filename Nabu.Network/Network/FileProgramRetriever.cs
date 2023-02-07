@@ -10,12 +10,12 @@ namespace Nabu.Network;
 
 public class FileProgramRetriever : ProgramRetriever
 {
-    public FileProgramRetriever(ILogger<ProgramRetriever> logger)
+    public FileProgramRetriever(IConsole<ProgramRetriever> logger)
     {
         Logger = logger;
     }
 
-    public ILogger<ProgramRetriever> Logger { get; }
+    public IConsole<ProgramRetriever> Logger { get; }
 
     #region File
     public async Task<byte[]> GetPakBytes(string path, int pak, bool encrypted = true)

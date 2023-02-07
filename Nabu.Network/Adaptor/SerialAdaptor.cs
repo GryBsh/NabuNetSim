@@ -14,7 +14,7 @@ public class SerialAdaptor
         CancellationToken stopping,
         int index = -1
     ) {
-        var logger = serviceProvider.GetRequiredService<ILogger<SerialAdaptor>>();
+        var logger = serviceProvider.GetRequiredService<IConsole<SerialAdaptor>>();
 
         var serial = new SerialPort(
             settings.Port,
@@ -37,7 +37,7 @@ public class SerialAdaptor
             serial.ReadTimeout = settings.ReadTimeout;
         }
 
-        logger.LogInformation(
+        logger.Write(
             $"Port: {settings.Port}, BaudRate: {settings.BaudRate}, ReadTimeout: {settings.ReadTimeout}"
         );
 
@@ -48,7 +48,7 @@ public class SerialAdaptor
             }
             catch (Exception ex)
             {
-                logger.LogWarning($"Serial Adaptor: {ex.Message}");
+                logger.WriteWarning($"Serial Adaptor: {ex.Message}");
                 Thread.Sleep(5000);
             }
         try
@@ -61,13 +61,13 @@ public class SerialAdaptor
                 serial.BaseStream,
                 index
             );
-            logger.LogInformation($"Adaptor Started");
+            logger.Write($"Adaptor Started");
             await adaptor.Listen(stopping);
 
         }
         catch (Exception ex)
         {
-            logger.LogError(ex.Message, ex);
+            logger.WriteError(ex.Message, ex);
         }
 
         serial.Close();

@@ -30,13 +30,13 @@ public static partial class NabuLib
     ///     Slices a packet for the requested segment
     ///     from the provided RAW program image
     /// </summary>
-    /// <param name="logger">An ILogger instance for provide operational feedback</param>
+    /// <param name="logger">An IConsole instance for provide operational feedback</param>
     /// <param name="segmentIndex">The index of the desired Segment</param>
     /// <param name="pakId">The id of the desired PAK from which to draw the segment</param>
     /// <param name="buffer">The RAW program image data to slice the packet from</param>
     /// <returns></returns>
     public static (bool, byte[]) SliceFromRaw(
-        ILogger logger,
+        IConsole logger,
         short segmentIndex,
         int pakId,
         Span<byte> buffer
@@ -45,11 +45,11 @@ public static partial class NabuLib
         int offset = segmentIndex * Constants.MaxPayloadSize;
         if (offset >= buffer.Length)
         {
-            logger.LogError($"Packet Start {offset} is beyond the end of the buffer");
+            logger.WriteError($"Packet Start {offset} is beyond the end of the buffer");
             return (true, Array.Empty<byte>());
         }
 
-        logger.LogTrace("Preparing Packet");
+        logger.WriteVerbose("Preparing Packet");
 
 
         var (next, slice) = Slice(buffer, offset, Constants.MaxPayloadSize);
@@ -114,7 +114,7 @@ public static partial class NabuLib
     /// <param name="segment"></param>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static (bool, byte[]) SliceFromPak(ILogger logger, short segment, byte[] buffer)
+    public static (bool, byte[]) SliceFromPak(IConsole logger, short segment, byte[] buffer)
     {
         /*
          *  [  Pak   ]
@@ -147,7 +147,7 @@ public static partial class NabuLib
         int offset = (2 * (segment + 1)) + (segment * length);
         var (next, message) = Slice(buffer, offset, length);
         
-        logger.LogDebug("Slicing Packet from PAK");
+        logger.WriteVerbose("Slicing Packet from PAK");
         var crc = GenerateCRC(message[0..^2]);
         message[^2] = crc[0];    //CRC MSB
         message[^1] = crc[1];    //CRC LSB
