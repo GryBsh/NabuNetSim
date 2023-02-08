@@ -7,58 +7,43 @@
     <div class="row">
         <div class="col flex-fill center title-col">
             <div class="container-fluid title-box">
-                <div class="row d-flex">
+                <div class="row">
                     <div class="col">
                         <Image class="logo" Source="_content/Nabu.NetSim.UI/nabu.png" />
+                        
                     </div>
                     <div class="col" style="margin: auto">
-                        <div >
-                            <h3>NABU NetSim</h3>
-                        </div>
+                        <h3>NABU NetSim</h3>
                     </div>
-                    <!-- <div class="col">
-                         <div class="center" style="margin-top: auto; margin-bottom: auto">
-                            <ul class="list-group list-group-flush">
-                                <li class="list-group-item center"><Icon Name="IconName.SliderHorizontal"/>&nbsp;Adaptor Settings</li>
-                                <li class="list-group-item center"><Icon Name="IconName.Save"/>&nbsp;Load Disks/Images</li>
-                                if (ViewModel!.IsLocalHost)
-                                {
-                                    <li class="list-group-item center"><Icon Name="IconName.Gamepad"/>&nbsp;MAME Settings</li>
-                                    <li class="list-group-item center"><Icon Name="IconName.Play"/>&nbsp;Start MAME</li>
-                                }
-                               <li class="list-group-item center"><Icon Name="IconName.Book"/>&nbsp;<a href="#" onclick="@(() => ViewModel!.ToggleLog())">@ViewModel!.LogButtonText</a></li>
-                            </ul>
-                        </div>
-                    </div>-->
                 </div>
                     
-
+                <div class="row row-divider" />
                 <div class="row">
-                    <div class="row row-divider" />
+                    
                     <div class="row adpt-tray">
                         <AdaptorView ViewModel="@(ViewModel!)" />
                     </div>
-                    <div class="row row-divider" />
-                    <div class="row title-row d-flex">
-                        <div class="col col-4 flex-column">
-                            <Button Class="btn btn-danger btn-sm" Disabled=@(!ViewModel!.AllAdaptorsCanStop) Clicked=@(ViewModel!.ToggleAllAdaptors)>
-                                Stop All
-                            </Button>
-                        </div>
-                        <div class="col col-4 flex-column">
-                                        
-                        </div>
-                        <div class="col col-4 flex-column">
-                            <!--<Button Class="btn btn-primary btn-sm">
-                                Add New
-                            </Button>-->
-                            <Button Class="@ViewModel!.LogButtonClass" Clicked="@ViewModel!.ToggleLog">
-                                @ViewModel!.LogButtonText
-                            </Button>
-                        </div>
-                    </div>
+                   
                 </div>    
-                
+                 <div class="row row-divider" />
+                <div class="row title-row d-flex">
+                    <div class="col col-4 flex-column">
+                        <Button Class="btn btn-danger btn-sm" Disabled=@(!ViewModel!.AllAdaptorsCanStop) Clicked=@(ViewModel!.ToggleAllAdaptors)>
+                            Stop All
+                        </Button>
+                    </div>
+                    <div class="col col-4 flex-column">
+                                        
+                    </div>
+                    <div class="col col-4 flex-column">
+                        <!--<Button Class="btn btn-primary btn-sm">
+                            Add New
+                        </Button>-->
+                        <Button Class="@ViewModel!.LogButtonClass" Clicked="@ViewModel!.ToggleLog">
+                            @ViewModel!.LogButtonText
+                        </Button>
+                    </div>
+                </div>
                 <div class="row row-divider" />                
                 <Div Class="row border-left" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
                     <div class="log-frame col flex-lg-column">
