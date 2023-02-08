@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <PackageReference Include="Blazorise" Version="1.2.0" />
+    <PackageReference Include="CodeHollow.FeedReader" Version="1.2.4" />
     <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.2" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />

@@ -3,7 +3,7 @@
 /// <summary>
 ///    Constant values used through out the Emulator.
 /// </summary>
-internal static class Constants
+public static class Constants
 {
 
     // Sizes

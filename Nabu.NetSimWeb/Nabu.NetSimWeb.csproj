@@ -15,6 +15,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Nabu.NetSim\MicrosoftExtensionsLoggingConsole.cs" Link="MicrosoftExtensionsLoggingConsole.cs" />
     <Compile Include="..\Nabu.NetSim\Simulation.cs" Link="Simulation.cs" />
   </ItemGroup>
 

@@ -23,7 +23,7 @@ body {
 }
 
 /* UTILS */
-.main-menu > .row.invisible {
+.main-menu  .row.invisible {
     display: none;
 }
 
@@ -35,7 +35,8 @@ body {
     position: relative;
     padding-top: 10px;
     color: var(--color);
-    min-width: 990px;
+    min-width: 640px;
+    max-width: 900px;
 }
 
 #settings-editor > .flex-column {
@@ -90,25 +91,27 @@ body {
     /* border-bottom: var(--border); */
 }
 
-div < .log-view {
-    overflow-y: scroll:
+.list-group-flush > .list-group-item {
+    background: var(--background);
+    color: white;
+}
+.list-group-flush > .list-group-item  a {
+    color: white;
 }
 
 .log-frame {
     overflow-y: scroll;
-    border-left: var(--border);
 }
 
 .log-view {
     display: block;
-    height: 500px;
+    height: 350px;
     /* width: 776px; */
 }
 
 .title-box {
-    border: var(--border);
     margin-bottom: 10px;
-    width: 900px;
+
 }
 
 .main-menu > .row {
@@ -132,7 +135,7 @@ div < .log-view {
     margin: 0;
     padding-bottom: 5px;
     padding-top: 0;
-    width: 600px;
+    
 }
 
 .adpt-tray > .row {
@@ -205,9 +208,7 @@ div < .log-view {
 
 
 img.logo {
-    margin: 10%;
-    width: 80%;
-    height: 80%;
+    margin: 30px;
 }
 
 .border-left {

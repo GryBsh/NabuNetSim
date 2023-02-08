@@ -30,19 +30,20 @@
             </Select>
         </div>
         <div class="col col-5">
-            <Select TValue="string" SelectedValue="@context.Source" SelectedValueChanged="@(v => { context.Source = v; context.Image = string.Empty; })">
+            <Select TValue="string" SelectedValue="@context.Source" SelectedValueChanged="@(v => { context.Source = v; context.Image = string.Empty; this.ViewModel!.RaisePropertyChanged(nameof(context.Image)); })">
                 @foreach (var source in ViewModel!.SourceNames) {
                     <option value="@source">@source</option>
                 }
             </Select>
         </div>
         <div class="col col-2 d-flex">
-            <Button Class="btn btn-success btn-sm d-flex"
+            <Button Class="btn btn-success btn-sm d-flex" Disabled="@(!ViewModel!.HasMultipleImages(context))"
                     Clicked="@(() => ViewModel!.ToggleSelector(@context))">
                 <small>&nbsp</small><Icon Name="IconName.FolderOpen" /><small>&nbsp</small>
             </Button>
             <small>&nbsp</small>
-            <Button Class="@ViewModel!.AdaptorButtonClass(context)" Clicked="@(() => ViewModel!.ToggleAdaptor(context))">
+            <Button Class="@ViewModel!.AdaptorButtonClass(context)" 
+                    Clicked="@(() => ViewModel!.ToggleAdaptor(context))">
                 <small>&nbsp</small><Icon Name="@ViewModel!.AdaptorButtonIcon(context)" /><small>&nbsp</small>
             </Button>
         </div>
@@ -57,7 +58,7 @@
            <TextEdit @bind-Text="@context.Port" />
         </div>
         <div class="col col-5">
-            <Select TValue="string" SelectedValue="@context.Source" SelectedValueChanged="@(v => { context.Source = v; context.Image = string.Empty; })">
+            <Select TValue="string" SelectedValue="@context.Source" SelectedValueChanged="@(v => { context.Source = v; context.Image = string.Empty; this.ViewModel!.RaisePropertyChanged(nameof(context.Image)); })">
                 @foreach (var source in ViewModel!.SourceNames)
                 {
                     <option value="@source">@source</option>
@@ -65,7 +66,7 @@
             </Select>
         </div>
         <div class="col col-2 d-flex">
-            <Button Class="btn btn-success btn-sm d-flex"
+            <Button Class="btn btn-success btn-sm d-flex" Disabled="@(!ViewModel!.HasMultipleImages(context))"
                     Clicked="@(() => ViewModel!.ToggleSelector(@context))">
                 <small>&nbsp</small><Icon Name="IconName.FolderOpen" /><small>&nbsp</small>
             </Button>

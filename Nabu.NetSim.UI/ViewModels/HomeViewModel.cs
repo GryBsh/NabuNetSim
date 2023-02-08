@@ -1,6 +1,8 @@
 ﻿using Blazorise;
+using CodeHollow.FeedReader;
 using DynamicData;
 using DynamicData.Binding;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
 using Nabu.NetSim.UI;
 using Nabu.Network;
@@ -8,7 +10,10 @@ using ReactiveUI;
 using System.Collections.Generic;
 using System.IO.Ports;
 using System.Reactive;
+using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.Xml;
+using static System.Net.WebRequestMethods;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
@@ -17,18 +22,25 @@ public class HomeViewModel : ReactiveObject
 
     AppLog AppLog { get; }
     Settings Settings { get; }
-    NabuNetService Images { get; }
+    ProgramSourceService Sources { get; }
     public IEnumerable<string> Entries { get; set; }
 
     ISimulation? Simulation { get; }
+    
 
-    public HomeViewModel(AppLog appLog, Settings settings, NabuNetService images, IHostedService simulation)
+    public HomeViewModel(
+        AppLog appLog, 
+        Settings settings, 
+        ProgramSourceService sources, 
+        ISimulation simulation
+        
+    )
     {
         AppLog = appLog;
         Settings = settings;
-        Images = images;
-        Simulation = simulation as ISimulation;
-
+        Sources = sources;
+        Simulation = simulation;
+        
         var sort = SortExpressionComparer<LogEntry>.Descending(e => e.Timestamp);
         var throttle = TimeSpan.FromSeconds(1);
 
@@ -45,6 +57,27 @@ public class HomeViewModel : ReactiveObject
 
         Entries = log.Where(e => e.Timestamp > DateTime.Now.AddMinutes(-AppLog.Interval))
                      .Select(e => $"{e.Timestamp:yyyy-MM-dd | HH:mm:ss.ff} | {e.Message}");
+        
+        Task.Run(async () => Headlines = await GetHeadlines());
+        Observable.Interval(TimeSpan.FromMinutes(1))
+                  .SubscribeOn(ThreadPoolScheduler.Instance)
+                  .Subscribe(async _ => Headlines = await GetHeadlines());
+    }
+
+    public bool IsLocalHost => true;
+
+
+    public IEnumerable<(string, string)> Headlines { get; set; } = Array.Empty<(string, string)>();
+
+    public async Task<IEnumerable<(string,string)>> GetHeadlines()
+    {
+        var url = "https://www.nabunetwork.com/feed/";
+        HttpClient http = new HttpClient();
+        var r = await http.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
+        if (!r.IsSuccessStatusCode) return Array.Empty<(string,string)>();
+
+        var feed = await FeedReader.ReadAsync(url);
+        return feed.Items.Select(item => (item.Title, item.Link));
     }
 
     public ICollection<SerialAdaptorSettings> Serial
@@ -115,6 +148,12 @@ public class HomeViewModel : ReactiveObject
         };
     }
 
+    public bool HasMultipleImages(AdaptorSettings? settings)
+    {
+        var programs = Sources.Programs(settings);
+        return programs.Count() > 1 && programs.Count(p => p.Name == "000001") == 0;
+    }
+
     public void ToggleAllAdaptors()
     {
         foreach (var s in Serial)
@@ -166,9 +205,9 @@ public class HomeViewModel : ReactiveObject
         {
             Task.Run(async () =>
             {
-                await Images.RefreshSources();
+                await Sources.RefreshSources();
                 SelectorAdaptor = new[] { settings };
-                AvailableImages = Images.Programs(settings).Select(p => (p.DisplayName, p.Name));
+                AvailableImages = Sources.Programs(settings).Select(p => (p.DisplayName, p.Name));
                 SelectorVisible = true;
                 this.RaisePropertyChanged(nameof(SelectorVisible));
                 this.RaisePropertyChanged(nameof(AvailableImages));

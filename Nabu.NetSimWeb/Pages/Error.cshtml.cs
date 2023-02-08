@@ -12,9 +12,9 @@ namespace Nabu.NetSimWeb.Pages
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-        private readonly ILogger<ErrorModel> _logger;
+        private readonly IConsole<ErrorModel> _logger;
 
-        public ErrorModel(ILogger<ErrorModel> logger)
+        public ErrorModel(IConsole<ErrorModel> logger)
         {
             _logger = logger;
         }

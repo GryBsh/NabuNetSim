@@ -3,7 +3,7 @@
 public static class Message
 {
     /*
-     * I've tried to give distrinct messages some kind of name
+     * I've tried to give distinct messages some kind of name
      * Not guaranteed to be accurate, likely to change
      */
     public const byte Reset = 0x80;

@@ -17,7 +17,7 @@ public static partial class NabuLib
             ProtocolType.Tcp
         );
         socket.NoDelay = noDelay;
-        socket.DontFragment = true;
+        //socket.DontFragment = true;
         socket.SendBufferSize = sBufferSize;
         socket.ReceiveBufferSize = rBufferSize;
         socket.LingerState = new LingerOption(false, 0);
