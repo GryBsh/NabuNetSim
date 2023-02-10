@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Nabu.Cache;
 using Nabu.Patching;
 using System;
 using System.Collections.Generic;
@@ -17,12 +18,13 @@ public enum ProgramListType
 public class HttpProgramRetriever : ProgramRetriever
 {
     public IConsole<ProgramRetriever> Logger { get; }
+    
     public HttpClient Http { get; }
 
-    public HttpProgramRetriever(IConsole<ProgramRetriever> logger, HttpClient http)
+    public HttpProgramRetriever(IConsole<ProgramRetriever> logger, HttpClient client)
     {
         Logger = logger;
-        Http = http;
+        Http = client;
     }
     
     public static bool IsWebSource(string path) => path.StartsWith("http");
@@ -39,7 +41,7 @@ public class HttpProgramRetriever : ProgramRetriever
         var found = await GetHead(uri);
         if (found is false) { return (false, Array.Empty<NabuProgram>()); }
         
-        var lines = (await Http.GetStringAsync(uri)).Split('\n');
+        var lines = (await new HttpCache(Http).GetString(uri)).Split('\n');
         var progs = new List<NabuProgram>();
         foreach ( var line in lines)
         {
@@ -103,7 +105,7 @@ public class HttpProgramRetriever : ProgramRetriever
             if (found) url = uri;
         }
 
-        var npak = await Http.GetByteArrayAsync(url);
+        var npak = await new HttpCache(Http).GetBytes(url);
 
         Logger.WriteVerbose($"NPAK Length: {npak.Length}");
         npak = NabuLib.Unpak(npak);
@@ -129,7 +131,7 @@ public class HttpProgramRetriever : ProgramRetriever
     public async Task<byte[]> GetRawBytes(string url, int pak, string? image = null)
     {
         if (!IsNabu(url)) url = NabuUrl(url, pak, image);
-        var buffer = await Http.GetByteArrayAsync(url);
+        var buffer = await new HttpCache(Http).GetBytes(url);
         return buffer;
     }
     public async Task<(bool, string)> FoundRaw(string url, int pak, string? image = null)
@@ -140,7 +142,7 @@ public class HttpProgramRetriever : ProgramRetriever
 
     async Task<bool> GetHead(string url)
     {
-        var response = await Http.SendAsync(new(HttpMethod.Head, url));
+        var response = await new HttpCache(Http).GetHead(url);
         return response.IsSuccessStatusCode;
     }
 

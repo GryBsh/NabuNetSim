@@ -13,38 +13,49 @@
                         
                     </div>
                     <div class="col" style="margin: auto">
-                        <h3>NABU NetSim</h3>
+                        <ul class="list-group list-group-sm">
+                            <li class="list-group-item"><Icon Name="IconName.SliderHorizontal"/>&nbsp;<a href="#" onclick="@(() => ViewModel!.ToggleSettings())">Adaptor Settings</a></li>
+                            <li class="list-group-item"><Icon Name="IconName.Book"/>&nbsp;<a href="#" aria-disabled="@(!ViewModel!.AllAdaptorsCanStop)" onclick="@(() => ViewModel!.ToggleAllAdaptors())">@(ViewModel!.AllAdaptorsCanStop ? "Stop All Adaptors" : "Start All Adaptors")</a></li>
+                            <li class="list-group-item"><Icon Name="IconName.Book"/>&nbsp;<a href="#" onclick="@(() => ViewModel!.ToggleLog())">@ViewModel!.LogButtonText</a></li>
+                        </ul>
                     </div>
                 </div>
                     
                 <div class="row row-divider" />
-                <div class="row">
+                <Div Class="row" Visibility=@(!ViewModel!.SettingsVisible ? Visibility.Visible : Visibility.Invisible)>
+                    <div class="col">Adaptor</div>
+                    <div class="col">Status</div>
+                    <div class="col">Source</div>
+                    <div class="col">Image</div>
+                </Div>
+                <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
+                    <Div class="row" Visibility=@(!ViewModel!.SettingsVisible ? Visibility.Visible : Visibility.Invisible)>
+                        <div class="col">
+                            @context.Port
+                        </div>    
+                        <div class="col">@ViewModel!.AdaptorStatus(context)</div> 
+                        <div class="col">@context.Source</div>
+                        <div class="col">@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : string.Empty)</div>
+                    </Div>
+                </Virtualize>
+                <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
+                    <Div class="row" Visibility=@(!ViewModel!.SettingsVisible ? Visibility.Visible : Visibility.Invisible)>
+                        <div class="col">
+                            TCP:@context.Port
+                        </div>    
+                        <div class="col">@ViewModel!.AdaptorStatus(context)</div> 
+                        <div class="col">@context.Source</div>
+                        <div class="col">@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : string.Empty)</div>
+                    </Div>
+                </Virtualize>
+                <Div class="row" Visibility=@(ViewModel!.SettingsVisible ? Visibility.Visible : Visibility.Invisible)>
                     
                     <div class="row adpt-tray">
                         <AdaptorView ViewModel="@(ViewModel!)" />
                     </div>
                    
-                </div>    
-                 <div class="row row-divider" />
-                <div class="row title-row d-flex">
-                    <div class="col col-4 flex-column">
-                        <Button Class="btn btn-danger btn-sm" Disabled=@(!ViewModel!.AllAdaptorsCanStop) Clicked=@(ViewModel!.ToggleAllAdaptors)>
-                            Stop All
-                        </Button>
-                    </div>
-                    <div class="col col-4 flex-column">
-                                        
-                    </div>
-                    <div class="col col-4 flex-column">
-                        <!--<Button Class="btn btn-primary btn-sm">
-                            Add New
-                        </Button>-->
-                        <Button Class="@ViewModel!.LogButtonClass" Clicked="@ViewModel!.ToggleLog">
-                            @ViewModel!.LogButtonText
-                        </Button>
-                    </div>
-                </div>
-                <div class="row row-divider" />                
+                </Div>    
+                <div class="row row-divider" />
                 <Div Class="row border-left" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
                     <div class="log-frame col flex-lg-column">
                         <div class="log-view flex-grow-0">

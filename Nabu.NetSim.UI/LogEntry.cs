@@ -30,9 +30,6 @@ public record LogEntry
     public string Name { get; }
     public string Message { get; }
     public Exception? Exception { get; }
-    public override string ToString()
-    {
-        return $"{Timestamp:HH:mm:ss.fff}\t[{LogLevel}]\t{Name}[{EventId}]\t{Message}";
-    }
+    
 }
 

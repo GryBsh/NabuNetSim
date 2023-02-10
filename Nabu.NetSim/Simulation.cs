@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
+using Nabu.Cache;
 using Nabu.Network;
 using Nabu.Network.NHACP;
 using Nabu.Network.RetroNet;

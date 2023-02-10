@@ -131,7 +131,8 @@ public class ProgramSourceService : NabuService
         {
 
             > 1 => FormatTriple(pak),
-            _ => Empty(settings.Image) ? NabuLib.FormatTriple(1) : settings.Image!
+            _ when Empty(settings.Image) => NabuLib.FormatTriple(1),
+            _ => settings.Image!
         };
 
         if (SourceCache.ContainsKey(source) is false) return (ImageType.None, ZeroBytes);
@@ -143,6 +144,9 @@ public class ProgramSourceService : NabuService
         {
             return (prg.ImageType, value);
         }
+
+        Http.Attach(settings);
+        File.Attach(settings);
 
         byte[] bytes = ZeroBytes;
         try
@@ -169,6 +173,9 @@ public class ProgramSourceService : NabuService
 
             bytes = await patch.Patch(prg, bytes);
         }
+
+        Http.Detach();
+        File.Detach();
 
         PakCache[(source.Name.ToLower(), pak)] = bytes;
         return (prg.ImageType, bytes);

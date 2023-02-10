@@ -190,6 +190,8 @@ public class HomeViewModel : ReactiveObject
     public string LogButtonClass { get => LogVisible ? "btn btn-danger btn-sm" : "btn btn-success btn-sm"; }
     public string LogButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
 
+    
+
     public bool LogVisible { get; set; } = false;
     public void ToggleLog()
     {

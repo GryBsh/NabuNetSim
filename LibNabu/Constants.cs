@@ -92,7 +92,7 @@ public static class Constants
     Convert.ToInt16("0xaf9b", 16), Convert.ToInt16("0xbfba", 16), Convert.ToInt16("0x8fd9", 16), Convert.ToInt16("0x9ff8", 16),
     Convert.ToInt16("0x6e17", 16), Convert.ToInt16("0x7e36", 16), Convert.ToInt16("0x4e55", 16), Convert.ToInt16("0x5e74", 16),
     Convert.ToInt16("0x2e93", 16), Convert.ToInt16("0x3eb2", 16), Convert.ToInt16("0x0ed1", 16), Convert.ToInt16("0x1ef0", 16)
-};
+    };
 
 
 }

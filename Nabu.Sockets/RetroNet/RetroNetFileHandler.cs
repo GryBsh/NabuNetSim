@@ -9,7 +9,13 @@ public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
     {
     }
 
-    public Task<byte[]> Get(string filename, CancellationToken cancel) => Task.FromResult(Array.Empty<byte>());
+    public async Task<byte[]> Get(string filename, CancellationToken cancel)
+    {
+        if (!Path.IsPathRooted(filename)) filename = Path.Combine(settings.StoragePath, filename);
+        if (File.Exists(filename))
+            return await File.ReadAllBytesAsync(filename);
+        return Array.Empty<byte>();
+    }
     
     public Task Copy(string source, string destination, CopyMoveFlags flags)
     {

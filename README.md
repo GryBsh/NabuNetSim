@@ -74,18 +74,18 @@ A PC can potentially serve hundreds.
 - [Leo "The Undipsuted God-Legend" Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
-- [Geek with Social Skils](https://www.youtube.com/@geekwithsocialskills)
+- [Geek with Social Skills](https://www.youtube.com/@geekwithsocialskills)
 - DJ Sures: For his work on Nabu.Ca
+- BriJohn: [NABU Mame](https://github.com/brijohn/mame/tree/nabupc_wip)
+- GTAMP: [NABU MAME Windows Builds](https://gtamp.com/nabu)
 - RetroNET and Discord Chaters (in no particular order):
   - Sark
   - Nath (The legend who decrypted NPAK files)
   - Brijohn (NABU MAME!!)
-  - Worm
   - Hans23 (Creator of the HCCA-ACP spec)
   - Guidol
   - VTTCP
   - HungryMarmot
-  - Wormetti
 - And many many more
 
 ## Join us on Discord

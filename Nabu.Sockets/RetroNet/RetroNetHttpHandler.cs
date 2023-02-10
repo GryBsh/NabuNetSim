@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
 using System;
+using Nabu.Cache;
 
 namespace Nabu.Network.RetroNet;
 
@@ -8,20 +9,20 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 {
     public RetroNetHttpHandler(IConsole logger, HttpClient client, AdaptorSettings settings) : base(logger, settings)
     {
-        Client = client;
+        Client = new HttpCache(client);
     }
-    public HttpClient Client { get; }
+    public HttpCache Client { get; }
 
     public async Task<byte[]> Get(string filename, CancellationToken cancel)
     {
         try
         {
-            using var client = new HttpClient();
-            using var response = await client.GetAsync(filename, cancel);
+            
+            using var response = await Client.GetHead(filename);
 
             if (response.IsSuccessStatusCode)
             {
-                return await response.Content.ReadAsByteArrayAsync(cancel);
+                return await Client.GetBytes(filename);
             }
             return Array.Empty<byte>();
         }
@@ -64,7 +65,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 
     public async Task<int> Size(string filename)
     {
-        var head = await Client.SendAsync(new(HttpMethod.Head, filename));
+        var head = await Client.GetHead(filename);
         var size = (int?)head.Content.Headers.ContentLength ?? -1;
         Log($"HTTP: {filename}:{size}");
         return size;

@@ -68,6 +68,7 @@ public class RetroNetTelnetProtocol : Protocol
     }
 
     CancellationTokenSource Cancel { get; set; } = new CancellationTokenSource();
+    Timer? StartupDetection { get; set; }
 
     public override async Task Handle(byte unhandled, CancellationToken cancel)
     {
@@ -99,51 +100,25 @@ public class RetroNetTelnetProtocol : Protocol
                     continue;
                 }
 
-                var stream = new NetworkStream(socket);
+                
                 Log($"Relaying Telnet to {hostname}:{port}");
 
                 Cancel = CancellationTokenSource.CreateLinkedTokenSource(cancel, CancellationToken.None);
+                var remote = new NetworkStream(socket);
+                var nabu = Stream;
                 
-                var sender = Task.Run(() =>
+                try
                 {
-                    int startupCount = 0;
-                    while (Cancel.IsCancellationRequested is false)
-                    {
-                        
-                        var b = (byte)Stream.ReadByte();
-                        if (b == 0x03)
-                            //CTRL+C
-                            break;
-
-                        if (b is Message.StartUp) startupCount++;
-                        if (startupCount == 2)
-                            break;
-
-                        stream.WriteByte(b);
-                    }
-                    Reset();
-                    stream.Dispose();
-                    socket.Dispose();
-                }, Cancel.Token);
-
-                var receiver = Task.Run(() =>
+                    await Task.WhenAny(
+                        nabu.CopyToAsync(remote, Cancel.Token),
+                        remote.CopyToAsync(nabu, Cancel.Token)
+                    );
+                }
+                catch
                 {
-                    while (Cancel.IsCancellationRequested is false && stream.CanRead)
-                    {
-                        while (socket.Available == 0) Thread.SpinWait(10);
-                        var b = (byte)stream.ReadByte();
-
-                        Stream.WriteByte(b);
-                    }
-                }, Cancel.Token);
-                
-
-
-
-                await Task.WhenAny(
-                    sender,
-                    receiver
-                );
+                    Cancel.Cancel();
+                    return;
+                }
             }
             catch (Exception ex)
             {
