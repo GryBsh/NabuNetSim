@@ -8,14 +8,14 @@
         <div class="col flex-fill center title-col">
             <div class="container-fluid title-box">
                 <div class="row">
-                    <div class="col">
+                    <div class="col col-6">
                         <Image class="logo" Source="_content/Nabu.NetSim.UI/nabu.png" />
                         
                     </div>
-                    <div class="col" style="margin: auto">
+                    <div class="col col-4" style="margin: auto">
                         <ul class="list-group list-group-sm">
-                            <li class="list-group-item"><Icon Name="IconName.SliderHorizontal"/>&nbsp;<a href="#" onclick="@(() => ViewModel!.ToggleSettings())">Adaptor Settings</a></li>
-                            <li class="list-group-item"><Icon Name="IconName.Book"/>&nbsp;<a href="#" aria-disabled="@(!ViewModel!.AllAdaptorsCanStop)" onclick="@(() => ViewModel!.ToggleAllAdaptors())">@(ViewModel!.AllAdaptorsCanStop ? "Stop All Adaptors" : "Start All Adaptors")</a></li>
+                            <li class="list-group-item"><Icon Name="IconName.SliderHorizontal"/>&nbsp;<a href="#" onclick="@(() => ViewModel!.ToggleSettings())">@(ViewModel!.SettingsVisible ? "Hide Settings" : "Change Settings")</a></li>
+                            <li class="list-group-item"><Icon Name="IconName.Stop"/>&nbsp;<a href="#" aria-disabled="@(!ViewModel!.AllAdaptorsCanStop)" onclick="@(() => ViewModel!.ToggleAllAdaptors())">@(ViewModel!.AllAdaptorsCanStop ? "Stop All Adaptors" : "Start All Adaptors")</a></li>
                             <li class="list-group-item"><Icon Name="IconName.Book"/>&nbsp;<a href="#" onclick="@(() => ViewModel!.ToggleLog())">@ViewModel!.LogButtonText</a></li>
                         </ul>
                     </div>
