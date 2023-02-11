@@ -13,7 +13,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.NetSimWeb", "Nabu.NetS
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nabu.NetSim.UI", "Nabu.NetSim.UI\Nabu.NetSim.UI.csproj", "{15DA10F0-0D14-45D2-A66F-B16089E4C964}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LibNabu", "LibNabu\LibNabu.csproj", "{E6A5E449-C011-460E-A4B7-E4767BF3BF46}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LibNabu", "LibNabu\LibNabu.csproj", "{E6A5E449-C011-460E-A4B7-E4767BF3BF46}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

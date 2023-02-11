@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "LibNabu": {
+      "commandName": "Project",
+      "launchBrowser": true,
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development"
+      },
+      "applicationUrl": "https://localhost:28757;http://localhost:28758"
+    }
+  }
+}

@@ -42,6 +42,7 @@
 
 
   <ItemGroup>
+    <ProjectReference Include="..\LibNabu\LibNabu.csproj" />
     <ProjectReference Include="..\Nabu.NetSim.UI\Nabu.NetSim.UI.csproj" />
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />
     <ProjectReference Include="..\Nabu.Sockets\Nabu.Sockets.csproj" />

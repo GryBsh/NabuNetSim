@@ -1,0 +1,71 @@
+﻿@inherits ReactiveComponentBase<MenuViewModel>
+
+<Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.MainMenu)>
+    <ul class="menu list-group list-group-flush list-group-sm">
+        <li class="list-group-item"><Icon Name="IconName.SliderHorizontal" />
+            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Settings))">Settings</a>
+        </li>
+        <li class="list-group-item"><Icon Name="IconName.BookReader" />
+            <a href="#" onclick="@(() => ViewModel!.Home.ToggleLog())">@ViewModel.Home.LogButtonText</a>
+        </li>
+    </ul>
+</Div>
+<Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.Settings)>
+    <ul class="menu list-group list-group-flush list-group-sm">
+        <li class="list-group-item"><Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a></li>
+        @foreach (var serial in ViewModel!.Home.Serial)
+        {
+            <li class="list-group-item">
+                <Icon Name="IconName.Plug" />
+                <a href="#" onclick="@(() => { ViewModel.SetSelected(serial); })">@serial.Port</a>
+            </li>
+        }
+        @foreach (var tcp in ViewModel!.Home.TCP)
+        {
+            <li class="list-group-item">
+                <Icon Name="IconName.Wifi" />
+                <a href="#" onclick="@(() => { ViewModel.SetSelected(tcp); })">TCP: @tcp.Port</a>
+            </li>
+        }
+    </ul>
+</Div>
+<Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.AdaptorSettings)>
+    <ul class="menu list-group list-group-flush list-group-sm">
+        <li class="list-group-item">
+            <Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Settings))">Back</a>
+        </li>
+        <li class="list-group-item">
+            <Icon Name="@ViewModel!.Home.AdaptorButtonIcon(ViewModel.Selected)" />
+            <a href="#" onclick="@(() => ViewModel!.Home.ToggleAdaptor(ViewModel.Selected))">@ViewModel!.AdaptorButtonText(ViewModel.Selected)</a>
+        </li>
+        <li class="list-group-item">
+            <Icon Name="IconName.Server" />
+            Source
+            <Select TValue="string" SelectedValue="@ViewModel.Selected.Source"
+                    SelectedValueChanged="@(
+                            v => {
+                                ViewModel.SetSource(v);
+                            })">
+                @foreach (var source in ViewModel!.Home.SourceNames)
+                {
+                    <option value="@source">@source</option>
+                }
+            </Select>
+        </li>
+        <li class="list-group-item @(ViewModel!.Home.HasMultipleImages(ViewModel.Selected) ? "" : "invisible")">
+            <Icon Name="IconName.FolderOpen" />
+            Select Program
+            <Select TValue="string" @bind-SelectedValue="@ViewModel.Selected.Image">
+                <option value=""></option>
+                @foreach (var (displayName, name) in ViewModel!.AvailableImages())
+                {
+                    <option value="@name">@displayName</option>
+                }
+            </Select>
+        </li>
+    </ul>
+    
+
+</Div>

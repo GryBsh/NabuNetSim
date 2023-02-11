@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 using Nabu.Network.RetroNetHandle;
+using Nabu;
 using System.Net.Cache;
 using System.Reflection.Metadata;
 using System.Text.RegularExpressions;

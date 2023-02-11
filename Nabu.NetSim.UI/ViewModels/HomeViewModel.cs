@@ -5,7 +5,7 @@ using DynamicData.Binding;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
 using Nabu.NetSim.UI;
-using Nabu.Network;
+using Nabu;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -14,6 +14,7 @@ using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 using System.Xml;
 using static System.Net.WebRequestMethods;
+using Nabu.Network;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
@@ -40,7 +41,8 @@ public class HomeViewModel : ReactiveObject
         Settings = settings;
         Sources = sources;
         Simulation = simulation;
-        
+        Menu = new(this, Sources);
+
         var sort = SortExpressionComparer<LogEntry>.Descending(e => e.Timestamp);
         var throttle = TimeSpan.FromSeconds(1);
 
@@ -59,12 +61,12 @@ public class HomeViewModel : ReactiveObject
                      .Select(e => $"{e.Timestamp:yyyy-MM-dd | HH:mm:ss.ff} | {e.Message}");
         
         Task.Run(async () => Headlines = await GetHeadlines());
-        Observable.Interval(TimeSpan.FromMinutes(1))
+        Observable.Interval(TimeSpan.FromMinutes(30))
                   .SubscribeOn(ThreadPoolScheduler.Instance)
                   .Subscribe(async _ => Headlines = await GetHeadlines());
     }
 
-    public bool IsLocalHost => true;
+
 
 
     public IEnumerable<(string, string)> Headlines { get; set; } = Array.Empty<(string, string)>();
@@ -72,13 +74,18 @@ public class HomeViewModel : ReactiveObject
     public async Task<IEnumerable<(string,string)>> GetHeadlines()
     {
         var url = "https://www.nabunetwork.com/feed/";
-        HttpClient http = new HttpClient();
-        var r = await http.SendAsync(new HttpRequestMessage(HttpMethod.Head, url));
-        if (!r.IsSuccessStatusCode) return Array.Empty<(string,string)>();
-
-        var feed = await FeedReader.ReadAsync(url);
-        return feed.Items.Select(item => (item.Title, item.Link));
+        try
+        {
+            var feed = await FeedReader.ReadAsync(url);
+            return feed.Items.Select(item => (item.Title, item.Link));
+        }
+        catch
+        {
+            return Array.Empty<(string, string)>();
+        }
     }
+
+    public MenuViewModel Menu { get; set; } 
 
     public ICollection<SerialAdaptorSettings> Serial
     {
@@ -137,19 +144,11 @@ public class HomeViewModel : ReactiveObject
                TCP.Any(t => t.Next is ServiceShould.Continue);
     }
 
-    public string AllAdaptorButtonClass(AdaptorSettings settings)
-    {
-        return settings.Next switch
-        {
-            ServiceShould.Continue => "btn btn-danger btn-sm d-flex",
-            ServiceShould.Restart => "btn btn-warning btn-sm d-flex",
-            ServiceShould.Stop => "btn btn-success btn-sm d-flex",
-            _ => "btn btn-secondary btn-sm d-flex"
-        };
-    }
+  
 
     public bool HasMultipleImages(AdaptorSettings? settings)
     {
+        if (settings is null or NullAdaptorSettings) return false;
         var programs = Sources.Programs(settings);
         return programs.Count() > 1 && programs.Count(p => p.Name == "000001") == 0;
     }
@@ -181,13 +180,10 @@ public class HomeViewModel : ReactiveObject
     public string[] SerialPortNames { get; set; } = SerialPort.GetPortNames();
     public IEnumerable<(string, string)> AvailableImages { get; private set; } = Array.Empty<(string, string)>();
 
-    public bool SettingsVisible { get; set; } = false;
-    public void ToggleSettings()
-    {
-        SettingsVisible = !SettingsVisible;
-    }
+    
 
-    public string LogButtonClass { get => LogVisible ? "btn btn-danger btn-sm" : "btn btn-success btn-sm"; }
+    public bool SettingsVisible { get; set; } = false;
+  
     public string LogButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
 
     
@@ -196,6 +192,7 @@ public class HomeViewModel : ReactiveObject
     public void ToggleLog()
     {
         LogVisible = !LogVisible;
+        this.RaisePropertyChanged(nameof(LogVisible));
     }
 
     public bool SelectorVisible { get; set; } = false;

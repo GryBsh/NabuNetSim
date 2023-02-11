@@ -10,8 +10,8 @@ public class HttpCache
 {
     HttpClient Http { get; }
    
-    string JoinPath(params string[] parts) => Path.Join(parts);
-    public string CacheFolder => JoinPath(AppContext.BaseDirectory, "cache");
+    
+    public string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
 
     public HttpCache(HttpClient http)
     {
@@ -49,7 +49,7 @@ public class HttpCache
     public async Task<byte[]> GetBytes(string uri)
     {
         var safeName = NabuLib.SafeFileName(uri);
-        var path = JoinPath(CacheFolder, safeName);
+        var path = Path.Join(CacheFolder, safeName);
 
         var (shouldDownload, found, local) = await ShouldDownload(uri, path);
 
@@ -69,7 +69,7 @@ public class HttpCache
     public async Task<string> GetString(string uri)
     {
         var safeName = NabuLib.SafeFileName(uri);
-        var path = JoinPath(CacheFolder, safeName);
+        var path = Path.Join(CacheFolder, safeName);
 
         var (shouldDownload, found, local) = await ShouldDownload(uri, path);
 

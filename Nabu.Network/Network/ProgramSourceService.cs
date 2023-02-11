@@ -5,21 +5,25 @@ using static System.Net.WebRequestMethods;
 
 namespace Nabu.Network;
 
-public class ProgramSourceService : NabuService
+public class ProgramSourceService : NabuBase
 {
-   
+
     HttpProgramRetriever Http { get; }
     FileProgramRetriever File { get; }
     public List<ProgramSource> Sources { get; }
     public Dictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
+    Settings Settings { get; }
+
     Dictionary<(string?, int), byte[]> PakCache { get; } = new();
-    
+
     public ProgramSourceService(
-        List<ProgramSource> sources, 
+        Settings settings,
+        List<ProgramSource> sources,
         IConsole<ProgramSourceService> console,
         HttpProgramRetriever http,
-        FileProgramRetriever file) : base(console, new NullAdaptorSettings())
+        FileProgramRetriever file) : base(console)
     {
+        Settings = settings;
         Sources = sources;
         Http = http;
         File = file;
@@ -32,6 +36,16 @@ public class ProgramSourceService : NabuService
     public ProgramSource Source(AdaptorSettings settings)
         => Sources.First(s => s.Name.ToLower() == settings.Source?.ToLower());
 
+    public string DiskFolder => Settings.StoragePath;
+
+    public IEnumerable<string> Disks()
+    {
+        if (!Directory.Exists(DiskFolder))
+            Directory.CreateDirectory(DiskFolder);
+        
+        return Directory.GetFiles(DiskFolder, "*.dsk,*.img");
+    }
+
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
     {
         var source = Source(settings);
@@ -42,7 +56,7 @@ public class ProgramSourceService : NabuService
 
     public IEnumerable<NabuProgram> RefreshLocal(ProgramSource source)
     {
-        if (source.Path is null || source.SourceType is SourceType.Remote) 
+        if (source.Path is null || source.SourceType is SourceType.Remote)
             return Array.Empty<NabuProgram>();
 
         return File.GetImageList(source.Name, source.Path);
@@ -55,35 +69,35 @@ public class ProgramSourceService : NabuService
 
         var (isList, items) = await Http.FoundNabuCaList(source.Name, source.Path);
         if (isList) return items;
-                
+
         var (isNabu, nabuUrl) = await Http.FoundRaw(source.Path, pak);
         if (isNabu)
         {
-           return
-                new NabuProgram[] {
+            return
+                 new NabuProgram[] {
                     new(
                         nabuName,
                         pakName,
-                        settings.Source!,
+                        source.Name,
                         DefinitionType.Folder,
                         nabuUrl,
                         SourceType.Remote,
                         ImageType.Raw,
                         new[] { new PassThroughPatch(Logger) }
                     )
-                };
+                 };
         }
         else
         {
             var (found, url) = await Http.FoundPak(source.Path, pak);
             if (found)
             {
-                return 
+                return
                     new NabuProgram[] {
                             new(
                                 nabuName,
                                 nabuName,
-                                settings.Source!,
+                                source.Name,
                                 DefinitionType.Folder,
                                 url,
                                 SourceType.Remote,
