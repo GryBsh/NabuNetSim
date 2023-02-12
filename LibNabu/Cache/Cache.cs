@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,14 +10,16 @@ namespace Nabu.Cache;
 public class HttpCache
 {
     HttpClient Http { get; }
-   
-    
+    IConsole Logger { get; }
+
     public string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
 
-    public HttpCache(HttpClient http)
+    public HttpCache(HttpClient http, IConsole logger)
     {
         
         Http = http;
+        //Http.Timeout = TimeSpan.FromSeconds(180);
+        Logger = logger;
         Task.Run(EnsureCacheFolder);
     }
 
@@ -57,11 +60,13 @@ public class HttpCache
 
         if (shouldDownload && found)
         {
+            Logger.Write($"Downloading {uri}");
             var bytes = await Http.GetByteArrayAsync(uri);
+            Logger.Write($"Writing {bytes.Length} bytes to {path}");
             await File.WriteAllBytesAsync(path, bytes);
             return bytes;
         }
-        
+        Logger.Write($"Reading {path} from cache");
         return await File.ReadAllBytesAsync(path);
         
     }
@@ -77,6 +82,7 @@ public class HttpCache
 
         if (shouldDownload && found)
         {
+            
             var str = await Http.GetStringAsync(uri);
             await File.WriteAllTextAsync(path, str);
             return str;

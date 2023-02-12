@@ -41,7 +41,7 @@ public class HttpProgramRetriever : ProgramRetriever
         var found = await GetHead(uri);
         if (found is false) { return (false, Array.Empty<NabuProgram>()); }
         
-        var lines = (await new HttpCache(Http).GetString(uri)).Split('\n');
+        var lines = (await new HttpCache(Http, Logger).GetString(uri)).Split('\n');
         var progs = new List<NabuProgram>();
         foreach ( var line in lines)
         {
@@ -105,7 +105,7 @@ public class HttpProgramRetriever : ProgramRetriever
             if (found) url = uri;
         }
 
-        var npak = await new HttpCache(Http).GetBytes(url);
+        var npak = await new HttpCache(Http, Logger).GetBytes(url);
 
         Logger.WriteVerbose($"NPAK Length: {npak.Length}");
         npak = NabuLib.Unpak(npak);
@@ -131,7 +131,7 @@ public class HttpProgramRetriever : ProgramRetriever
     public async Task<byte[]> GetRawBytes(string url, int pak, string? image = null)
     {
         if (!IsNabu(url)) url = NabuUrl(url, pak, image);
-        var buffer = await new HttpCache(Http).GetBytes(url);
+        var buffer = await new HttpCache(Http, Logger).GetBytes(url);
         return buffer;
     }
     public async Task<(bool, string)> FoundRaw(string url, int pak, string? image = null)
@@ -142,7 +142,7 @@ public class HttpProgramRetriever : ProgramRetriever
 
     async Task<bool> GetHead(string url)
     {
-        var response = await new HttpCache(Http).GetHead(url);
+        var response = await new HttpCache(Http, Logger).GetHead(url);
         return response.IsSuccessStatusCode;
     }
 

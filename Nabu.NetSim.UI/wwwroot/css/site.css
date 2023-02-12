@@ -60,8 +60,17 @@ body {
     max-width: 50%;
     margin-left: 25%;
     color: white;
-}    
+}
+.log-frame {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
+}
 
+.log-view {
+    display: block;
+   
+    width: 800px;
+}
 
 .modal-body {
     background: var(--background);
@@ -226,6 +235,9 @@ img.logo {
 
 .border-left {
     border-left: var(--border)
+}
+.borders {
+    border: 5px solid white;
 }
 
 .valid.modified:not([type=checkbox]) {

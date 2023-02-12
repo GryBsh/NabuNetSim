@@ -9,7 +9,7 @@ public class HttpHandleHandler : RetroNetMemoryHandle
     HttpCache Http { get; }
     public HttpHandleHandler(IConsole logger, AdaptorSettings settings, HttpClient client ) : base(logger, settings)
     {
-        Http = new HttpCache(client);
+        Http = new HttpCache(client, Logger);
     }
 
     public override async Task<bool> Open(string uri, FileOpenFlags flags, CancellationToken cancel)

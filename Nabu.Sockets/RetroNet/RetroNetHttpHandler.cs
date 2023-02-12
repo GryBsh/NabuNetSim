@@ -9,7 +9,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 {
     public RetroNetHttpHandler(IConsole logger, HttpClient client, AdaptorSettings settings) : base(logger, settings)
     {
-        Client = new HttpCache(client);
+        Client = new HttpCache(client, Logger);
     }
     public HttpCache Client { get; }
 

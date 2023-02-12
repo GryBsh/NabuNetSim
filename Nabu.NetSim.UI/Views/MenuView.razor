@@ -1,7 +1,7 @@
 ﻿@inherits ReactiveComponentBase<MenuViewModel>
 
 <Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.MainMenu)>
-    <ul class="menu list-group list-group-flush list-group-sm">
+    <ul class="menu list-group list-group-flush list-group-sm borders">
         <li class="list-group-item"><Icon Name="IconName.SliderHorizontal" />
             <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Settings))">Settings</a>
         </li>
@@ -11,7 +11,7 @@
     </ul>
 </Div>
 <Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.Settings)>
-    <ul class="menu list-group list-group-flush list-group-sm">
+    <ul class="menu list-group list-group-flush list-group-sm borders">
         <li class="list-group-item"><Icon Name="IconName.Backward" />
             <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a></li>
         @foreach (var serial in ViewModel!.Home.Serial)
@@ -31,7 +31,7 @@
     </ul>
 </Div>
 <Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.AdaptorSettings)>
-    <ul class="menu list-group list-group-flush list-group-sm">
+    <ul class="menu list-group list-group-flush list-group-sm borders">
         <li class="list-group-item">
             <Icon Name="IconName.Backward" />
             <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Settings))">Back</a>
