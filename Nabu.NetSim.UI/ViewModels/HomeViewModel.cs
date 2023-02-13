@@ -5,7 +5,6 @@ using DynamicData.Binding;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
 using Nabu.NetSim.UI;
-using Nabu;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -23,7 +22,7 @@ public class HomeViewModel : ReactiveObject
 
     AppLog AppLog { get; }
     Settings Settings { get; }
-    ProgramSourceService Sources { get; }
+    NabuNetwork Sources { get; }
     public IEnumerable<string> Entries { get; set; }
 
     ISimulation? Simulation { get; }
@@ -32,9 +31,8 @@ public class HomeViewModel : ReactiveObject
     public HomeViewModel(
         AppLog appLog, 
         Settings settings, 
-        ProgramSourceService sources, 
+        NabuNetwork sources, 
         ISimulation simulation
-        
     )
     {
         AppLog = appLog;

@@ -7,7 +7,7 @@ namespace Nabu.Network;
 
 public class ClassicNabuProtocol : Protocol
 {
-    ProgramSourceService Network { get; }
+    NabuNetwork Network { get; }
     NabuNetAdaptorState State;
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     protected override byte Version => 0x84;
@@ -16,7 +16,7 @@ public class ClassicNabuProtocol : Protocol
 
     public ClassicNabuProtocol(
         IConsole<ClassicNabuProtocol> logger,
-        ProgramSourceService network) : base(logger)
+        NabuNetwork network) : base(logger)
     {
         Network = network;
         State = new();
@@ -128,11 +128,10 @@ public class ClassicNabuProtocol : Protocol
             return;
         }
 
-        bool last = false;
-        byte[] payload = Array.Empty<byte>();
+        
 
         //if (type == ImageType.Raw)
-        (last, payload) = NabuLib.SliceFromRaw(Logger, segment, pak, segmentData);
+        var (last, payload) = NabuLib.SliceFromRaw(Logger, segment, pak, segmentData);
         //else
         //(last, payload) = NabuLib.SliceFromPak(Logger, segment, segmentData);
 
@@ -202,9 +201,9 @@ public class ClassicNabuProtocol : Protocol
         buffer = EscapeBytes(buffer).ToArray();
         Debug($"NA: Sending Packet, {buffer.Length} bytes");
 
-        var start = DateTime.Now;
+        //var start = DateTime.Now;
         Send(buffer);
-        var stop = DateTime.Now;
+        //var stop = DateTime.Now;
 
         Finished();                      //Epilog
         if (last)

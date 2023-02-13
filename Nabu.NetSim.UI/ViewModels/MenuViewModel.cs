@@ -19,7 +19,7 @@ public enum MenuPage
 
 public class MenuViewModel : ReactiveObject
 {
-    public MenuViewModel(HomeViewModel home, ProgramSourceService sources)
+    public MenuViewModel(HomeViewModel home, NabuNetwork sources)
     {
         Home = home;
         Sources = sources;
@@ -27,7 +27,7 @@ public class MenuViewModel : ReactiveObject
 
     
     public HomeViewModel Home { get; set; }
-    public ProgramSourceService Sources { get; }
+    public NabuNetwork Sources { get; }
 
     void NotifyChange()
     {

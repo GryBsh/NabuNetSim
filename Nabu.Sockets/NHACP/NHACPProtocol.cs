@@ -9,9 +9,9 @@ namespace Nabu.Network.NHACP;
 
 public class NHACPProtocol : Protocol
 {
-    ProgramSourceService NabuNet { get; }
+    NabuNetwork NabuNet { get; }
     NHACPProtocolService Storage { get; }
-    public NHACPProtocol(IConsole<NHACPProtocol> logger, ProgramSourceService nabuNet) : base(logger)
+    public NHACPProtocol(IConsole<NHACPProtocol> logger, NabuNetwork nabuNet) : base(logger)
     {
         Storage = new(Logger, settings);
         NabuNet = nabuNet;

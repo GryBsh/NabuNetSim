@@ -3,12 +3,12 @@
 public abstract class NabuBase
 {
     protected IConsole Logger { get; }
-    public NabuBase(IConsole logger, int index = -1)
+    public NabuBase(IConsole logger, string? label = null)
     {
         Logger = logger;
-        Index = index;
+        Label = label ?? string.Empty;
     }
-    public int Index { get; }
+    public string Label { get; }
     protected static bool Empty(string? str) => string.IsNullOrWhiteSpace(str);
     protected static byte[] ZeroBytes => Array.Empty<byte>();
     protected static string FormatSeparated(params byte[] bytes) => NabuLib.FormatSeperated(bytes);
@@ -18,7 +18,8 @@ public abstract class NabuBase
 
     protected virtual string LogMessage(string message)
     {
-        return message;
+        var header = string.IsNullOrWhiteSpace(Label) ? string.Empty : $"[{Label}]";
+        return $"{header}:{message}";
     }
 
     protected void Log(string message) => Task.Run(() => Logger.Write(LogMessage(message)));

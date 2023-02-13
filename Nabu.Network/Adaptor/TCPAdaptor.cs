@@ -23,8 +23,7 @@ public class TCPAdaptor
     public static async Task Start(
         IServiceProvider serviceProvider, 
         AdaptorSettings settings, 
-        CancellationToken stopping,
-        int index = -1
+        CancellationToken stopping
     ){
         var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
         var socket = NabuLib.Socket();
@@ -63,8 +62,7 @@ public class TCPAdaptor
                      serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
-                     stream,
-                     index
+                     stream
                 );
                 
                 ServerListen(logger, adaptor, stream, stopping);

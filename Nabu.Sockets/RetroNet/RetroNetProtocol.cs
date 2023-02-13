@@ -14,7 +14,7 @@ public partial class RetroNetProtocol : Protocol
     Dictionary<byte, IRetroNetFileHandle> Slots { get; } = new();
     FileDetails[]? CurrentList { get; set; }
     HttpClient HttpClient { get; }
-    ProgramSourceService NabuNet { get; }
+    NabuNetwork NabuNet { get; }
     Dictionary<string, byte[]> Cache { get; } = new();
     byte NextIndex()
     {
@@ -29,7 +29,7 @@ public partial class RetroNetProtocol : Protocol
     public RetroNetProtocol(
         IConsole<RetroNetProtocol> logger,
         HttpClient httpClient,
-        ProgramSourceService nabuNet
+        NabuNetwork nabuNet
     ) : base(logger)
     {
         HttpClient = httpClient;

@@ -58,7 +58,8 @@ public sealed class AppLog
 
     public void Add(LogEntry entry)
     {
-        lock (LogLock) LogEntries.Add(entry);
+        lock (LogLock) 
+            LogEntries.Add(entry);
     }
 
     public void Add(

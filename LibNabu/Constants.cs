@@ -5,7 +5,8 @@
 /// </summary>
 public static class Constants
 {
-
+    public const string CycleMenuPak = "000001";
+    public const string CycleMenuPakName = $"{CycleMenuPak}.nabu";
     // Sizes
     public const int MaxSegmentSize = 65536;
     public const int MaxPacketSize = 1024;

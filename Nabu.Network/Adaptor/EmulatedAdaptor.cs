@@ -18,9 +18,9 @@ public class EmulatedAdaptor : NabuService
         //ACPProtocol acp,
         IEnumerable<IProtocol> protocols,
         IConsole logger,
-        Stream stream,
-        int index = -1
-    ) : base(logger, settings, index)
+        Stream stream
+       
+    ) : base(logger, settings)
     {
         base.settings = settings;
         NabuNet = nabu;

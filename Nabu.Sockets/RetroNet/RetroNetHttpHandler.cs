@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
 using System;
-using Nabu.Cache;
 
 namespace Nabu.Network.RetroNet;
 
@@ -17,13 +16,12 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
     {
         try
         {
-            
-            using var response = await Client.GetHead(filename);
-
-            if (response.IsSuccessStatusCode)
+            var (should, found, cached)= await Client.CanGet(filename);
+            if (found || cached)
             {
                 return await Client.GetBytes(filename);
             }
+
             return Array.Empty<byte>();
         }
         catch (Exception ex)

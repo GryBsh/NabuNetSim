@@ -11,8 +11,7 @@ public class SerialAdaptor
     public static async Task Start(
         IServiceProvider serviceProvider, 
         SerialAdaptorSettings settings, 
-        CancellationToken stopping,
-        int index = -1
+        CancellationToken stopping
     ) {
         var logger = serviceProvider.GetRequiredService<IConsole<SerialAdaptor>>();
 
@@ -58,8 +57,7 @@ public class SerialAdaptor
                 serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                 serviceProvider.GetServices<IProtocol>(),
                 logger,
-                serial.BaseStream,
-                index
+                serial.BaseStream
             );
             logger.Write($"Adaptor Started");
             await adaptor.Listen(stopping);

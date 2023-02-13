@@ -6,7 +6,7 @@ public abstract class NabuService : NabuBase
 {
   
     protected AdaptorSettings settings { get; set; }
-    public NabuService(IConsole logger, AdaptorSettings settings, int index = -1) : base(logger, index)
+    public NabuService(IConsole logger, AdaptorSettings settings) : base(logger)
     {
         
         this.settings = settings;
