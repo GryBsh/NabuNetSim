@@ -10,7 +10,7 @@ public class ClassicNabuProtocol : Protocol
     NabuNetwork Network { get; }
     NabuNetAdaptorState State;
     public override byte[] Commands { get; } = new byte[] { 0x83 };
-    protected override byte Version => 0x84;
+    public override byte Version => 0x84;
 
     AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 

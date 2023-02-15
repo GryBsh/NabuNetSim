@@ -24,7 +24,7 @@ public class RetroNetTelnetProtocol : Protocol
 
     public override byte[] Commands { get; } = new byte[] { 0xA6 };
 
-    protected override byte Version => 0x01;
+    public override byte Version => 0x01;
 
     void Write(string message) => Send(NabuLib.FromASCII(message).ToArray());
     void WriteLine(string? message = null) => Write($"{message}\n");

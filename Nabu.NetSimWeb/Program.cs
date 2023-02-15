@@ -33,7 +33,7 @@ builder.Services.AddHttpClient();
 builder.Services.AddSingleton<AppLog>();
 builder.Services.AddTransient<MainLayoutViewModel>();
 builder.Services.AddTransient<HomeViewModel>();
-Simulation.Register(builder.Services);
+Simulation.Register(builder.Services, settings);
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();

@@ -18,7 +18,7 @@ public class NHACPProtocol : Protocol
     }
 
     public override byte[] Commands { get; } = new byte[] { 0xAF };
-    protected override byte Version => 0x01;
+    public override byte Version => 0x01;
 
     #region ACP Frames / Messages
     void StorageStarted()

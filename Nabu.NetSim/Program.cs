@@ -21,6 +21,6 @@ await   Host
                 );
                 
                 services.AddHttpClient();
-                Simulation.Register(services);
+                Simulation.Register(services, settings);
             }
         ).RunConsoleAsync();

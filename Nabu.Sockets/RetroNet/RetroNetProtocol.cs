@@ -58,7 +58,7 @@ public partial class RetroNetProtocol : Protocol
         RetroNetCommands.FileStat
     };
 
-    protected override byte Version { get; } = 0x01;
+    public override byte Version { get; } = 0x01;
 
     public override Task Handle(byte unhandled, CancellationToken cancel)
     {

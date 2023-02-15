@@ -7,6 +7,7 @@
     <UserSecretsId>1edfc615-53f7-4ec2-9052-78dfd6daea82</UserSecretsId>
     <AssemblyName>nns-wui</AssemblyName>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +37,7 @@
     <PackageReference Include="Blazorise.Sidebar" Version="1.2.0" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.2" />
     <PackageReference Include="NLog.Extensions.Logging" Version="5.2.1" />
+    <PackageReference Include="Python.Included" Version="3.11.1" />
     <PackageReference Include="ReactiveUI.Blazor" Version="18.4.20" />
     <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="14.6.8" />
   </ItemGroup>

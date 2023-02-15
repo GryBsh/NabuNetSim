@@ -6,16 +6,16 @@ namespace Nabu.Adaptor;
 
 public abstract class Protocol : NabuService, IProtocol
 {
-    //protected AdaptorSettings Settings { get; private set; }
-    protected Stream Stream { get; private set; } = Stream.Null;
-    protected BinaryReader Reader { get; private set; }
-    protected BinaryWriter Writer { get; private set; }
-    protected abstract byte Version { get; }
+    //public AdaptorSettings Settings { get; private set; }
+    public Stream Stream { get; private set; } = Stream.Null;
+    public BinaryReader Reader { get; private set; }
+    public BinaryWriter Writer { get; private set; }
+    public abstract byte Version { get; }
     public abstract byte[] Commands { get; } 
     public bool Attached => Stream != Stream.Null;
     
     int SendDelay = 0;
-    protected Protocol(
+    public Protocol(
         IConsole logger
     ) : base(logger, new NullAdaptorSettings())
     {
@@ -34,7 +34,7 @@ public abstract class Protocol : NabuService, IProtocol
     ///     Receive 1 byte.
     /// </summary>
     /// <returns>The received byte</returns>
-    protected byte Recv()
+    public byte Recv()
     {
         var b = Reader.ReadByte();
         Trace($"NA: RCVD: {Format(b)}");
@@ -42,14 +42,14 @@ public abstract class Protocol : NabuService, IProtocol
         return b;
     }
 
-    protected async Task<byte[]> RecvAsync(int length) 
+    public async Task<byte[]> RecvAsync(int length) 
     {
         var buffer = new byte[length];
         await Stream.ReadAsync(buffer.AsMemory(0, length));
         return buffer;
     }
 
-    protected async Task<byte> RecvAsync() => (await RecvAsync(1))[0];
+    public async Task<byte> RecvAsync() => (await RecvAsync(1))[0];
 
     /// <summary>
     ///     Receives a byte and returns if it was the expected byte
@@ -57,7 +57,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// </summary>
     /// <param name="expected">The expected byte</param>
     /// <returns>If it was the expected byte and the actual byte received</returns>
-    protected (bool, byte) Recv(byte expected)
+    public (bool, byte) Recv(byte expected)
     {
         var read = Recv();
         var good = read == expected;
@@ -75,7 +75,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// </summary>
     /// <param name="length"></param>
     /// <returns></returns>
-    protected byte[] Recv(int length)
+    public byte[] Recv(int length)
     {
         var buffer = Reader.ReadBytes(length);
         Trace($"NA: RCVD: {FormatSeparated(buffer)}");
@@ -90,7 +90,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// </summary>
     /// <param name="expected">The bytes expected to be received</param>
     /// <returns>If the expected bytes were received and the bytes actually received</returns>
-    protected (bool, byte[]) Recv(params byte[] expected)
+    public (bool, byte[]) Recv(params byte[] expected)
     {
         var read = Recv(expected.Length);
         var good = expected.SequenceEqual(read);
@@ -135,7 +135,7 @@ public abstract class Protocol : NabuService, IProtocol
     ///     <ref>System.IO.Stream</ref>'s buffer.
     /// </remarks>
     /// <param name="bytes">The bytes to send</param>
-    protected void Send(params byte[] bytes)
+    public void Send(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeparated(bytes)}");
         
@@ -162,7 +162,7 @@ public abstract class Protocol : NabuService, IProtocol
     ///     at a reduced speed.
     /// </summary>
     /// <param name="bytes">The bytes to send</param>
-    protected void SlowerSend(params byte[] bytes)
+    public void SlowerSend(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeparated(bytes)}");
         for (int i = 0; i < bytes.Length; i++)
@@ -176,7 +176,7 @@ public abstract class Protocol : NabuService, IProtocol
     #endregion
 
     #region Framed Protocols
-    protected void SendFramed(params byte[] buffer)
+    public void SendFramed(params byte[] buffer)
     {
         Send(NabuLib.FromShort((short)buffer.Length));
         Send(buffer);
@@ -184,14 +184,14 @@ public abstract class Protocol : NabuService, IProtocol
 
 
 
-    protected void SendFramed(byte header, params IEnumerable<byte>[] buffer)
+    public void SendFramed(byte header, params IEnumerable<byte>[] buffer)
     {
         var head = new byte[] { header };
         var frame = NabuLib.Frame(head, buffer);
         SendFramed(frame.ToArray());
     }
 
-    protected (short, byte[]) ReadFrame()
+    public (short, byte[]) ReadFrame()
     {
         var ln = Recv(2);
         var length = NabuLib.ToShort(ln);

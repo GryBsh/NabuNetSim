@@ -7,6 +7,8 @@ using Nabu.Network.NHACP;
 using Nabu.Network.RetroNet;
 using Nabu;
 using System.Text;
+using Python.Runtime;
+using Python.Included;
 
 namespace Nabu;
 
@@ -54,11 +56,37 @@ public class Simulation : BackgroundService, ISimulation
 
     }
 
+    private void PythonInstallerLog(string obj)
+    {
+        Logger.Write($"{obj}");
+    }
+
+
+    protected static async Task EnsurePython()
+    {
+        var python_installed = Installer.IsPythonInstalled();
+        var pip_installed = Installer.IsPipInstalled();
+
+        if (!python_installed) await Installer.SetupPython();
+        if (!pip_installed) await Installer.InstallPip();
+
+
+    }
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
+        Logger.Write("Ensuring Embedded Python, uno momento...");
+        Installer.LogMessage += PythonInstallerLog;
+        Runtime.PythonDLL = Path.Join(Installer.EmbeddedPythonHome, "python311.dll");
+        await EnsurePython();
+        PythonEngine.Initialize();
+        PythonEngine.BeginAllowThreads();
+
+
+        Logger.Write("GO SPEED RACER GO!");
 
         await Task.Run(() =>
         {
+            
             // We are going to keep track of the services that were defined
             // so if they stop, we can restart them
             Span<Task> services =  NabuLib.SetLength(
@@ -127,19 +155,34 @@ public class Simulation : BackgroundService, ISimulation
         }, stopping);
     }
 
-    public static IServiceCollection Register(IServiceCollection services)
+    
+
+    
+
+    public static IServiceCollection Register(IServiceCollection services, Settings settings)
     {
-        services //.AddTransient<HttpProgramRetriever>()
-                 //.AddTransient<FileProgramRetriever>()
-                 //.AddTransient<ProgramSourceService>()
-                .AddTransient<NabuNetwork>()
+        services.AddTransient<NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
-                .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
-                .AddTransient<IProtocol, NHACPProtocol>()
+                .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>));
+
+        foreach (var proto in settings.Protocols)
+        {
+            services.AddTransient<IProtocol>(
+                sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
+            );
+            foreach (var pip in proto.Modules)
+            {
+                Installer.PipInstallModule(pip);
+            }
+            
+        }
+
+        services.AddTransient<IProtocol, NHACPProtocol>()
                 .AddTransient<IProtocol, RetroNetTelnetProtocol>()
                 .AddTransient<IProtocol, RetroNetProtocol>()
                 .AddSingleton<ISimulation, Simulation>()
                 .AddHostedService<Simulation>();
+
         return services;
     }
 }

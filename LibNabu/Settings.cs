@@ -9,6 +9,7 @@ using System.Text;
 public class Settings {
     public string StoragePath { get; set; } = "./Files";
     public AdaptorCollection Adaptors { get; set; } = new();
+    public List<ProtocolSettings> Protocols { get; set; } = new();
     public List<ProgramSource> Sources { get; set; } = new();
 }
 

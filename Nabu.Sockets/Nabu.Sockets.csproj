@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <RootNamespace>Nabu.Network</RootNamespace>
     <LangVersion>preview</LangVersion>
+    <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
   <ItemGroup>

@@ -15,7 +15,7 @@ public class NabuNetSocketProtocol : Protocol
     }
 
     public override byte[] Commands { get; } = new byte[] { 0xA1 };
-    protected override byte Version => 0x01;
+    public override byte Version => 0x01;
 
     byte NextIndex()
     {

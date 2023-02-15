@@ -59,8 +59,7 @@ public class EmulatedAdaptor : NabuService
                 {
                     if (handler is ClassicNabuProtocol)
                     {
-                        foreach (var p in Protocols)
-                            p.Reset();
+                        foreach (var p in Protocols) p.Reset();
                     }
 
                     if (await handler.Listen(incoming, cancel))
@@ -79,7 +78,8 @@ public class EmulatedAdaptor : NabuService
             {
                 // There is a big fail in dotnet 7 where Stream throws an IOException
                 // instead of a TimeoutException.
-                if (ex.HResult == -2147023436) continue; // <-- That's the HResult for a Timeout
+                if (ex.HResult == -2147023436) 
+                    continue; // <-- That's the HResult for a Timeout
                 
                 Log($"Adaptor Loop Error: {ex.Message}");
                 break;
