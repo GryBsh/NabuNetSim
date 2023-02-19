@@ -17,11 +17,13 @@ using Nabu.Network;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
+
+
 public class HomeViewModel : ReactiveObject
 {
 
     AppLog AppLog { get; }
-    Settings Settings { get; }
+    public Settings Settings { get; }
     NabuNetwork Sources { get; }
     public IEnumerable<string> Entries { get; set; }
 
@@ -51,7 +53,7 @@ public class HomeViewModel : ReactiveObject
             .ObserveOn(RxApp.TaskpoolScheduler)
             .Sort(sort)
             .Bind(out var log)
-            .Throttle(TimeSpan.FromMilliseconds(1000))
+            .Throttle(TimeSpan.FromSeconds(5))
             .SubscribeOn(RxApp.TaskpoolScheduler)
             .Subscribe(_ => this.RaisePropertyChanged(nameof(Entries)));
 
@@ -61,11 +63,11 @@ public class HomeViewModel : ReactiveObject
         Task.Run(async () => Headlines = await GetHeadlines());
         Observable.Interval(TimeSpan.FromMinutes(30))
                   .SubscribeOn(ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => Headlines = await GetHeadlines());
+                  .Subscribe(async _ => {
+                      Headlines = await GetHeadlines();
+                      GC.Collect();
+                  });
     }
-
-
-
 
     public IEnumerable<(string, string)> Headlines { get; set; } = Array.Empty<(string, string)>();
 
@@ -75,7 +77,7 @@ public class HomeViewModel : ReactiveObject
         try
         {
             var feed = await FeedReader.ReadAsync(url);
-            return feed.Items.Select(item => (item.Title, item.Link));
+            return feed.Items.Select(item => (item.Title, item.Link)).ToArray();
         }
         catch
         {

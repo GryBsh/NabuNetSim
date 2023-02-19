@@ -17,7 +17,7 @@ public class Simulation : BackgroundService, ISimulation
     readonly IConsole Logger;
     readonly AdaptorSettings[] DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
-
+    Settings Settings { get; }
     public Simulation(
         IConsole<Simulation> logger,
         Settings settings,
@@ -25,6 +25,7 @@ public class Simulation : BackgroundService, ISimulation
     )
     {
         Logger = logger;
+        Settings = settings;
         DefinedAdaptors = NabuLib.Concat<AdaptorSettings>(
             settings.Adaptors.Serial,
             settings.Adaptors.TCP
@@ -61,28 +62,16 @@ public class Simulation : BackgroundService, ISimulation
         Logger.Write($"{obj}");
     }
 
-
-    protected static async Task EnsurePython()
-    {
-        var python_installed = Installer.IsPythonInstalled();
-        var pip_installed = Installer.IsPipInstalled();
-
-        if (!python_installed) await Installer.SetupPython();
-        if (!pip_installed) await Installer.InstallPip();
-
-
-    }
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        Logger.Write("Ensuring Embedded Python, uno momento...");
-        Installer.LogMessage += PythonInstallerLog;
-        Runtime.PythonDLL = Path.Join(Installer.EmbeddedPythonHome, "python311.dll");
-        await EnsurePython();
-        PythonEngine.Initialize();
-        PythonEngine.BeginAllowThreads();
+        if (Settings.Flags.Contains(Flags.EnablePython))
+        {
+            Logger.Write("Starting Python Engine");
+            await PythonProtocol.Startup(Logger);
+        }
 
 
-        Logger.Write("GO SPEED RACER GO!");
+        //Logger.Write("GO SPEED RACER GO!");
 
         await Task.Run(() =>
         {
@@ -142,6 +131,7 @@ public class Simulation : BackgroundService, ISimulation
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
+                            AdaptorType.TCP when ((TCPAdaptorSettings)settings).Client => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
                             AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
                             _ => throw new NotImplementedException()
                         };
@@ -165,16 +155,19 @@ public class Simulation : BackgroundService, ISimulation
                 .AddTransient<ClassicNabuProtocol>()
                 .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>));
 
-        foreach (var proto in settings.Protocols)
+        if (settings.Flags.Contains(Flags.EnablePython))
         {
-            services.AddTransient<IProtocol>(
-                sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
-            );
-            foreach (var pip in proto.Modules)
+            foreach (var proto in settings.Protocols)
             {
-                Installer.PipInstallModule(pip);
+                services.AddTransient<IProtocol>(
+                    sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
+                );
+                foreach (var pip in proto.Modules)
+                {
+                    Installer.PipInstallModule(pip);
+                }
+
             }
-            
         }
 
         services.AddTransient<IProtocol, NHACPProtocol>()

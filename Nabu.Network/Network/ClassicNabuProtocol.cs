@@ -8,9 +8,10 @@ namespace Nabu.Network;
 public class ClassicNabuProtocol : Protocol
 {
     NabuNetwork Network { get; }
-    NabuNetAdaptorState State;
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     public override byte Version => 0x84;
+    public short Channel { get; set; }
+    public bool ChannelKnown => Channel is > 0 and < 0x100;
 
     AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 
@@ -19,13 +20,12 @@ public class ClassicNabuProtocol : Protocol
         NabuNetwork network) : base(logger)
     {
         Network = network;
-        State = new();
     }
 
     #region NabuNet Responses
 
     void Authorized()
-    {
+    { 
         Send(ServiceStatus.Authorized);               //Prolog
         Recv(Message.ACK);
     }
@@ -59,7 +59,7 @@ public class ClassicNabuProtocol : Protocol
         switch (data)
         {
             case StatusMessage.Signal: // <- NA Channel Lock Status
-                if (State.ChannelKnown)
+                if (ChannelKnown)
                 {
                     Debug($"NPC: {nameof(StatusMessage.Signal)}? NA: {nameof(Status.SignalLock)}");
                     StatusResult(Status.SignalLock);
@@ -88,15 +88,15 @@ public class ClassicNabuProtocol : Protocol
         short data = NabuLib.ToShort(Recv(2));
         if (data is > 0 and < 0x100)
         {
-            State.Channel = data;
+            Channel = data;
         }
         else
         {
-            State.Channel = 0;
+            Channel = 0;
             return;
         }
         Confirmed();
-        Log($"Channel Code: {State.Channel:X04}");
+        Log($"Channel Code: {Channel:X04}");
     }
 
     /// <summary>
@@ -128,12 +128,12 @@ public class ClassicNabuProtocol : Protocol
             return;
         }
 
-        
-
-        //if (type == ImageType.Raw)
-        var (last, payload) = NabuLib.SliceFromRaw(Logger, segment, pak, segmentData);
-        //else
-        //(last, payload) = NabuLib.SliceFromPak(Logger, segment, segmentData);
+        var (last, payload) = type switch
+        {
+            ImageType.Raw => NabuLib.SliceFromRaw(Logger, segment, pak, segmentData),
+            ImageType.Pak => NabuLib.SliceFromPak(Logger, segment, segmentData),
+            ImageType.EncryptedPak => NabuLib.SliceFromPak(Logger, segment, NabuLib.Unpak(segmentData))
+        };
 
         if (payload.Length == 0) Unauthorized();
         else SendPacket(pak, payload, last: last);
@@ -219,11 +219,7 @@ public class ClassicNabuProtocol : Protocol
         var success = base.Attach(settings, stream);
         if (success is false) return false;
 
-        State = new()
-        {
-            Channel = settings.AdapterChannel
-        };
-
+        Channel = settings.AdapterChannel;
         Settings = settings;
         return true;
     }

@@ -14,27 +14,10 @@ public class PassThroughPatch : IProgramPatch
         Logger = logger;
     }
 
-    public Task<byte[]> Patch(NabuProgram source, byte[] program)
+    public Task<byte[]> Patch(NabuProgram program, byte[] bytes)
     {
-        Logger.Write($"Source {source.DisplayName}: Pass-Through");
-        return Task.FromResult(program);
+        Logger.Write($"Program: {program.DisplayName}: Pass-Through");
+        return Task.FromResult(bytes);
     }
 }
 
-public class BootstrapPatch : IProgramPatch
-{
-    private readonly IConsole Logger;
-    public string Name => nameof(BootstrapPatch);
-
-    public BootstrapPatch(IConsole logger)
-    {
-        Logger = logger;
-    }
-
-    public Task<byte[]> Patch(NabuProgram source, byte[] program)
-    {
-        Logger.Write($"Source {source.DisplayName}: Bootstrap");
-        
-        return Task.FromResult(program);
-    }
-}

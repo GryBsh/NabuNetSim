@@ -13,11 +13,19 @@ public class TCPAdaptor
 
     private TCPAdaptor() { }
 
-    static async void ServerListen(IConsole logger, EmulatedAdaptor adaptor, Stream stream, CancellationToken stopping)
+    static void ServerListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
     {
-        logger.Write($"Adaptor Started");
-        await adaptor.Listen(stopping);
-        await stream.DisposeAsync();
+        Task.Run(async () =>
+        {
+            logger.Write($"TCP Client Connected from {socket.RemoteEndPoint}");
+            try {
+                await adaptor.Listen(stopping);
+            } catch (Exception ex) {
+                logger.WriteError(ex.Message);
+            }
+            stream.Dispose();
+            logger.Write($"TCP Client from {socket.RemoteEndPoint} disconnected");
+        });
     }
     
     public static async Task Start(
@@ -34,22 +42,17 @@ public class TCPAdaptor
             port = Constants.DefaultTCPPort;
         };
         
-        
-
-        logger.Write($"Port: {port}");
-        
         try
         {
             socket.Bind(new IPEndPoint(IPAddress.Any, port));
             socket.Listen();
-            logger.Write("Server Started.");
         } catch (Exception ex)
         {
             logger.WriteError(ex.Message);
             return;
         }
         
-        logger.Write($"Adaptor Started");
+        logger.Write($"TCP Server Ready, listening on port {port}");
         
         while (stopping.IsCancellationRequested is false)
             try
@@ -65,8 +68,7 @@ public class TCPAdaptor
                      stream
                 );
                 
-                ServerListen(logger, adaptor, stream, stopping);
-                logger.Write($"Client Connected");
+                ServerListen(logger, adaptor, incoming, stream, stopping);
             }
             catch (Exception ex)
             {

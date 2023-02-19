@@ -17,7 +17,9 @@ public sealed class AppLog
     static SourceList<LogEntry> LogEntries = new() { };
     static SemaphoreSlim LogLock = new(1, 1);
     public SourceList<LogEntry> Entries => LogEntries;
-    static IEnumerable<LogEntry> PendingRemoval { get; set; }
+    
+    static IEnumerable<LogEntry> RemovalStaging { get; set; } = Array.Empty<LogEntry>();
+    static IEnumerable<LogEntry> PendingRemoval => RemovalStaging.ToArray();
     public static int Interval { get; } = 30;
 
     public AppLog(Settings settings)
@@ -26,7 +28,7 @@ public sealed class AppLog
                   .Bind(out var pending)
                   .Subscribe();
 
-        PendingRemoval = pending.Where(RemovalFilter);
+        RemovalStaging = pending.Where(RemovalFilter);
 
         Observable.Interval(TimeSpan.FromMinutes(Interval))
                   .ObserveOn(ThreadPoolScheduler.Instance)
@@ -34,7 +36,8 @@ public sealed class AppLog
                   .Subscribe(_ => LogCycle());
     }
 
-    bool RemovalFilter(LogEntry entry) => entry.Timestamp < DateTime.Now.AddMinutes(-Interval);
+    bool RemovalFilter(LogEntry entry) 
+        => entry.Timestamp < DateTime.Now.AddMinutes(-Interval);
 
     void LogCycle()
     {
@@ -44,7 +47,7 @@ public sealed class AppLog
             LogLevel.Warning,
             new EventId(0, "Log Cycle"),
             "UI Log Cycle",
-            $"Removing {PendingRemoval.Count()} aged log entries",
+            $"Removing {RemovalStaging.Count()} aged log entries",
             null
         );
 

@@ -16,7 +16,6 @@ public class HttpCache
 
     public HttpCache(HttpClient http, IConsole logger)
     {
-
         Http = http;
         //Http.Timeout = TimeSpan.FromSeconds(180);
         Logger = logger;
@@ -80,8 +79,9 @@ public class HttpCache
         {
             Logger.Write($"Downloading {uri}");
             var bytes = await Http.GetByteArrayAsync(uri);
+            var file = File.OpenWrite(path);
             Logger.Write($"Writing {bytes.Length} bytes to {path}");
-            await File.WriteAllBytesAsync(path, bytes);
+            file.Write(bytes);
             return bytes;
         }
 

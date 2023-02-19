@@ -13,7 +13,8 @@ public enum ImageType
 {
     None = 0,
     Raw,
-    Pak
+    Pak,
+    EncryptedPak
 }
 
 public enum AdaptorType

@@ -14,19 +14,40 @@ public enum MenuPage
     MainMenu,
     Settings,
     AdaptorSettings,
+    Features,
     MAME
 }
 
+public class SettingsViewModel : ReactiveObject
+{
+    Settings Settings { get; }
+    public SettingsViewModel(Settings settings)
+    {
+        Settings = settings;
+    }
+
+    public bool EnablePython
+    {
+        get => Settings.Flags.Contains(Flags.EnablePython);
+        set { 
+            if (value)
+                Settings.Flags.Add(Flags.EnablePython);
+            else
+                Settings.Flags.RemoveAll(s => s is Flags.EnablePython);
+        }
+    }
+}
 public class MenuViewModel : ReactiveObject
 {
     public MenuViewModel(HomeViewModel home, NabuNetwork sources)
     {
         Home = home;
         Sources = sources;
+        Settings = new (home.Settings);
     }
 
-    
-    public HomeViewModel Home { get; set; }
+    public SettingsViewModel Settings { get; }
+    public HomeViewModel Home { get;  }
     public NabuNetwork Sources { get; }
 
     void NotifyChange()

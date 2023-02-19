@@ -8,7 +8,7 @@ namespace Nabu;
 
 public record ProtocolSettings
 {
-    public string Path { get; set; }
+    public string Path { get; set; } = string.Empty;
     public byte[] Commands { get; set; }
     public List<string> Modules { get; set; } = new();
 

@@ -63,9 +63,27 @@ public class PythonProtocol : Protocol
                 }
             }
             
-        });
+        }, cancel);
     }
 
+
+    protected static async Task EnsurePython(IConsole logger)
+    {
+        Installer.LogMessage += logger.Write;
+        var python_installed = Installer.IsPythonInstalled();
+        var pip_installed = Installer.IsPipInstalled();
+
+        if (!python_installed) await Installer.SetupPython();
+        if (!pip_installed) await Installer.InstallPip();
+    }
+
+    public static async Task Startup(IConsole logger)
+    {
+        Runtime.PythonDLL = Path.Join(Installer.EmbeddedPythonHome, "python311.dll");
+        await EnsurePython(logger);
+        PythonEngine.Initialize();
+        PythonEngine.BeginAllowThreads();
+    }
 
 }
 

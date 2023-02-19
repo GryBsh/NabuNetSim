@@ -2,12 +2,31 @@
 
 <Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.MainMenu)>
     <ul class="menu list-group list-group-flush list-group-sm borders">
-        <li class="list-group-item"><Icon Name="IconName.SliderHorizontal" />
+        <li class="list-group-item">
+            <Icon Name="IconName.SliderHorizontal" />
             <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Settings))">Settings</a>
+        </li>
+        <li class="list-group-item">
+            <Icon Name="IconName.Adjust" />
+            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Features))">Features</a>
         </li>
         <li class="list-group-item"><Icon Name="IconName.BookReader" />
             <a href="#" onclick="@(() => ViewModel!.Home.ToggleLog())">@ViewModel.Home.LogButtonText</a>
         </li>
+    </ul>
+</Div>
+
+<Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.Features)>
+    <ul class="menu list-group list-group-flush list-group-sm borders">
+        <li class="list-group-item">
+            <Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
+        </li>
+        <li class="list-group-item">
+            <Check TValue="bool" Checked="@(ViewModel.Settings.EnablePython)" ReadOnly=true/>
+            Python Protocol Support
+        </li>
+        
     </ul>
 </Div>
 <Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.Settings)>

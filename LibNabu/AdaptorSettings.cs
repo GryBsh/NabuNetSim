@@ -24,12 +24,13 @@ public record NullAdaptorSettings : AdaptorSettings
 public record TCPAdaptorSettings : AdaptorSettings
 {
     public override AdaptorType Type => AdaptorType.TCP;
+    public bool Client { get; set; } = false;
 }
 
 public record SerialAdaptorSettings : AdaptorSettings
 {
     public override AdaptorType Type => AdaptorType.Serial;
-    public int BaudRate { get; set; } = 115200; // 111865 or 111900 - I've seen both used;
+    public int BaudRate { get; set; } = 115200; // 111861 
     public int ReadTimeout { get; set; } = 1000;
 }
 
