@@ -124,9 +124,10 @@ public partial class NabuNetwork : NabuBase
                 }
                 if (IsNabu(source.Path))
                 {
+                    var name = Path.GetFileName(pakUrl);
                     SourceCache[source] = new NabuProgram[] { new(
                         source.Name,
-                        string.Empty,
+                        name,
                         source.Name,
                         DefinitionType.Folder,
                         source.Path,
@@ -210,7 +211,7 @@ public partial class NabuNetwork : NabuBase
             return (ImageType.None, ZeroBytes);
 
         var prg = SourceCache[source].FirstOrDefault(p => p.Name == image) ?? 
-                  SourceCache[source].FirstOrDefault(p => p.IsPakMenu);
+                  SourceCache[source].FirstOrDefault();
         
         if (prg is null) 
             return (ImageType.None, ZeroBytes);

@@ -23,8 +23,10 @@
             <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
         </li>
         <li class="list-group-item">
-            <Check TValue="bool" Checked="@(ViewModel.Settings.EnablePython)" ReadOnly=true/>
-            Python Protocol Support
+            <div class="row">
+                <div class="col col-1"><Check TValue="bool" Checked="@(ViewModel.Settings.EnablePython)" ReadOnly=true/></div>
+                <div class="col margin-auto">Python Protocol Support</div>
+            </div>
         </li>
         
     </ul>

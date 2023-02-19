@@ -219,6 +219,10 @@ body {
     justify-content: center;
 }
 
+.margin-auto {
+    margin: auto;
+}
+
 .table {
     color: white;
 }
