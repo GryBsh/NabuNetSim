@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using System.Threading.Channels;
 using System;
+using Nabu.Services;
 
 namespace Nabu.Network.RetroNet;
 

@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Nabu.Network;
+using Nabu.Services;
 using System.IO.Ports;
 
 namespace Nabu.Adaptor;

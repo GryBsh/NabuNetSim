@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Nabu.Services;
 
 namespace Nabu;
 
@@ -18,6 +19,6 @@ public abstract class NabuService : NabuBase
         return $"{settings.Type}:{settings.Port}:{message}";
     }
 
-   
+    
 
 }

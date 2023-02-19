@@ -1,7 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 using Nabu.Messages;
-using Nabu;
+using Nabu.Services;
 
 namespace Nabu.Network;
 
@@ -208,7 +208,7 @@ public class ClassicNabuProtocol : Protocol
         Finished();                      //Epilog
         if (last)
         {
-            Network.UncachePak(settings.Source, pak);
+            Network.UncachePak(settings, pak);
             GC.Collect();
         }
     }

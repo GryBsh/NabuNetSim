@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Nabu.Services;
 using System.Diagnostics;
 
 namespace Nabu.NetSimWeb.Pages

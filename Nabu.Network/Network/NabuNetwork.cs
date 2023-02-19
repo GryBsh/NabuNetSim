@@ -1,16 +1,8 @@
 ﻿using Nabu.Patching;
-using System;
-using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
-using System.Data;
-using System.IO;
-using System.Linq;
+using Nabu.Services;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Reflection.Metadata;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Nabu.Network;
 
@@ -20,7 +12,7 @@ public partial class NabuNetwork : NabuBase
     Settings Settings { get; }
     List<ProgramSource> Sources { get; }
     Dictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
-    Dictionary<(string?, int), byte[]> PakCache { get; } = new();
+    Dictionary<(AdaptorSettings, ProgramSource, int), byte[]> PakCache { get; } = new();
     public NabuNetwork(
         IConsole<NabuNetwork> logger,
         Settings settings, 
@@ -33,11 +25,18 @@ public partial class NabuNetwork : NabuBase
         Task.Run(() => RefreshSources());
         Observable.Interval(TimeSpan.FromMinutes(1))
                   .SubscribeOn(ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => await RefreshSources(true));
+                  .Subscribe(async _ => await RefreshTask(true));
         Observable.Interval(TimeSpan.FromMinutes(30))
                   .SubscribeOn(ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => await RefreshSources(remoteOnly: true));
+                  .Subscribe(async _ => await RefreshTask(remoteOnly: true));
     }
+
+    async Task RefreshTask(bool localOnly = false, bool remoteOnly = false)
+    {
+        await RefreshSources(localOnly, remoteOnly);
+        GC.Collect();
+    }
+
     public ProgramSource Source(AdaptorSettings settings)
         => Sources.First(s => s.Name.ToLower() == settings.Source?.ToLower());
 
@@ -113,7 +112,6 @@ public partial class NabuNetwork : NabuBase
                         "Cycle Menu",
                         Constants.CycleMenuPak,
                         source.Name,
-                        DefinitionType.Folder,
                         pakUrl,
                         source.SourceType,
                         type,
@@ -129,7 +127,6 @@ public partial class NabuNetwork : NabuBase
                         source.Name,
                         name,
                         source.Name,
-                        DefinitionType.Folder,
                         source.Path,
                         source.SourceType,
                         ImageType.Raw,
@@ -150,7 +147,6 @@ public partial class NabuNetwork : NabuBase
                             "Cycle Menu",
                             Constants.CycleMenuPak,
                             source.Name,
-                            DefinitionType.Folder,
                             menuPak,
                             source.SourceType,
                             type,
@@ -167,7 +163,6 @@ public partial class NabuNetwork : NabuBase
                         name,
                         name,
                         source.Name,
-                        DefinitionType.Folder,
                         file,
                         source.SourceType,
                         ImageType.Raw,
@@ -192,7 +187,7 @@ public partial class NabuNetwork : NabuBase
         if (SourceCache.ContainsKey(source) is false) 
             return (ImageType.None, ZeroBytes);
 
-        if (PakCache.TryGetValue((source.Name.ToLower(), pak), out var value))
+        if (PakCache.TryGetValue((settings, source, pak), out var value))
         {
             return (ImageType.Raw, value);
         }
@@ -260,17 +255,17 @@ public partial class NabuNetwork : NabuBase
 
         Log($"Type: {prg.ImageType} Size: {bytes.Length} Path: {path}");
 
-        PakCache[(source.Name.ToLower(), pak)] = bytes;
+        PakCache[(settings, source, pak)] = bytes;
         return (prg.ImageType, bytes);
     }
 
-    public void UncachePak(string source, int pak)
+    public void UncachePak(AdaptorSettings settings, int pak)
     {
-        source = source.ToLower();
-        if (PakCache.ContainsKey((source, pak)))
+        var source = Source(settings);
+        if (PakCache.ContainsKey((settings, source, pak)))
         {
             Log($"Removing pak {pak} from cache");
-            PakCache.Remove((source, pak));
+            PakCache.Remove((settings, source, pak));
         }
     }
 
@@ -286,7 +281,7 @@ public partial class NabuNetwork : NabuBase
     #endregion
 
     #region Http Location
-    public async Task<(bool, string, ImageType)> IsPak(string url, int pak)
+    protected async Task<(bool, string, ImageType)> IsPak(string url, int pak)
     {
         url = url.TrimEnd('/');
        
@@ -312,7 +307,7 @@ public partial class NabuNetwork : NabuBase
 
             (_, found, cached) = await Http.CanGet($"{url}/{NabuLib.PakName(pak)}{Constants.EncryptedPakExtension}");
             if (found || cached)
-                return (true, url, ImageType.EncryptedPak);
+                return (false, url, ImageType.EncryptedPak); //Encrypted pak support is disabled.
 
             return (false, url, ImageType.None);
         }
@@ -321,7 +316,7 @@ public partial class NabuNetwork : NabuBase
         return (found || cached, url, type);
     }
 
-    public async Task<(bool, NabuProgram[])> IsNabuCaList(string source, string uri)
+    protected async Task<(bool, NabuProgram[])> IsNabuCaList(string source, string uri)
     {
 
         if (!uri.EndsWith(".txt")) { return (false, Array.Empty<NabuProgram>()); }
@@ -348,7 +343,6 @@ public partial class NabuNetwork : NabuBase
                 displayName,
                 name,
                 source,
-                DefinitionType.NabuCaList,
                 url,
                 SourceType.Remote,
                 ImageType.Raw,
@@ -357,7 +351,6 @@ public partial class NabuNetwork : NabuBase
         }
         return (true, progs.ToArray());
     }
-
 
     [GeneratedRegex(".*/d{6}.nabu")]
     private static partial Regex PakFile();

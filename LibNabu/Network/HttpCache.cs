@@ -1,13 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Nabu.Services;
 
 namespace Nabu.Network;
 
-public class HttpCache
+public class HttpCache : IHttpCache
 {
     HttpClient Http { get; }
     IConsole Logger { get; }
@@ -71,8 +66,8 @@ public class HttpCache
         var path = Path.Join(CacheFolder, safeName);
 
         var (shouldDownload, found, local) = await CanGet(uri, path);
-        
-        if (!shouldDownload && !found && !local) 
+
+        if (!shouldDownload && !found && !local)
             return Array.Empty<byte>();
 
         if (shouldDownload && found)

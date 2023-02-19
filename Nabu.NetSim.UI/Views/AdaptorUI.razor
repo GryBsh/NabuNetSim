@@ -39,42 +39,37 @@
                 </Div> -->
                   
                 <div class="row row-divider" />
-                <Div Class="row">
-                    <div class="col">Adaptor</div>
-                    <div class="col">Status</div>
-                    <div class="col">Source</div>
-                    <div class="col">Image</div>
-                </Div>
-                <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
-                    <Div class="row">
-                        <div class="col">
-                            @context.Port
-                        </div>    
-                        <div class="col">@ViewModel!.AdaptorStatus(context)</div> 
-                        <div class="col">@context.Source</div>
-                        <div class="col">@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : string.Empty)</div>
-                    </Div>
-                </Virtualize>
-                <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
-                    <Div class="row">
-                        <div class="col">
-                            TCP:@context.Port
-                        </div>    
-                        <div class="col">@ViewModel!.AdaptorStatus(context)</div> 
-                        <div class="col">@context.Source</div>
-                        <div class="col">@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : string.Empty)</div>
-                    </Div>
-                </Virtualize>
+                <div class="row">
+                    <ul class="center news list-group list-group-flush list-group-horizontal-sm">
+                        <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
+                            <li class="list-group-item">
+                                <large><Icon Name="IconName.Plug"/></large>
+                                @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                <large><Icon Name="IconName.Folder"/></large>
+                                @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")                                
+                            </li>
+                        </Virtualize>
+                        <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
+                            <li class="list-group-item">
+                                <large><Icon Name="IconName.Wifi"/></large>
+                                @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                <large><Icon Name="IconName.Folder"/></large>
+                                @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")                                
+                            </li>
+                        </Virtualize>
+                    </ul>
+                </div>
+                
                 <div class="row row-divider" />
                 
                 <Div Class="row" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
                     <br/>
                     <div class="log-frame col flex-lg-column">
                         <div class="log-view flex-grow-0">
-
+                            
                             @foreach (var line in ViewModel!.Entries.ToArray())
                             {
-                                <div>@line</div>
+                                <div><small>@line</small></div>
                             }
                         </div>
                     </Div>

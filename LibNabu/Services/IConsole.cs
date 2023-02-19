@@ -1,4 +1,4 @@
-﻿namespace Nabu;
+﻿namespace Nabu.Services;
 
 public interface IConsole
 {
@@ -7,7 +7,7 @@ public interface IConsole
     void WriteVerbose(string message);
     void WriteError(string message, Exception? exception = null);
     void WriteWarning(string message, Exception? exception = null);
-    
+
 }
 
 public interface IConsole<T> : IConsole { }

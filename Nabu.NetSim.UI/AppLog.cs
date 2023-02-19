@@ -14,21 +14,19 @@ public sealed class AppLog
 {
     // This is some Blazor Server quirk, it only works right on both sides
     // Like this...
-    static SourceList<LogEntry> LogEntries = new() { };
+    public static SourceList<LogEntry> LogEntries = new() { };
     static SemaphoreSlim LogLock = new(1, 1);
-    public SourceList<LogEntry> Entries => LogEntries;
-    
     static IEnumerable<LogEntry> RemovalStaging { get; set; } = Array.Empty<LogEntry>();
-    static IEnumerable<LogEntry> PendingRemoval => RemovalStaging.ToArray();
     public static int Interval { get; } = 30;
 
     public AppLog(Settings settings)
     {
         LogEntries.Connect()
+                  .Filter(RemovalFilter)
                   .Bind(out var pending)
                   .Subscribe();
 
-        RemovalStaging = pending.Where(RemovalFilter);
+        RemovalStaging = pending;
 
         Observable.Interval(TimeSpan.FromMinutes(Interval))
                   .ObserveOn(ThreadPoolScheduler.Instance)
@@ -53,7 +51,7 @@ public sealed class AppLog
 
         lock (LogLock)
         {
-            LogEntries.RemoveMany(PendingRemoval);
+            LogEntries.RemoveMany(RemovalStaging);
         }
 
         GC.Collect();

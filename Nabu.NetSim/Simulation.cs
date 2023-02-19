@@ -5,10 +5,11 @@ using Nabu.Adaptor;
 using Nabu.Network;
 using Nabu.Network.NHACP;
 using Nabu.Network.RetroNet;
-using Nabu;
 using System.Text;
 using Python.Runtime;
 using Python.Included;
+using Nabu.Services;
+using NLog;
 
 namespace Nabu;
 
@@ -35,6 +36,8 @@ public class Simulation : BackgroundService, ISimulation
 
     ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
 
+    CancellationTokenSource[] Cancel { get; set; } = Array.Empty<CancellationTokenSource>();
+
     public void StartAdaptor(AdaptorSettings settings)
     {
         int index = Array.IndexOf(DefinedAdaptors, settings);
@@ -57,17 +60,13 @@ public class Simulation : BackgroundService, ISimulation
 
     }
 
-    private void PythonInstallerLog(string obj)
-    {
-        Logger.Write($"{obj}");
-    }
 
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
         if (Settings.Flags.Contains(Flags.EnablePython))
         {
-            Logger.Write("Starting Python Engine");
-            await PythonProtocol.Startup(Logger);
+            
+            PythonProtocol.Startup(Logger);
         }
 
 
@@ -90,7 +89,7 @@ public class Simulation : BackgroundService, ISimulation
                 ServiceShould.Continue
             ).ToArray();
 
-            Span<CancellationTokenSource> cancel = NabuLib.SetLength(
+            Span<CancellationTokenSource> Cancel = NabuLib.SetLength(
                 DefinedAdaptors.Length,
                 Array.Empty<CancellationTokenSource>(),
                 () => CancellationTokenSource.CreateLinkedTokenSource(stopping)
@@ -110,24 +109,14 @@ public class Simulation : BackgroundService, ISimulation
 
                     if (settings.Enabled is false)
                     {
-                        settings.Next = ServiceShould.Stop;
                         continue;
                     }
-
-                    if (settings.Next is ServiceShould.Restart or ServiceShould.Stop)
-                    {
-                        cancel[index].Cancel();
-                        services[index] = Task.CompletedTask;
-                        cancel[index] = CancellationTokenSource.CreateLinkedTokenSource(stopping);
-                    }
-                    if (settings.Next is ServiceShould.Restart)
-                        settings.Next = ServiceShould.Continue;
-
+                                        
                     // Is this service stopped?
                     if (services[index].IsCompleted && settings.Next is ServiceShould.Continue && settings.Enabled)
                     {
                         // If so, restart it
-                        var token = cancel[index].Token;
+                        var token = Cancel[index].Token;
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
@@ -157,16 +146,38 @@ public class Simulation : BackgroundService, ISimulation
 
         if (settings.Flags.Contains(Flags.EnablePython))
         {
-            foreach (var proto in settings.Protocols)
-            {
-                services.AddTransient<IProtocol>(
-                    sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
-                );
-                foreach (var pip in proto.Modules)
-                {
-                    Installer.PipInstallModule(pip);
-                }
+            var pythonLib = string.Empty;
+            if (OperatingSystem.IsWindows()) pythonLib = "python311.dll";
+            else if (OperatingSystem.IsLinux()) pythonLib = "libpython3.11.so";
+            else if (OperatingSystem.IsMacOS()) pythonLib = "libpython3.11.dylib";
 
+            var pythonPath = string.Empty;
+
+            var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? Array.Empty<string>();
+            var hits = new List<string>();
+            foreach (var path in paths)
+            {
+                var searchPath = Path.Join(path, pythonLib);
+                if (File.Exists(searchPath))
+                    hits.Add(searchPath);
+            }
+
+            if (hits.Count > 0)
+            {
+                Runtime.PythonDLL = hits.OrderDescending().FirstOrDefault();
+                if (Runtime.PythonDLL != null)
+                {
+                    foreach (var proto in settings.Protocols)
+                    {
+                        services.AddTransient<IProtocol>(
+                            sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
+                        );
+                    }
+                }
+            }
+            else
+            {
+                settings.Flags.Remove(Flags.EnablePython);
             }
         }
 

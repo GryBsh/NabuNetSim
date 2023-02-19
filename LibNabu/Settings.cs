@@ -1,7 +1,5 @@
-using Microsoft.Extensions.Logging;
 using Nabu;
 using Nabu.Network;
-using System.Text;
 
 /// <summary>
 ///     Emulators setings. This is merged with config on startup.

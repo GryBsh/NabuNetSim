@@ -1,6 +1,4 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace Nabu;
+﻿namespace Nabu;
 
 public static partial class NabuLib
 {

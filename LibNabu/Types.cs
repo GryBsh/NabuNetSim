@@ -1,6 +1,4 @@
-﻿using System.IO;
-
-namespace Nabu;
+﻿namespace Nabu;
 
 public enum SourceType
 {

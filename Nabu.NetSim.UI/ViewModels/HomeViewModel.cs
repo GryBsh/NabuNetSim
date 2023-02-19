@@ -21,8 +21,6 @@ namespace Nabu.NetSim.UI.ViewModels;
 
 public class HomeViewModel : ReactiveObject
 {
-
-    AppLog AppLog { get; }
     public Settings Settings { get; }
     NabuNetwork Sources { get; }
     public IEnumerable<string> Entries { get; set; }
@@ -31,13 +29,11 @@ public class HomeViewModel : ReactiveObject
     
 
     public HomeViewModel(
-        AppLog appLog, 
         Settings settings, 
         NabuNetwork sources, 
         ISimulation simulation
     )
     {
-        AppLog = appLog;
         Settings = settings;
         Sources = sources;
         Simulation = simulation;
@@ -48,7 +44,7 @@ public class HomeViewModel : ReactiveObject
 
         SourceNames = SourceFolders.Select(s => s.Name).ToArray();
 
-        AppLog.Entries
+        AppLog.LogEntries
             .Connect()
             .ObserveOn(RxApp.TaskpoolScheduler)
             .Sort(sort)

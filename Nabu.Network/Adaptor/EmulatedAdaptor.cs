@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Network;
+using Nabu.Services;
 
 namespace Nabu.Adaptor;
 
@@ -18,7 +19,7 @@ public class EmulatedAdaptor : NabuService
 
     public EmulatedAdaptor(
         AdaptorSettings settings,
-        ClassicNabuProtocol nabu,
+        ClassicNabuProtocol nabuNet,
         IEnumerable<IProtocol> protocols,
         IConsole logger,
         Stream stream
@@ -26,7 +27,7 @@ public class EmulatedAdaptor : NabuService
     ) : base(logger, settings)
     {
         base.settings = settings;
-        NabuNet = nabu;
+        NabuNet = nabuNet;
         Protocols = protocols;
 
         Stream = stream;
@@ -36,11 +37,13 @@ public class EmulatedAdaptor : NabuService
             protocol.Attach(base.settings, Stream);
     }
 
+    public bool IsRunning { get; protected set; }
 
     #region Adaptor Loop   
 
     public virtual async Task Listen(CancellationToken cancel)
-    {        
+    {
+        IsRunning = true;
         Log("Waiting for NABU");
         while (cancel.IsCancellationRequested is false)
         {
@@ -88,7 +91,7 @@ public class EmulatedAdaptor : NabuService
                 break;
             }
         }
-                
+        IsRunning = false;
         Log("Disconnected");
        
         // Detach all the protocol handlers from the Adaptor.

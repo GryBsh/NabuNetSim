@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Nabu.Services;
 
 namespace Nabu;
 

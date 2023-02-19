@@ -6,7 +6,6 @@ public record NabuProgram(
     string DisplayName,
     string Name,
     string Source,
-    DefinitionType DefinitionType,
     string Path,
     SourceType SourceType,
     ImageType ImageType,

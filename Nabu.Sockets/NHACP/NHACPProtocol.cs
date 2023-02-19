@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
-using Nabu;
 using System;
 using System.Reflection;
 using System.Text;
+using Nabu.Services;
 
 namespace Nabu.Network.NHACP;
 

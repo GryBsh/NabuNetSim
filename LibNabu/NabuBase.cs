@@ -1,4 +1,6 @@
-﻿namespace Nabu;
+﻿using Nabu.Services;
+
+namespace Nabu;
 
 public abstract class NabuBase
 {

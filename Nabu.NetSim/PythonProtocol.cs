@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Hosting;
 using Python.Runtime;
 using Nabu.Adaptor;
-using Python.Included;
+using Python.Deployment;
 using static System.Formats.Asn1.AsnWriter;
 using System;
 using Nabu.Patching;
+using Nabu.Network;
+using Nabu.Services;
 
 namespace Nabu;
 
@@ -66,8 +68,9 @@ public class PythonProtocol : Protocol
         }, cancel);
     }
 
+  
 
-    protected static async Task EnsurePython(IConsole logger)
+    protected static async Task EnsurePython(IConsole logger, string pythonLib)
     {
         Installer.LogMessage += logger.Write;
         var python_installed = Installer.IsPythonInstalled();
@@ -75,12 +78,12 @@ public class PythonProtocol : Protocol
 
         if (!python_installed) await Installer.SetupPython();
         if (!pip_installed) await Installer.InstallPip();
+        Runtime.PythonDLL = Path.Join(Installer.EmbeddedPythonHome, pythonLib);
     }
 
-    public static async Task Startup(IConsole logger)
+    public static void Startup(IConsole logger)
     {
-        Runtime.PythonDLL = Path.Join(Installer.EmbeddedPythonHome, "python311.dll");
-        await EnsurePython(logger);
+        logger.Write("Starting Python.Net");
         PythonEngine.Initialize();
         PythonEngine.BeginAllowThreads();
     }
