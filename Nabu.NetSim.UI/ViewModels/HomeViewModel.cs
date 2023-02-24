@@ -98,7 +98,7 @@ public class HomeViewModel : ReactiveObject
     {
         return settings.Next switch
         {
-            ServiceShould.Continue => "btn btn-danger btn-sm d-flex",
+            ServiceShould.Run => "btn btn-danger btn-sm d-flex",
             ServiceShould.Restart => "btn btn-warning btn-sm d-flex",
             ServiceShould.Stop => "btn btn-success btn-sm d-flex",
             _ => "btn btn-secondary btn-sm d-flex"
@@ -109,7 +109,7 @@ public class HomeViewModel : ReactiveObject
     {
         return settings.Next switch
         {
-            ServiceShould.Continue => "Running",
+            ServiceShould.Run => "Running",
             ServiceShould.Restart => "Stopping",
             ServiceShould.Stop => "Stopped",
             _ => "Unknown"
@@ -120,7 +120,7 @@ public class HomeViewModel : ReactiveObject
     {
         return settings.Next switch
         {
-            ServiceShould.Continue => IconName.Stop,
+            ServiceShould.Run => IconName.Stop,
             ServiceShould.Restart => IconName.Stop,
             ServiceShould.Stop => IconName.Play,
             _ => IconName.Play
@@ -129,15 +129,13 @@ public class HomeViewModel : ReactiveObject
 
     public void ToggleAdaptor(AdaptorSettings settings)
     {
-        settings.Next = settings.Next is ServiceShould.Continue ?
-                        ServiceShould.Stop :
-                        ServiceShould.Continue;
+        Simulation?.ToggleAdaptor(settings);
     }
 
     public bool AllAdaptorsCanStop
     {
-        get => Serial.Any(s => s.Next is ServiceShould.Continue) ||
-               TCP.Any(t => t.Next is ServiceShould.Continue);
+        get => Serial.Any(s => s.Next is ServiceShould.Run) ||
+               TCP.Any(t => t.Next is ServiceShould.Run);
     }
 
   
@@ -153,16 +151,16 @@ public class HomeViewModel : ReactiveObject
     {
         foreach (var s in Serial)
         {
-            s.Next = s.Next is ServiceShould.Continue ?
+            s.Next = s.Next is ServiceShould.Run ?
                      ServiceShould.Stop :
-                     ServiceShould.Continue;
+                     ServiceShould.Run;
         }
 
         foreach (var t in TCP)
         {
-            t.Next = t.Next is ServiceShould.Continue ?
+            t.Next = t.Next is ServiceShould.Run ?
                      ServiceShould.Stop :
-                     ServiceShould.Continue;
+                     ServiceShould.Run;
         }
     }
 

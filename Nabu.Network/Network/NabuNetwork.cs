@@ -92,8 +92,8 @@ public partial class NabuNetwork : NabuBase
     {
         foreach (var source in Sources)
         {
-            var pak = 1;
-            var nabuName = FormatTriple(pak);
+            //var pak = 1;
+            //var nabuName = FormatTriple(pak);
             
             var isRemote = IsWebSource(source.Path);
             if (!localOnly && (source.SourceType is SourceType.Remote || isRemote))

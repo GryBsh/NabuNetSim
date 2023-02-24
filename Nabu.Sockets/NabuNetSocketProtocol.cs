@@ -176,22 +176,14 @@ public class NabuNetSocketProtocol : Protocol
 
     #endregion
 
-    protected virtual Dictionary<byte, Func<byte[], CancellationToken, Task>> PrepareHandlers()
-    {
-        return new()
-        {
-            { 0x01, Open },
-            { 0x02, Read },
-            { 0x03, Write },
-        };
-    }
+    
 
 
     public override async Task Handle(byte command, CancellationToken cancel)
     {
         Log($"Start v{Version}");
         Started();
-        var handlers = PrepareHandlers();
+       
         while (cancel.IsCancellationRequested is false)
             try
             {

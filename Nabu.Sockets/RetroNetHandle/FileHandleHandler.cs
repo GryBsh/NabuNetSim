@@ -76,8 +76,7 @@ public class FileHandleHandler : NabuService, IRetroNetFileHandle
     public Task<bool> Open(string filename, FileOpenFlags flags, CancellationToken cancel)
     {
         Flags = flags;
-        if (!Path.IsPathRooted(filename))
-            filename = Path.Combine(settings.StoragePath, filename);
+        filename = NabuLib.FilePath(settings, filename);
         FileHandle = new FileInfo(filename);
         return Task.FromResult(true);
     }
@@ -106,7 +105,7 @@ public class FileHandleHandler : NabuService, IRetroNetFileHandle
         return Task.FromResult((int)FileHandle!.Length);
     }
 
-    int Position { get; set; }
+    public int Position { get; protected set; } = 0;
     public async Task<byte[]> ReadSequence(short readLength, CancellationToken cancel)
     {
         var end = Position + readLength;
@@ -119,7 +118,7 @@ public class FileHandleHandler : NabuService, IRetroNetFileHandle
         {
             return new byte[0];
         }
-        Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
+        //Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
         var bytes = await Read(Position, readLength, cancel);
         Position += readLength;
         return bytes;

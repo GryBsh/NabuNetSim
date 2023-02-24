@@ -34,29 +34,17 @@ public class Simulation : BackgroundService, ISimulation
         ServiceProvider = serviceProvider;
     }
 
-    ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
+    static ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
 
-    CancellationTokenSource[] Cancel { get; set; } = Array.Empty<CancellationTokenSource>();
-
-    public void StartAdaptor(AdaptorSettings settings)
-    {
-        int index = Array.IndexOf(DefinedAdaptors, settings);
-        if (index >= 0)
-            Next[index] = ServiceShould.Restart;
-    }
-
-    public void StopAdaptor(AdaptorSettings settings)
-    {
-        int index = Array.IndexOf(DefinedAdaptors, settings);
-        if (index >= 0)
-            Next[index] = ServiceShould.Stop;
-    }
-
+    static CancellationTokenSource[] Cancel { get; set; } = Array.Empty<CancellationTokenSource>();
+        
     public void ToggleAdaptor(AdaptorSettings settings)
     {
-        int index = Array.IndexOf(DefinedAdaptors, settings);
-        if (index >= 0)
-            Next[index] = Next[index] == ServiceShould.Continue ? ServiceShould.Stop : ServiceShould.Continue;
+
+        if (settings.Next is ServiceShould.Run)
+            settings.Next = ServiceShould.Stop;
+        else
+            settings.Next = ServiceShould.Run;
 
     }
 
@@ -65,10 +53,14 @@ public class Simulation : BackgroundService, ISimulation
     {
         if (Settings.Flags.Contains(Flags.EnablePython))
         {
-            
             PythonProtocol.Startup(Logger);
         }
 
+        Cancel = NabuLib.SetLength(
+            DefinedAdaptors.Length,
+            Array.Empty<CancellationTokenSource>(),
+            () => CancellationTokenSource.CreateLinkedTokenSource(stopping)
+        ).ToArray();
 
         //Logger.Write("GO SPEED RACER GO!");
 
@@ -83,19 +75,6 @@ public class Simulation : BackgroundService, ISimulation
                 Task.CompletedTask
             ).ToArray();
 
-            Span<ServiceShould> next = Next = NabuLib.SetLength(
-                DefinedAdaptors.Length,
-                Array.Empty<ServiceShould>(),
-                ServiceShould.Continue
-            ).ToArray();
-
-            Span<CancellationTokenSource> Cancel = NabuLib.SetLength(
-                DefinedAdaptors.Length,
-                Array.Empty<CancellationTokenSource>(),
-                () => CancellationTokenSource.CreateLinkedTokenSource(stopping)
-            ).ToArray();
-
-
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
             Logger.Write($"Defined Adaptors: {DefinedAdaptors.Length}");
@@ -106,22 +85,29 @@ public class Simulation : BackgroundService, ISimulation
                 for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
                     var settings = DefinedAdaptors[index];
-
-                    if (settings.Enabled is false)
+                   
+                    if (settings.Next is ServiceShould.Stop)
                     {
+                        if (services[index] != Task.CompletedTask)
+                        {
+                            Cancel[index].Cancel();
+                            Cancel[index].Dispose();
+                            Cancel[index] = CancellationTokenSource.CreateLinkedTokenSource(stopping);
+                            services[index] = Task.CompletedTask;
+                        }
                         continue;
                     }
-                                        
+                    
                     // Is this service stopped?
-                    if (services[index].IsCompleted && settings.Next is ServiceShould.Continue && settings.Enabled)
+                    if (services[index].IsCompleted && settings.Next is ServiceShould.Run && settings.Enabled)
                     {
                         // If so, restart it
                         var token = Cancel[index].Token;
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
-                            AdaptorType.TCP when ((TCPAdaptorSettings)settings).Client => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
-                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
+                            AdaptorType.TCP when ((TCPAdaptorSettings)settings).Client => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, settings, token)),
+                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, token)),
                             _ => throw new NotImplementedException()
                         };
                         settings.Running = true;

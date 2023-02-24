@@ -74,9 +74,10 @@ public class HttpCache : IHttpCache
         {
             Logger.Write($"Downloading {uri}");
             var bytes = await Http.GetByteArrayAsync(uri);
-            var file = File.OpenWrite(path);
+            
             Logger.Write($"Writing {bytes.Length} bytes to {path}");
-            file.Write(bytes);
+            await File.WriteAllBytesAsync(path, bytes);
+
             return bytes;
         }
 

@@ -76,7 +76,7 @@ public class MenuViewModel : ReactiveObject
     {
         return settings.Next switch
         {
-            ServiceShould.Continue => "Stop Adaptor",
+            ServiceShould.Run => "Stop Adaptor",
             _ => "Start Adaptor"
         };
     }

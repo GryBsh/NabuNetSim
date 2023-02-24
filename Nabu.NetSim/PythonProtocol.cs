@@ -30,13 +30,13 @@ public class PythonProtocol : Protocol
         {
         }
 
-        public override byte Version { get; } = 0;
+        public override byte Version { get; } = 0x00;
 
         public override byte[] Commands => Array.Empty<byte>();
 
         public override Task Handle(byte unhandled, CancellationToken cancel)
         {
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 
@@ -83,7 +83,7 @@ public class PythonProtocol : Protocol
 
     public static void Startup(IConsole logger)
     {
-        logger.Write("Starting Python.Net");
+        logger.Write($"Starting Python from {Runtime.PythonDLL}");
         PythonEngine.Initialize();
         PythonEngine.BeginAllowThreads();
     }

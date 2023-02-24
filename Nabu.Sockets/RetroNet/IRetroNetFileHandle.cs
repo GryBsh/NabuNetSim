@@ -12,6 +12,7 @@ public interface IRetroNetFileHandle
     Task Delete(int offset, short length, CancellationToken cancel);
     Task Empty(CancellationToken cancel);
     Task Replace(int offset, byte[] data, CancellationToken cancel);
+    public int Position { get; }
     Task<byte[]> ReadSequence(short readLength, CancellationToken cancel);
     Task<int> Seek(int offset, FileSeekFlags flags, CancellationToken cancel);
 }

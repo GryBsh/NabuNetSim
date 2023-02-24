@@ -92,7 +92,7 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         return Task.CompletedTask;
     }
 
-    protected int Position { get; set; } = 0;
+    public int Position { get; protected set; } = 0;
 
     public Task<byte[]> ReadSequence(short readLength, CancellationToken cancel)
     {
@@ -106,7 +106,7 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         {
             return Task.FromResult(new byte[0]);
         }
-        Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
+        //Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
         Span<byte> bytes = Buffer[Position..end];
         Position += readLength;
         return Task.FromResult(bytes.ToArray());

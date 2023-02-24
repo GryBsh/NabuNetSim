@@ -12,28 +12,28 @@ public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
 
     public async Task<byte[]> Get(string filename, CancellationToken cancel)
     {
-        if (!Path.IsPathRooted(filename)) filename = Path.Combine(settings.StoragePath, filename);
+        filename = NabuLib.FilePath(settings,filename);
         if (File.Exists(filename))
-            return await File.ReadAllBytesAsync(filename);
+            return await File.ReadAllBytesAsync(filename, cancel);
         return Array.Empty<byte>();
     }
     
     public Task Copy(string source, string destination, CopyMoveFlags flags)
     {
-        File.Copy(source, destination, flags is CopyMoveFlags.Replace);
+        File.Copy(NabuLib.FilePath(settings,source), NabuLib.FilePath(settings,destination), flags is CopyMoveFlags.Replace);
         return Task.CompletedTask;
     }
 
     public Task Delete(string filename)
     {
-        File.Delete(filename);
+        File.Delete(NabuLib.FilePath(settings,filename));
         return Task.CompletedTask;
     }
 
     public Task<FileDetails> FileDetails(string filename)
     {
 
-        var file = new FileInfo(filename);
+        var file = new FileInfo(NabuLib.FilePath(settings,filename));
         var details = file.Exists switch
         {
             true => new FileDetails
@@ -56,7 +56,7 @@ public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
     public Task<IEnumerable<FileDetails>> List(string path, string wildcard, FileListFlags flags)
     {
         var r = new List<FileDetails>();
-        var dir = new DirectoryInfo(path);
+        var dir = new DirectoryInfo(NabuLib.FilePath(settings, path));
         if (flags is FileListFlags.Files)
             foreach (var file in dir.EnumerateFiles(wildcard))
                 r.Add(new FileDetails
@@ -80,17 +80,18 @@ public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
 
     public Task Move(string source, string destination, CopyMoveFlags flags)
     {
-        File.Move(source, destination, flags is CopyMoveFlags.Replace);
+        File.Move(NabuLib.FilePath(settings,source), NabuLib.FilePath(settings,destination), flags is CopyMoveFlags.Replace);
         return Task.CompletedTask;
     }
 
+    
+
     public Task<int> Size(string filename)
     {
-        if (!Path.IsPathRooted(filename)) filename = Path.Combine(settings.StoragePath, filename);
+        filename = NabuLib.FilePath(settings,filename);
         var file = new FileInfo(filename);
         int length = -2;
         if (file!.Exists) length = (int)file.Length;
-        file = null;
         return Task.FromResult(length);
     }
 }

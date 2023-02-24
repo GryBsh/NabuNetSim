@@ -17,7 +17,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
     {
         try
         {
-            var (should, found, cached)= await Client.CanGet(filename);
+            var (_, found, cached)= await Client.CanGet(filename);
             if (found || cached)
             {
                 return await Client.GetBytes(filename);

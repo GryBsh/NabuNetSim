@@ -25,7 +25,7 @@ public enum AdaptorType
 
 public enum ServiceShould
 {
-    Continue = 0,
+    Run = 0,
     Restart,
     Stop
 }

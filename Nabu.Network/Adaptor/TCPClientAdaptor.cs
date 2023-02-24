@@ -9,7 +9,7 @@ public class TCPClientAdaptor
 {
     private TCPClientAdaptor() { }
 
-    static async Task ServerListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
+    static async Task ClientListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
     {
         
         logger.Write($"TCP Client to {socket.RemoteEndPoint}");
@@ -62,7 +62,7 @@ public class TCPClientAdaptor
                      stream
                 );
                 
-                await ServerListen(logger, adaptor, socket, stream, stopping);
+                await ClientListen(logger, adaptor, socket, stream, stopping);
             }
             catch (Exception ex)
             {
