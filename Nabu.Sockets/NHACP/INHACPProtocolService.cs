@@ -2,7 +2,7 @@
 
 
 
-public interface IACPProtocolService
+public interface INHACPProtocolService
 {
     // 0x00 0x00                                    -> FRAME SIZE
     // 2 bytes

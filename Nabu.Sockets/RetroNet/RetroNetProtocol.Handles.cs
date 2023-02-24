@@ -24,22 +24,13 @@ public partial class RetroNetProtocol : Protocol
         if (handle is 0xFF) handle = NextIndex();
         Log($"Open: {handle} {filename}");
 
-        byte[] cacheHit = Array.Empty<byte>();
-        if (Http().IsMatch(filename))
-        {
-            if (!Cache.ContainsKey(filename))
-            {
-                var bytes = await FileHandler(filename).Get(filename, cancel);
-                cacheHit = Cache[filename] = bytes;
-            }
-            else cacheHit = Cache[filename];
-        }
-        
+        var bytes = await FileHandler(filename).Get(filename, cancel);
+
         Slots[handle] = filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, settings, cacheHit),
-            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, settings, cacheHit),
-            _ => new FileHandleHandler(Logger, settings)
+            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, settings, bytes),
+            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, settings, bytes),
+            _ => new RetroNetFileHandle(Logger, settings)
         };
         var opened = await Slots[handle].Open(filename, flags, cancel);
         if (opened is false) Writer.Write(0xFF);

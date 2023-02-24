@@ -3,7 +3,7 @@ using Nabu.Services;
 
 namespace Nabu.Network.NHACP;
 
-public class NHACPProtocolService : IACPProtocolService
+public class NHACPProtocolService : INHACPProtocolService
 {
     IConsole Logger;
     AdaptorSettings Settings;

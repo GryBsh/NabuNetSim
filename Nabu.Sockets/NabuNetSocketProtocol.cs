@@ -176,8 +176,6 @@ public class NabuNetSocketProtocol : Protocol
 
     #endregion
 
-    
-
 
     public override async Task Handle(byte command, CancellationToken cancel)
     {

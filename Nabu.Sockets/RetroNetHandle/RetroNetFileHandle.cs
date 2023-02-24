@@ -4,9 +4,9 @@ using Nabu.Services;
 
 namespace Nabu.Network.RetroNetHandle;
 
-public class FileHandleHandler : NabuService, IRetroNetFileHandle
+public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
 {
-    public FileHandleHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
+    public RetroNetFileHandle(IConsole logger, AdaptorSettings settings) : base(logger, settings)
     {
 
     }

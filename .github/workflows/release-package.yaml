@@ -11,7 +11,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      linux_arch: x64 arm arm64
+      linux_arch: x86 x64 arm arm64
       win_arch: x64 arm arm64
       PAK: Assets/PAKs
       CONFIG: Assets/Config

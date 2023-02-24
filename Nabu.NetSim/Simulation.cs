@@ -163,6 +163,7 @@ public class Simulation : BackgroundService, ISimulation
             }
             else
             {
+                Logger.WriteWarning("Python Enabled, but not found.")
                 settings.Flags.Remove(Flags.EnablePython);
             }
         }
