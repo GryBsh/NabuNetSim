@@ -2,14 +2,20 @@
 using System.Threading.Channels;
 using System;
 using Nabu.Services;
+using Nabu.Network;
 
 namespace Nabu.Network.RetroNet;
 
 public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 {
-    public RetroNetHttpHandler(IConsole logger, HttpClient client, AdaptorSettings settings) : base(logger, settings)
+    public RetroNetHttpHandler(
+        IConsole logger, 
+        HttpClient client, 
+        AdaptorSettings settings, 
+        FileCache cache
+    ) : base(logger, settings)
     {
-        Client = new HttpCache(client, Logger);
+        Client = new HttpCache(client, Logger, cache);
     }
     public HttpCache Client { get; }
 

@@ -108,7 +108,7 @@ public abstract class Protocol : NabuService, IProtocol
     /// <param name="length">The number of bytes transfered</param>
     void TransferRate(DateTime start, DateTime stop, int length)
     {
-        var byteLength = settings.Type switch
+        var byteLength = Settings.Type switch
         {
             AdaptorType.Serial => 11, // 8 + 1 + 2
             _ => 8
@@ -141,11 +141,10 @@ public abstract class Protocol : NabuService, IProtocol
         Trace($"NA: SEND: {FormatSeparated(bytes)}");
         
         if (bytes.Length > 128)
-        { // This doesn't work unless you fill the buffer
+        { 
             DateTime start = DateTime.Now;
-            //Writer.Write(bytes);
-            //Writer.Flush();
             Writer.Write(bytes);
+            
             DateTime end = DateTime.Now;
             TransferRate(start, end, bytes.Length);
         }
@@ -153,7 +152,7 @@ public abstract class Protocol : NabuService, IProtocol
         {
             Writer.Write(bytes);
         }
-        //Task.Run(Writer.Flush);
+        Writer.Flush();
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 
@@ -223,7 +222,7 @@ public abstract class Protocol : NabuService, IProtocol
         ) return false;
 
         Stream = stream;
-        base.settings = settings;
+        base.Settings = settings;
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         return true;
@@ -252,7 +251,7 @@ public abstract class Protocol : NabuService, IProtocol
 
     public virtual void Detach()
     {
-        settings = new NullAdaptorSettings();
+        Settings = new NullAdaptorSettings();
         Stream = Stream.Null;
         Reader = new BinaryReader(Stream);
         Writer = new BinaryWriter(Stream);

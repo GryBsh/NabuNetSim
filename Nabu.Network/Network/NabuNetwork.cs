@@ -6,9 +6,11 @@ using System.Text.RegularExpressions;
 
 namespace Nabu.Network;
 
+
 public partial class NabuNetwork : NabuBase
 {
     HttpCache Http { get; }
+    FileCache FileCache { get; set; }
     Settings Settings { get; }
     List<ProgramSource> Sources { get; }
     Dictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
@@ -16,26 +18,25 @@ public partial class NabuNetwork : NabuBase
     public NabuNetwork(
         IConsole<NabuNetwork> logger,
         Settings settings, 
-        HttpClient http
-    ) : base(logger, "Network")
+        HttpClient http,
+        FileCache cache
+    ) : base(logger)
     {
         Settings = settings;
         Sources = settings.Sources; 
-        Http = new (http, logger);
-        Task.Run(() => RefreshSources());
+        Http = new (http, logger, cache);
+        FileCache = cache;
+
+        BackgroundRefresh(RefreshType.All);
+
         Observable.Interval(TimeSpan.FromMinutes(1))
-                  .SubscribeOn(ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => await RefreshTask(true));
+            .Subscribe(_ => BackgroundRefresh(RefreshType.Local));
+
         Observable.Interval(TimeSpan.FromMinutes(30))
-                  .SubscribeOn(ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => await RefreshTask(remoteOnly: true));
+            .Subscribe(_ => BackgroundRefresh(RefreshType.Remote));
     }
 
-    async Task RefreshTask(bool localOnly = false, bool remoteOnly = false)
-    {
-        await RefreshSources(localOnly, remoteOnly);
-        GC.Collect();
-    }
+    
 
     public ProgramSource Source(AdaptorSettings settings)
         => Sources.First(s => s.Name.ToLower() == settings.Source?.ToLower());
@@ -74,7 +75,6 @@ public partial class NabuNetwork : NabuBase
                 var (supported, type) = IsSupportedType(f);
                 if (!supported) continue;
                 return (supported, f, type);
-
             }
            
             if (filename == encryptedMenuPakName)
@@ -83,20 +83,34 @@ public partial class NabuNetwork : NabuBase
                 if (!supported) continue;
                 return (supported, f, type);
             }
-            
         }
         return (false, string.Empty, ImageType.None);
     }
 
-    public async Task RefreshSources(bool localOnly = false, bool remoteOnly = false)
+
+    async void BackgroundRefresh(RefreshType refresh)
     {
+        await RefreshSources(refresh);
+        GC.Collect();
+    }
+
+    public async Task RefreshSources(RefreshType refresh = RefreshType.All)
+    {
+        if (refresh.HasFlag(RefreshType.Remote))
+            Logger.Write($"Refreshing remote sources");
+
         foreach (var source in Sources)
         {
-            //var pak = 1;
-            //var nabuName = FormatTriple(pak);
             
             var isRemote = IsWebSource(source.Path);
-            if (!localOnly && (source.SourceType is SourceType.Remote || isRemote))
+            
+            var checkRemote = refresh.HasFlag(RefreshType.Remote);
+            var checkLocal = refresh.HasFlag(RefreshType.Local);
+
+            if (isRemote) source.SourceType = SourceType.Remote;
+            else source.SourceType = SourceType.Local;
+
+            if (checkRemote && source.SourceType is SourceType.Remote)
             {
                 source.SourceType = SourceType.Remote;
                 var (isList, items) = await IsNabuCaList(source.Name, source.Path);
@@ -134,9 +148,11 @@ public partial class NabuNetwork : NabuBase
                     )};
                 }
             }
-            else if (!remoteOnly && (source.SourceType is SourceType.Local || !isRemote))
+            else if (checkLocal && source.SourceType is SourceType.Local)
             {
                 source.SourceType = SourceType.Local;
+                if (Directory.Exists(source.Path) is false) continue;
+
                 var files = Directory.GetFiles(source.Path);
                 var programs = new List<NabuProgram>();
                 var (supported, menuPak, type) = ContainsPak(files);
@@ -144,18 +160,22 @@ public partial class NabuNetwork : NabuBase
                 if (supported && menuPak is not null)
                 {   
                     programs.Add(new (
-                            "Cycle Menu",
-                            Constants.CycleMenuPak,
-                            source.Name,
-                            menuPak,
-                            source.SourceType,
-                            type,
-                            new[] { new PassThroughPatch(Logger) },
-                            true
+                        "Cycle Menu",
+                        Constants.CycleMenuPak,
+                        source.Name,
+                        menuPak,
+                        source.SourceType,
+                        type,
+                        new[] { new PassThroughPatch(Logger) },
+                        true
                     ));
                     files = files.Except(new[] { menuPak }).ToArray();
                 }
                 
+                files = files.Where(
+                    f => Path.GetExtension(f) is Constants.NabuExtension
+                ).ToArray();
+
                 foreach (var file in files)
                 {
                     var name = Path.GetFileNameWithoutExtension(file);
@@ -235,7 +255,7 @@ public partial class NabuNetwork : NabuBase
             bytes = prg.SourceType switch
             {
                 SourceType.Remote => await Http.GetBytes(path),
-                SourceType.Local => await File.ReadAllBytesAsync(path),
+                SourceType.Local => await FileCache.CacheFile(Logger, path),
                 _ => ZeroBytes
             };
         }

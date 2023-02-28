@@ -14,7 +14,7 @@ public sealed class AppLog
 {
     // This is some Blazor Server quirk, it only works right on both sides
     // Like this...
-    public static SourceList<LogEntry> LogEntries = new() { };
+    public static SourceList<LogEntry> LogEntries = new();
     static SemaphoreSlim LogLock = new(1, 1);
     static IEnumerable<LogEntry> RemovalStaging { get; set; } = Array.Empty<LogEntry>();
     public static int Interval { get; } = 30;
@@ -28,9 +28,7 @@ public sealed class AppLog
 
         RemovalStaging = pending;
 
-        Observable.Interval(TimeSpan.FromMinutes(Interval))
-                  .ObserveOn(ThreadPoolScheduler.Instance)
-                  .SubscribeOn(RxApp.MainThreadScheduler)
+        Observable.Interval(TimeSpan.FromMinutes(Interval), ThreadPoolScheduler.Instance)
                   .Subscribe(_ => LogCycle());
     }
 
@@ -48,7 +46,7 @@ public sealed class AppLog
             $"Removing {RemovalStaging.Count()} aged log entries",
             null
         );
-
+        
         lock (LogLock)
         {
             LogEntries.RemoveMany(RemovalStaging);

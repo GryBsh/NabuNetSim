@@ -22,5 +22,8 @@ public static class RetroNetCommands
     public const byte FileHandleDetails = 0xB4;
     public const byte FileHandleReadSequence = 0xB5;
     public const byte FileHandleSeek = 0xB6;
+
+    public const byte GetParentCount = 0xBA;
+    public const byte GetParentName = 0xBB;
 }
 

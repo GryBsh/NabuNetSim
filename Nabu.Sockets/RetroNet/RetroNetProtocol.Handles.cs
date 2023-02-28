@@ -28,9 +28,9 @@ public partial class RetroNetProtocol : Protocol
 
         Slots[handle] = filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, settings, bytes),
-            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, settings, bytes),
-            _ => new RetroNetFileHandle(Logger, settings)
+            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings, bytes),
+            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings, bytes),
+            _ => new RetroNetFileHandle(Logger, Settings)
         };
         var opened = await Slots[handle].Open(filename, flags, cancel);
         if (opened is false) Writer.Write(0xFF);

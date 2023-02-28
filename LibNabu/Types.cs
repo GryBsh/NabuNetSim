@@ -7,6 +7,14 @@ public enum SourceType
     Remote
 }
 
+[Flags]
+public enum RefreshType
+{
+    Local = 0b_0001,
+    Remote = 0b_0010,
+    All = Local | Remote
+}
+
 public enum ImageType
 {
     None = 0,

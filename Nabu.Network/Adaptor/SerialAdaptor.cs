@@ -18,7 +18,7 @@ public class SerialAdaptor
 
         var serial = new SerialPort(
             settings.Port,
-            settings.BaudRate,
+            settings.BaudRate, //115200
             Parity.None,
             8,
             StopBits.Two
@@ -46,11 +46,25 @@ public class SerialAdaptor
             {
                 serial.Open();
             }
+            catch (UnauthorizedAccessException)
+            {
+                logger.WriteError($"Serial Adaptor: Port {settings.Port} is inaccessible");
+                settings.Next = ServiceShould.Stop;
+                break;
+            }
             catch (Exception ex)
             {
                 logger.WriteWarning($"Serial Adaptor: {ex.Message}");
                 Thread.Sleep(5000);
             }
+
+        if (serial.IsOpen is false)
+        {
+            serial.Close();
+            serial.Dispose();
+            return;
+        }
+
         try
         {
             var adaptor = new EmulatedAdaptor(
@@ -64,6 +78,7 @@ public class SerialAdaptor
             await adaptor.Listen(stopping);
 
         }
+        
         catch (Exception ex)
         {
             logger.WriteError(ex.Message, ex);

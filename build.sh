@@ -2,7 +2,7 @@
 rm -rf ./bin
 rm -f *.zip
 
-linux_arch="x64 arm arm64"
+linux_arch="x86 x64 arm arm64"
 win_arch="x64 arm arm64"
 PAK="Assets/PAKs"
 CONFIG="Assets/Config"

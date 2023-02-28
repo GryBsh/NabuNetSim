@@ -34,7 +34,6 @@ public class Simulation : BackgroundService, ISimulation
         ServiceProvider = serviceProvider;
     }
 
-    static ServiceShould[] Next { get; set; } = Array.Empty<ServiceShould>();
 
     static CancellationTokenSource[] Cancel { get; set; } = Array.Empty<CancellationTokenSource>();
         
@@ -85,7 +84,7 @@ public class Simulation : BackgroundService, ISimulation
                 for (int index = 0; index < DefinedAdaptors.Length; index++)
                 {
                     var settings = DefinedAdaptors[index];
-                   
+                    
                     if (settings.Next is ServiceShould.Stop)
                     {
                         if (services[index] != Task.CompletedTask)
@@ -98,6 +97,8 @@ public class Simulation : BackgroundService, ISimulation
                         continue;
                     }
                     
+                    if (settings.Enabled == false) continue;
+
                     // Is this service stopped?
                     if (services[index].IsCompleted && settings.Next is ServiceShould.Run && settings.Enabled)
                     {
@@ -126,9 +127,10 @@ public class Simulation : BackgroundService, ISimulation
 
     public static IServiceCollection Register(IServiceCollection services, Settings settings)
     {
-        services.AddTransient<NabuNetwork>()
+        services.AddSingleton<NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
-                .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>));
+                .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
+                .AddSingleton<FileCache>();
 
         if (settings.Flags.Contains(Flags.EnablePython))
         {

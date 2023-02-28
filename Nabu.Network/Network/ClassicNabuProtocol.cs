@@ -70,8 +70,8 @@ public class ClassicNabuProtocol : Protocol
                     StatusResult(Status.NoSignal);
                 }
                 break;
-            case StatusMessage.MysteryStatus: // <-- NPC Program/DOS Loaded
-                Debug($"NPC: 1E? NA: {nameof(Message.Finished)}?");
+            case StatusMessage.AdaptorReady: // <-- NPC Program/DOS Loaded
+                Log($"NPC: Finished? NA: {nameof(Message.Finished)}");
                 Finished();
                 break;
             default:
@@ -101,7 +101,7 @@ public class ClassicNabuProtocol : Protocol
 
     /// <summary>
     ///  Handles the Segment Request message - 0x84
-    /// </summary>
+    /// </summary>  
     /// <returns>A Task to await fetching the program image from disk/http</returns>
     async Task SegmentRequest()
     {
@@ -208,7 +208,7 @@ public class ClassicNabuProtocol : Protocol
         Finished();                      //Epilog
         if (last)
         {
-            Network.UncachePak(settings, pak);
+            Network.UncachePak(base.Settings, pak);
             GC.Collect();
         }
     }

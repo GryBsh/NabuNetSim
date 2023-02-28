@@ -1,6 +1,6 @@
 
 @font-face {
-    font-family: 'Mode Seven';
+    font-family: 'GlassTTYVT220';
     src: url(../Modeseven-L3n5.ttf) format('truetype');
 }
 
@@ -8,18 +8,14 @@ body {
     --border: 10px solid white;
     --light-background: #7d75fc;
     --dark-background: #5455ed;
-    --background:
-    var(--light-background);
+    --background: var(--light-background);
     --color: white;
-    --inverse-background:
-    var(--dark-background);
+    --inverse-background: var(--dark-background);
     background: var(--background);
-
-    --bs-font-family: 'Mode Seven';
-    font-family: 'Mode Seven';
-    font-size: smaller;
+    --bs-font-family: 'GlassTTYVT220';
+    font-family: 'GlassTTYVT220';
+    font-size: 10pt;
     --b-bar-light-background: var(--light-background);
-
 }
 
 /* UTILS */

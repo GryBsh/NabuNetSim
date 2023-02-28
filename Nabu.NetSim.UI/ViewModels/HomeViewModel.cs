@@ -57,11 +57,10 @@ public class HomeViewModel : ReactiveObject
                      .Select(e => $"{e.Timestamp:yyyy-MM-dd | HH:mm:ss.ff} | {e.Message}");
         
         Task.Run(async () => Headlines = await GetHeadlines());
-        Observable.Interval(TimeSpan.FromMinutes(30))
-                  .SubscribeOn(ThreadPoolScheduler.Instance)
+        Observable.Interval(TimeSpan.FromMinutes(30), ThreadPoolScheduler.Instance)
                   .Subscribe(async _ => {
                       Headlines = await GetHeadlines();
-                      GC.Collect();
+                      
                   });
     }
 
@@ -138,8 +137,6 @@ public class HomeViewModel : ReactiveObject
                TCP.Any(t => t.Next is ServiceShould.Run);
     }
 
-  
-
     public bool HasMultipleImages(AdaptorSettings? settings)
     {
         if (settings is null or NullAdaptorSettings) return false;
@@ -196,9 +193,9 @@ public class HomeViewModel : ReactiveObject
 
         if (SelectorVisible is false && settings is not null)
         {
-            Task.Run(async () =>
+            Task.Run(() =>
             {
-                await Sources.RefreshSources();
+                //await Sources.RefreshSources();
                 SelectorAdaptor = new[] { settings };
                 AvailableImages = Sources.Programs(settings).Select(p => (p.DisplayName, p.Name));
                 SelectorVisible = true;
@@ -206,6 +203,7 @@ public class HomeViewModel : ReactiveObject
                 this.RaisePropertyChanged(nameof(AvailableImages));
                 this.RaisePropertyChanged(nameof(SelectorVisible));
             });
+
             return;
         }
         else if (SelectorVisible is true)
@@ -214,9 +212,7 @@ public class HomeViewModel : ReactiveObject
             SelectorAdaptor = Array.Empty<AdaptorSettings>();
             AvailableImages = Array.Empty<(string, string)>();
         }
-
     }
 
-    
 }
 

@@ -43,7 +43,7 @@ public class PythonProtocol : Protocol
     public override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         var p = new PyProto(Logger);
-        p.Attach(settings, Stream);
+        p.Attach(Settings, Stream);
         string source = await File.ReadAllTextAsync(Protocol.Path);
         await Task.Run(() =>
         {

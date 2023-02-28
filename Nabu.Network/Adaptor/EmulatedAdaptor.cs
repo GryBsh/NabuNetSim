@@ -26,15 +26,15 @@ public class EmulatedAdaptor : NabuService
        
     ) : base(logger, settings)
     {
-        base.settings = settings;
+        base.Settings = settings;
         NabuNet = nabuNet;
         Protocols = protocols;
 
         Stream = stream;
         Reader = new BinaryReader(stream);
-        NabuNet.Attach(base.settings, Stream);
+        NabuNet.Attach(base.Settings, Stream);
         foreach (var protocol in Protocols)
-            protocol.Attach(base.settings, Stream);
+            protocol.Attach(base.Settings, Stream);
     }
 
     public bool IsRunning { get; protected set; }

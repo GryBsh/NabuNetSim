@@ -1,4 +1,8 @@
 ﻿using Nabu.Services;
+using System;
+using System.Security.Cryptography;
+using System.Text;
+using System.Xml.Linq;
 
 namespace Nabu.Network;
 
@@ -6,14 +10,14 @@ public class HttpCache : IHttpCache
 {
     HttpClient Http { get; }
     IConsole Logger { get; }
-
-    public string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
-
-    public HttpCache(HttpClient http, IConsole logger)
+    
+    protected string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
+    protected FileCache MemoryCache { get; }
+    public HttpCache(HttpClient http, IConsole logger, FileCache cache)
     {
         Http = http;
-        //Http.Timeout = TimeSpan.FromSeconds(180);
         Logger = logger;
+        MemoryCache = cache;
         Task.Run(EnsureCacheFolder);
     }
 
@@ -22,7 +26,6 @@ public class HttpCache : IHttpCache
         if (Directory.Exists(CacheFolder) is false)
             Directory.CreateDirectory(CacheFolder);
     }
-
 
     public async Task<HttpResponseMessage> GetHead(string uri)
     {
@@ -51,7 +54,7 @@ public class HttpCache : IHttpCache
         }
 
         var modified = head.Content.Headers.LastModified;
-        var localModified = File.GetLastWriteTimeUtc(path);
+        var localModified = await Task.Run(() => File.GetLastWriteTimeUtc(path));
 
         if (modified > localModified)
         {
@@ -64,6 +67,7 @@ public class HttpCache : IHttpCache
     {
         var safeName = NabuLib.SafeFileName(uri);
         var path = Path.Join(CacheFolder, safeName);
+        var name = Path.GetFileName(uri);
 
         var (shouldDownload, found, local) = await CanGet(uri, path);
 
@@ -74,36 +78,59 @@ public class HttpCache : IHttpCache
         {
             Logger.Write($"Downloading {uri}");
             var bytes = await Http.GetByteArrayAsync(uri);
-            
-            Logger.Write($"Writing {bytes.Length} bytes to {path}");
-            await File.WriteAllBytesAsync(path, bytes);
+
+            Logger.Write($"Writing {bytes.Length} bytes to {CacheFolder}\\{name}");
+            try
+            {
+                await File.WriteAllBytesAsync(path, bytes);
+                MemoryCache.Cache(path, bytes);
+            }
+            catch
+            {
+                Logger.WriteWarning("Caching failed, please try again later");
+            }
 
             return bytes;
         }
 
-        Logger.Write($"Reading {path} from cache");
-        return await File.ReadAllBytesAsync(path);
+        Logger.Write($"Reading {name} from cache");
 
+        return await MemoryCache.CacheFile(Logger, path);
+        
     }
+
+    
 
     public async Task<string> GetString(string uri)
     {
         var safeName = NabuLib.SafeFileName(uri);
         var path = Path.Join(CacheFolder, safeName);
-
+        var name = Path.GetFileName(uri);
         var (shouldDownload, found, local) = await CanGet(uri, path);
 
         if (!shouldDownload && !found && !local) return string.Empty;
 
         if (shouldDownload && found)
         {
-
+            Logger.Write($"Downloading {uri}");
             var str = await Http.GetStringAsync(uri);
-            await File.WriteAllTextAsync(path, str);
+
+            Logger.Write($"Writing {str.Length} characters to {CacheFolder}\\{name}");
+            try
+            {
+                await File.WriteAllTextAsync(path, str);
+                MemoryCache.Cache(path, str);
+            }
+            catch
+            {
+                Logger.WriteWarning("Caching failed, please try again later");
+            }
+            
             return str;
         }
 
-        return await File.ReadAllTextAsync(path);
+        return await MemoryCache.CacheFileText(Logger, path);
+
     }
 
 }

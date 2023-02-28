@@ -13,7 +13,7 @@ public class NHACPProtocol : Protocol
     NHACPProtocolService Storage { get; }
     public NHACPProtocol(IConsole<NHACPProtocol> logger, NabuNetwork nabuNet) : base(logger)
     {
-        Storage = new(Logger, settings);
+        Storage = new(Logger, Settings);
         NabuNet = nabuNet;
     }
 
@@ -218,7 +218,7 @@ public class NHACPProtocol : Protocol
 
     public override bool ShouldAccept(byte unhandled)
     {
-        return base.ShouldAccept(unhandled) && !NabuNet.Source(settings).EnableRetroNet;
+        return base.ShouldAccept(unhandled) && !NabuNet.Source(Settings).EnableRetroNet;
     }
 
 }
