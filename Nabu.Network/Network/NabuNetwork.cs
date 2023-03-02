@@ -9,7 +9,7 @@ namespace Nabu.Network;
 
 public partial class NabuNetwork : NabuBase
 {
-    HttpCache Http { get; }
+    CachingHttpClient Http { get; }
     FileCache FileCache { get; set; }
     Settings Settings { get; }
     List<ProgramSource> Sources { get; }
@@ -284,7 +284,7 @@ public partial class NabuNetwork : NabuBase
         var source = Source(settings);
         if (PakCache.ContainsKey((settings, source, pak)))
         {
-            Log($"Removing pak {pak} from cache");
+            Debug($"Removing pak {pak} from transfer cache");
             PakCache.Remove((settings, source, pak));
         }
     }

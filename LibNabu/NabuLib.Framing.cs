@@ -9,7 +9,7 @@ public static partial class NabuLib
         return Concat(header, Concat(buffer)).ToArray().AsSpan();
     }
 
-    public static Socket Socket(bool noDelay = true, int sBufferSize = 32, int rBufferSize = 32)
+    public static Socket Socket(bool noDelay = true, int sBufferSize = 8, int rBufferSize = 8)
     {
         var socket = new Socket(
             AddressFamily.InterNetwork,

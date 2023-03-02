@@ -135,7 +135,7 @@ public class Simulation : BackgroundService, ISimulation
         if (settings.Flags.Contains(Flags.EnablePython))
         {
             var pythonLib = string.Empty;
-            if (OperatingSystem.IsWindows()) pythonLib = "python311.dll";
+            if (OperatingSystem.IsWindows())    pythonLib = "python311.dll";
             else if (OperatingSystem.IsLinux()) pythonLib = "libpython3.11.so";
             else if (OperatingSystem.IsMacOS()) pythonLib = "libpython3.11.dylib";
 

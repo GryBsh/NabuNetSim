@@ -108,6 +108,11 @@ public class ClassicNabuProtocol : Protocol
         short segment = Recv();
         int pak = NabuLib.ToInt(Recv(3));
 
+        // Anything packet except the time packet...
+        if (pak is 1 && started is null) 
+            started = DateTime.Now;
+        // RACERS START YOUR ENGINES!
+
         Log($"NPC: Segment: {segment:x04}, PAK: {FormatTriple(pak)}, NA: {nameof(StateMessage.Confirmed)}");
         Confirmed();
         if (segment == 0x00 &&
@@ -117,6 +122,11 @@ public class ClassicNabuProtocol : Protocol
             SendPacket(pak,TimePacket(), last: true);
             return;
         }
+
+        // Anything packet except the time packet...
+        if (pak is 1 && segment is 0 && started is null) 
+            started = DateTime.Now;
+        // RACERS START YOUR ENGINES!
 
         // Network Emulator
         var (type, segmentData) = await Network.Request(Settings, pak);
@@ -182,11 +192,15 @@ public class ClassicNabuProtocol : Protocol
         }
     }
 
+    DateTime? started = null;
+
     /// <summary>
     ///     Sends a packet to the device
     /// </summary>
     void SendPacket(int pak, byte[] buffer, bool last = false)
     {
+        
+
         if (buffer.Length > Constants.MaxPacketSize)
         {
             Error("Packet too large");
@@ -205,11 +219,18 @@ public class ClassicNabuProtocol : Protocol
         Send(buffer);
         //var stop = DateTime.Now;
 
-        Finished();                      //Epilog
+        Finished();        //Epilog
         if (last)
         {
+            var finished = DateTime.Now;
             Network.UncachePak(base.Settings, pak);
             GC.Collect();
+            
+            if (started is null) return; // Time Packet is not timed.
+
+            var elapsed = finished - started.Value;
+            Log($"Finished in {elapsed.TotalSeconds:0.000}s");
+            started = null;
         }
     }
     #endregion
@@ -237,9 +258,23 @@ public class ClassicNabuProtocol : Protocol
                 Log($"NPC: {nameof(Message.Reset)}, NA: {nameof(Message.ACK)} {nameof(StateMessage.Confirmed)}");
                 Confirmed();
                 break;
-            case Message.MagicalMysteryMessage:
+            case Message.SetStatus:
                 Ack();
-                Log($"NPC: {nameof(Message.MagicalMysteryMessage)}: {FormatSeparated(Recv(2))}, NA: {nameof(StateMessage.Confirmed)}");
+                Log($"NPC: {nameof(Message.SetStatus)}, NA: {nameof(Message.ACK)}");
+                byte[] status = Recv(2);
+                switch (status[0])
+                {
+                    case 0x0F:
+                        Log("NPC: HCCA Idle");
+                        break;
+                    case 0x1F:
+                        Log("NPC: HCCA Transfer");
+                        break;
+                    default:
+                        Log($"NPC: Status: {Format(status[0])}");
+                        break;
+                }
+                Log($"NA: {nameof(StateMessage.Confirmed)}");
                 Confirmed();
                 break;
             case Message.GetStatus:

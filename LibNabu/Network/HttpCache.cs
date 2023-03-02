@@ -6,14 +6,14 @@ using System.Xml.Linq;
 
 namespace Nabu.Network;
 
-public class HttpCache : IHttpCache
+public class CachingHttpClient : IHttpCache
 {
     HttpClient Http { get; }
     IConsole Logger { get; }
     
     protected string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
     protected FileCache MemoryCache { get; }
-    public HttpCache(HttpClient http, IConsole logger, FileCache cache)
+    public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache)
     {
         Http = http;
         Logger = logger;

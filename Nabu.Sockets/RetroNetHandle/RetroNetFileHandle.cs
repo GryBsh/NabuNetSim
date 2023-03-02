@@ -12,7 +12,7 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
     }
 
     //public FileInfo? FileHandle { get; set; }
-    string Filename { get; set; }
+    string Filename { get; set; } = string.Empty;
     FileOpenFlags? Flags { get; set; }
 
     public Task Append(byte[] data, CancellationToken cancel)
@@ -43,7 +43,7 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
             Created = File.GetCreationTime(Filename),
             Modified = File.GetLastWriteTime(Filename),
             Filename = Path.GetFileName(Filename),
-            FileSize = (int)new FileInfo(Filename).Length,
+            FileSize = NabuLib.FileSize(Filename),
         });
     }
 

@@ -1,4 +1,5 @@
-﻿using Nabu.Services;
+﻿using InvertedTomato.IO;
+using Nabu.Services;
 
 namespace Nabu;
 
@@ -12,16 +13,22 @@ public static partial class NabuLib
     /// <returns>The CRC bytes for the packet</returns>
     public static Span<byte> GenerateCRC(byte[] buffer)
     {
-        short crc = -1; // 0xFFFF
-        foreach (var byt in buffer)
-        {
-            byte b = (byte)(crc >> 8 ^ byt);
-            crc <<= 8;
-            crc ^= Constants.CRCTable[b];
-        }
+        //short crc = -1; // 0xFFFF
+        //foreach (var byt in buffer)
+        //{
+        //    byte b = (byte)(crc >> 8 ^ byt);
+        //    crc <<= 8;
+        //    crc ^= Constants.CRCTable[b];
+        //}
+
+        var crc = CrcAlgorithm
+                  .CreateCrc16Genibus()
+                  .Append(buffer)
+                  .ToByteArray();
+
         return new byte[] {
-            (byte)(crc >> 8 & 0xFF ^ 0xFF),
-            (byte)(crc >> 0 & 0xFF ^ 0xFF)
+            (byte)(crc[0] & 0xFF),
+            (byte)(crc[1] & 0xFF)
         };
 
     }

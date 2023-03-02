@@ -13,5 +13,10 @@
             filePath = filePath.Replace("..", string.Empty).Replace(":", string.Empty);
             return Path.Combine(settings.StoragePath, filePath);
         }
+
+        public static int FileSize(string path)
+        {
+            return (int) new FileInfo(path).Length;
+        }
     }
 }

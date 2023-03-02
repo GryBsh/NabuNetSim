@@ -7,7 +7,7 @@ public static class Message
      * Not guaranteed to be accurate, likely to change
      */
     public const byte Reset = 0x80;
-    public const byte MagicalMysteryMessage = 0x81;
+    public const byte SetStatus = 0x81;
     public const byte GetStatus = 0x82;
     public const byte StartUp = 0x83;
     public const byte PacketRequest = 0x84;

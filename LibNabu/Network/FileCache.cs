@@ -3,16 +3,18 @@ using System.Text;
 
 namespace Nabu.Network;
 
+
 public class FileCache : Dictionary<string, (DateTime, byte[])>
 {
     public TimeSpan TTL { get; set; } = TimeSpan.FromMinutes(30);
     SemaphoreSlim Lock { get; } = new(1);
 
-    (bool, byte[]?) CacheHit(string path)
+    (bool, byte[]) CacheHit(string path)
     {
         if (TryGetValue(path, out var cached) &&
             cached is var (cachedTime, content) &&
-            (DateTime.Now - cachedTime) < TTL
+            (DateTime.Now - cachedTime) < TTL &&
+            File.GetLastWriteTime(path) < cachedTime
         )   return (true, content);
 
         return (false, Array.Empty<byte>());

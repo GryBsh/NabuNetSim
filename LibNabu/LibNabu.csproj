@@ -8,4 +8,8 @@
     <Platforms>AnyCPU;x64</Platforms>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="InvertedTomato.Crc" Version="1.2.0" />
+  </ItemGroup>
+
 </Project>
