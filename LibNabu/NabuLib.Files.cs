@@ -18,5 +18,31 @@
         {
             return (int) new FileInfo(path).Length;
         }
+
+        public static bool IsFileAvailable(string path)
+        {
+            try
+            {
+                using FileStream inputStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
+                return inputStream.Length > 0;
+            }
+            catch (IOException)
+            {
+                return false;
+            }
+        }
+
+        public static Task<bool> FileAvailable(string path)
+        {
+            return Task.Run(() => {
+                return IsFileAvailable(path);
+            });
+        }
+
+        public static void EnsureFolder(string folder)
+        {
+            if (Directory.Exists(folder) is false)
+                Directory.CreateDirectory(folder);
+        }
     }
 }

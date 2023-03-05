@@ -23,13 +23,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
     {
         try
         {
-            var (_, found, cached)= await Client.CanGet(filename);
-            if (found || cached)
-            {
-                return await Client.GetBytes(filename);
-            }
-
-            return Array.Empty<byte>();
+           return await Client.GetBytes(filename);
         }
         catch (Exception ex)
         {

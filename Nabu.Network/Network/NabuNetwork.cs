@@ -97,7 +97,7 @@ public partial class NabuNetwork : NabuBase
     public async Task RefreshSources(RefreshType refresh = RefreshType.All)
     {
         if (refresh.HasFlag(RefreshType.Remote))
-            Logger.Write($"Refreshing remote sources");
+            Log($"Refreshing remote sources");
 
         foreach (var source in Sources)
         {
@@ -238,6 +238,7 @@ public partial class NabuNetwork : NabuBase
                 ImageType.Raw           => Constants.NabuExtension,
                 ImageType.Pak           => Constants.PakExtension,
                 ImageType.EncryptedPak  => Constants.EncryptedPakExtension,
+                _ => Constants.PakExtension
             };
             var name = prg.ImageType switch
             {
@@ -255,7 +256,7 @@ public partial class NabuNetwork : NabuBase
             bytes = prg.SourceType switch
             {
                 SourceType.Remote => await Http.GetBytes(path),
-                SourceType.Local => await FileCache.CacheFile(Logger, path),
+                SourceType.Local => await FileCache.GetOrCacheFile(path),
                 _ => ZeroBytes
             };
         }
@@ -273,7 +274,7 @@ public partial class NabuNetwork : NabuBase
             bytes = await patch.Patch(prg, bytes);
         }
 
-        Log($"Type: {prg.ImageType} Size: {bytes.Length} Path: {path}");
+        Log($"Type: {prg.ImageType}, Size: {bytes.Length}, Path: {path}");
 
         PakCache[(settings, source, pak)] = bytes;
         return (prg.ImageType, bytes);
@@ -296,8 +297,6 @@ public partial class NabuNetwork : NabuBase
     protected static bool IsPak(string path) => path.EndsWith(Constants.PakExtension);
     protected static bool IsEncryptedPak(string path) => path.EndsWith(Constants.EncryptedPakExtension);                                          
 
-    
-
     #endregion
 
     #region Http Location
@@ -317,22 +316,22 @@ public partial class NabuNetwork : NabuBase
         if (type is ImageType.None)
         {
            
-            (_, found, cached) = await Http.CanGet($"{url}/{FormatTriple(pak)}{Constants.NabuExtension}");
+            (_, found, cached, _) = await Http.GetUriStatus($"{url}/{FormatTriple(pak)}{Constants.NabuExtension}");
             if (found || cached)
                 return (true, url, ImageType.Raw);
 
-            (_, found, cached) = await Http.CanGet($"{url}/{FormatTriple(pak)}{Constants.PakExtension}");
+            (_, found, cached, _) = await Http.GetUriStatus($"{url}/{FormatTriple(pak)}{Constants.PakExtension}");
             if (found || cached)
                 return (true, url, ImageType.Pak);
 
-            (_, found, cached) = await Http.CanGet($"{url}/{NabuLib.PakName(pak)}{Constants.EncryptedPakExtension}");
+            (_, found, cached, _) = await Http.GetUriStatus($"{url}/{NabuLib.PakName(pak)}{Constants.EncryptedPakExtension}");
             if (found || cached)
                 return (false, url, ImageType.EncryptedPak); //Encrypted pak support is disabled.
 
             return (false, url, ImageType.None);
         }
 
-        (_, found, cached) = await Http.CanGet(url);
+        (_, found, cached, _) = await Http.GetUriStatus(url);
         return (found || cached, url, type);
     }
 
@@ -341,7 +340,7 @@ public partial class NabuNetwork : NabuBase
 
         if (!uri.EndsWith(".txt")) { return (false, Array.Empty<NabuProgram>()); }
 
-        var (shouldDownload, found, cached) = await Http.CanGet(uri);
+        var (shouldDownload, found, cached, _) = await Http.GetUriStatus(uri);
         if (!found && !cached) { return (false, Array.Empty<NabuProgram>()); }
         
         var lines = (await Http.GetString(uri)).Split('\n');

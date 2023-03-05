@@ -7,6 +7,21 @@ using Nabu.Services;
 
 namespace Nabu.Network.NHACP;
 
+public class NHACPV03Protocol : Protocol
+{
+    public NHACPV03Protocol(IConsole logger) : base(logger)
+    {
+    }
+
+    public override byte Version => 0x03;
+
+    public override byte[] Commands => new byte[] { 0x8F };
+    public override Task Handle(byte unhandled, CancellationToken cancel)
+    {
+        throw new NotImplementedException();
+    }
+}
+
 public class NHACPProtocol : Protocol
 {
     NabuNetwork NabuNet { get; }
@@ -108,7 +123,7 @@ public class NHACPProtocol : Protocol
             if (success is false) StorageError(0, error);
             else
             {
-                Log($"NA: Get from slot {index}:{offset}->{length} bytes");
+                Log($"NA: slot {index}:{offset}->{length} bytes");
                 DataBuffer(data);
             }
         }
@@ -218,7 +233,8 @@ public class NHACPProtocol : Protocol
 
     public override bool ShouldAccept(byte unhandled)
     {
-        return base.ShouldAccept(unhandled) && !NabuNet.Source(Settings).EnableRetroNet;
+        return base.ShouldAccept(unhandled) && 
+               NabuNet.Source(Settings).EnableRetroNet is false;
     }
 
 }

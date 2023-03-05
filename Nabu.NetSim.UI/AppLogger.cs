@@ -13,19 +13,21 @@ public class AppLogger : ILogger
     private readonly string Name;
     private readonly AppLogProvider Provider;
     private readonly AppLogConfiguration Settings;
-    private readonly AppLog AppLog;
+
     public AppLogger(
         string name,
-        AppLog appLog,
         AppLogProvider provider,
-        AppLogConfiguration settings
+        AppLogConfiguration settings,
+        IRepository repository
     )
     {
         Name = name.Split('.')[^1];
-        AppLog = appLog;
         Provider = provider;
         Settings = settings;
+        Repository = repository;
     }
+
+    IRepository Repository { get; }
 
     public IDisposable BeginScope<TState>(TState state)
         where TState : notnull
@@ -47,15 +49,16 @@ public class AppLogger : ILogger
         if (eventId.Name?.StartsWith("System.Net.Http") is false) return;
 
         Task.Run(() =>
-            AppLog.Add(
-                Guid.NewGuid(),
-                DateTime.Now,
-                logLevel,
-                eventId,
-                Name,
-                formatter(state, exception),
-                exception
-            )
+            Repository.Collection<LogEntry>().Insert(
+                new LogEntry(
+                    Guid.NewGuid(),
+                    DateTime.Now,
+                    logLevel,
+                    eventId,
+                    Name,
+                    formatter(state, exception),
+                    exception
+                ))
         );
     }
 }

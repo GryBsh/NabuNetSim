@@ -1,4 +1,5 @@
 ﻿
+@using CodeHollow.FeedReader;
 @using ReactiveUI
 @inherits ReactiveComponentBase<HomeViewModel>
 
@@ -11,10 +12,9 @@
                 <div class="row">
                     <ul class="news list-group list-group-flush list-group-horizontal-sm">
                         <li class="list-group-item center"><small>NABUNetwork.com News</small></li>
-                        @foreach (var (title,url) in ViewModel!.Headlines.Take(4))
-                        {
-                            <li class="list-group-item center"><small><a target="_blank" href="@url">@title</a></small></li>
-                        }
+                        <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
+                            <li class="list-group-item center"><small><a target="_blank" href="@context?.Link">@context?.Title</a></small></li>
+                        </Virtualize>
                         <li class="list-group-item center"><small><a target="_blank" href="https://www.nabunetwork.com">More...</a></small></li>
                     </ul>
                 </div>
@@ -66,11 +66,9 @@
                     <br/>
                     <div class="log-frame col flex-lg-column">
                         <div class="log-view flex-grow-0">
-                            
-                            @foreach (var line in ViewModel!.Entries.ToArray())
-                            {
-                                <div><small>@line</small></div>
-                            }
+                            <Virtualize TItem="string" Items="@ViewModel!.Entries">
+                                <div><small>@context</small></div>
+                            </Virtualize>
                         </div>
                     </Div>
                     <br/>

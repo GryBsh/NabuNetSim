@@ -20,8 +20,8 @@ public abstract class NabuBase
 
     protected virtual string LogMessage(string message)
     {
-        var header = string.IsNullOrWhiteSpace(Label) ? string.Empty : $"[{Label}]";
-        return $"{header}:{message}";
+        var header = string.IsNullOrWhiteSpace(Label) ? string.Empty : $"[{Label}]: ";
+        return $"{header}{message}";
     }
 
     protected void Log(string message) => Task.Run(() => Logger.Write(LogMessage(message)));

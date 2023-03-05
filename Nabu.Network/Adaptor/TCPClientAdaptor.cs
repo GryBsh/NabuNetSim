@@ -28,6 +28,7 @@ public class TCPClientAdaptor
         AdaptorSettings settings, 
         CancellationToken stopping
     ){
+        var tcpSettings = (TCPAdaptorSettings)settings;
         var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
         
         //socket.LingerState = new LingerOption(false, 0);
@@ -42,7 +43,7 @@ public class TCPClientAdaptor
         };
         
         while (stopping.IsCancellationRequested is false) {
-            var socket = NabuLib.Socket();
+            var socket = NabuLib.Socket(true, tcpSettings.SendBufferSize, tcpSettings.ReceiveBufferSize);
             try {
                 socket.Connect(hostname, port);
             } catch (Exception ex)
@@ -59,7 +60,8 @@ public class TCPClientAdaptor
                      serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
-                     stream
+                     stream,
+                     $"{socket.RemoteEndPoint}"
                 );
                 
                 await ClientListen(logger, adaptor, socket, stream, stopping);

@@ -1,5 +1,6 @@
 ﻿using Nabu.Services;
 using System;
+using System.Net;
 using System.Security.Cryptography;
 using System.Text;
 using System.Xml.Linq;
@@ -11,20 +12,14 @@ public class CachingHttpClient : IHttpCache
     HttpClient Http { get; }
     IConsole Logger { get; }
     
-    protected string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
+    protected static string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
     protected FileCache MemoryCache { get; }
     public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache)
     {
         Http = http;
         Logger = logger;
         MemoryCache = cache;
-        Task.Run(EnsureCacheFolder);
-    }
-
-    void EnsureCacheFolder()
-    {
-        if (Directory.Exists(CacheFolder) is false)
-            Directory.CreateDirectory(CacheFolder);
+        Task.Run(() => NabuLib.EnsureFolder(CacheFolder));
     }
 
     public async Task<HttpResponseMessage> GetHead(string uri)
@@ -35,32 +30,32 @@ public class CachingHttpClient : IHttpCache
         }
         catch
         {
-            return new HttpResponseMessage(System.Net.HttpStatusCode.NotFound);
+            return new HttpResponseMessage(HttpStatusCode.NotFound);
         }
     }
 
-    public async Task<(bool, bool, bool)> CanGet(string uri, string? path = null)
+    public async Task<(bool, bool, bool, DateTime)> GetUriStatus(string uri, string? path = null)
     {
-        path ??= NabuLib.SafeFileName(uri);
+        path ??= Path.Join(CacheFolder, NabuLib.SafeFileName(uri));
         var pathExists = File.Exists(path);
         var head = await GetHead(uri);
+        var modified = head.Content.Headers.LastModified;
         if (!pathExists)
         {
             if (!head.IsSuccessStatusCode)
             {
-                return (false, false, false); //No download, not found, no local
+                return (false, false, false, DateTime.Now); //No download, not found, no local
             }
-            return (true, true, false); //Download, Found, None
+            return (true, true, false, DateTime.MinValue); //Download, Found, None
         }
 
-        var modified = head.Content.Headers.LastModified;
-        var localModified = await Task.Run(() => File.GetLastWriteTimeUtc(path));
+        var lastCached = MemoryCache.LastChange(path);
 
-        if (modified > localModified)
+        if (modified > lastCached)
         {
-            return (true, true, true);
+            return (true, true, true, DateTime.MinValue);
         }
-        return (false, true, true);
+        return (false, true, true, lastCached);
     }
 
     public async Task<byte[]> GetBytes(string uri)
@@ -69,7 +64,7 @@ public class CachingHttpClient : IHttpCache
         var path = Path.Join(CacheFolder, safeName);
         var name = Path.GetFileName(uri);
 
-        var (shouldDownload, found, local) = await CanGet(uri, path);
+        var (shouldDownload, found, local, last) = await GetUriStatus(uri, path);
 
         if (!shouldDownload && !found && !local)
             return Array.Empty<byte>();
@@ -79,24 +74,20 @@ public class CachingHttpClient : IHttpCache
             Logger.Write($"Downloading {uri}");
             var bytes = await Http.GetByteArrayAsync(uri);
 
-            Logger.Write($"Writing {bytes.Length} bytes to {CacheFolder}\\{name}");
+            Logger.Write($"Writing {bytes.Length} bytes to {name}");
             try
             {
-                await File.WriteAllBytesAsync(path, bytes);
-                MemoryCache.Cache(path, bytes);
+                MemoryCache.CacheFile(path, bytes);
             }
             catch
             {
                 Logger.WriteWarning("Caching failed, please try again later");
             }
-
             return bytes;
         }
 
         Logger.Write($"Reading {name} from cache");
-
-        return await MemoryCache.CacheFile(Logger, path);
-        
+        return await MemoryCache.GetOrCacheFile(path);
     }
 
     
@@ -106,7 +97,7 @@ public class CachingHttpClient : IHttpCache
         var safeName = NabuLib.SafeFileName(uri);
         var path = Path.Join(CacheFolder, safeName);
         var name = Path.GetFileName(uri);
-        var (shouldDownload, found, local) = await CanGet(uri, path);
+        var (shouldDownload, found, local, last) = await GetUriStatus(uri, path);
 
         if (!shouldDownload && !found && !local) return string.Empty;
 
@@ -115,11 +106,11 @@ public class CachingHttpClient : IHttpCache
             Logger.Write($"Downloading {uri}");
             var str = await Http.GetStringAsync(uri);
 
-            Logger.Write($"Writing {str.Length} characters to {CacheFolder}\\{name}");
+            Logger.Write($"Writing {str.Length} characters to {name} in cache");
             try
             {
-                await File.WriteAllTextAsync(path, str);
-                MemoryCache.Cache(path, str);
+                
+                MemoryCache.CacheString(path, str);
             }
             catch
             {
@@ -128,8 +119,9 @@ public class CachingHttpClient : IHttpCache
             
             return str;
         }
-
-        return await MemoryCache.CacheFileText(Logger, path);
+        
+        Logger.Write($"Reading {name} from cache");
+        return await MemoryCache.GetOrCacheString(path);
 
     }
 

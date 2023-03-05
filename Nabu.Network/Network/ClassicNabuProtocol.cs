@@ -12,6 +12,7 @@ public class ClassicNabuProtocol : Protocol
     public override byte Version => 0x84;
     public short Channel { get; set; }
     public bool ChannelKnown => Channel is > 0 and < 0x100;
+    DateTime? started = null;
 
     AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 
@@ -80,6 +81,25 @@ public class ClassicNabuProtocol : Protocol
         }
     }
 
+    void SetStatus()
+    {
+        byte[] status = Recv(2);
+        switch (status[0])
+        {
+            case 0x0F:
+                Log("NPC: Running");
+                break;
+            case 0x1F:
+                Log("NPC: Loading");
+                break;
+            default:
+                Log($"NPC: Status: {Format(status[0])}");
+                break;
+        }
+        Log($"NA: {nameof(StateMessage.Confirmed)}");
+        Confirmed();
+    }
+
     /// <summary>
     ///  Handles the Channel Change Message - 0x85
     /// </summary>
@@ -123,13 +143,13 @@ public class ClassicNabuProtocol : Protocol
             return;
         }
 
-        // Anything packet except the time packet...
-        if (pak is 1 && segment is 0 && started is null) 
-            started = DateTime.Now;
-        // RACERS START YOUR ENGINES!
-
         // Network Emulator
         var (type, segmentData) = await Network.Request(Settings, pak);
+
+        // Anything packet except the time packet...
+        if (pak is 1 && segment is 0 && started is null)
+            started = DateTime.Now;
+        // RACERS START YOUR ENGINES!
 
         if (type is ImageType.None)
         {
@@ -148,6 +168,9 @@ public class ClassicNabuProtocol : Protocol
         if (payload.Length == 0) Unauthorized();
         else SendPacket(pak, payload, last: last);
     }
+    #endregion
+
+    #region NabuNet Packets
 
     /// <Summary>
     ///     Send the time packet to the device - segment: 00 pak: 7FFFFF
@@ -171,9 +194,7 @@ public class ClassicNabuProtocol : Protocol
         return payload;
     }
 
-    #endregion
 
-    #region NabuNet Packets
 
     /// <summary>
     ///     Escapes the Escape bytes in the packet with Escape.
@@ -192,7 +213,7 @@ public class ClassicNabuProtocol : Protocol
         }
     }
 
-    DateTime? started = null;
+    
 
     /// <summary>
     ///     Sends a packet to the device
@@ -261,21 +282,7 @@ public class ClassicNabuProtocol : Protocol
             case Message.SetStatus:
                 Ack();
                 Log($"NPC: {nameof(Message.SetStatus)}, NA: {nameof(Message.ACK)}");
-                byte[] status = Recv(2);
-                switch (status[0])
-                {
-                    case 0x0F:
-                        Log("NPC: HCCA Idle");
-                        break;
-                    case 0x1F:
-                        Log("NPC: HCCA Transfer");
-                        break;
-                    default:
-                        Log($"NPC: Status: {Format(status[0])}");
-                        break;
-                }
-                Log($"NA: {nameof(StateMessage.Confirmed)}");
-                Confirmed();
+                SetStatus();
                 break;
             case Message.GetStatus:
                 Ack();

@@ -37,3 +37,8 @@ public enum ServiceShould
     Restart,
     Stop
 }
+
+public interface IEntity
+{
+    Guid Id { get; }
+}

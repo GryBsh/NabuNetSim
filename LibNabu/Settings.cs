@@ -12,5 +12,12 @@ public class Settings {
 
     public List<string> Flags { get; set; } = new();
     public Dictionary<string, object> Options { get; set; } = new();
+
+    public int MaxUIEntryAgeMinutes { get; set; } = 30;
+    public int MaxLogEntryAgeDays { get; set; } = 5;
+    public int LogCleanupIntervalHours { get; set; } = 1;
+
+    public string CacheDatabasePath { get; set; } = "cache.db";
+    public string DatabasePath { get; set; } = "data.db";
 }
 

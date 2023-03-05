@@ -4,7 +4,6 @@ using DynamicData;
 using DynamicData.Binding;
 using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.Hosting;
-using Nabu.NetSim.UI;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.IO.Ports;
@@ -14,70 +13,101 @@ using System.Reactive.Linq;
 using System.Xml;
 using static System.Net.WebRequestMethods;
 using Nabu.Network;
+using LiteDB;
+using LiteDb.Extensions.Caching;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
-
+public record TickerItem(string Title, string Link);
 
 public class HomeViewModel : ReactiveObject
 {
     public Settings Settings { get; }
     NabuNetwork Sources { get; }
-    public IEnumerable<string> Entries { get; set; }
-
+    public ICollection<string> Entries { get; private set; } = new List<string>();
     ISimulation? Simulation { get; }
-    
+    IRepository Repository { get; }
+    IMultiLevelCache Cache { get; }
+
+    const string FeedUrl = "https://www.nabunetwork.com/feed/";
 
     public HomeViewModel(
         Settings settings, 
         NabuNetwork sources, 
-        ISimulation simulation
+        ISimulation simulation,
+        IRepository repository,
+        IMultiLevelCache cache
     )
     {
+        Cache = cache;
         Settings = settings;
         Sources = sources;
         Simulation = simulation;
+        Repository = repository;
         Menu = new(this, Sources);
-
-        var sort = SortExpressionComparer<LogEntry>.Descending(e => e.Timestamp);
-        var throttle = TimeSpan.FromSeconds(1);
 
         SourceNames = SourceFolders.Select(s => s.Name).ToArray();
 
-        AppLog.LogEntries
-            .Connect()
-            .ObserveOn(RxApp.TaskpoolScheduler)
-            .Sort(sort)
-            .Bind(out var log)
-            .Throttle(TimeSpan.FromSeconds(5))
-            .SubscribeOn(RxApp.TaskpoolScheduler)
-            .Subscribe(_ => this.RaisePropertyChanged(nameof(Entries)));
-
-        Entries = log.Where(e => e.Timestamp > DateTime.Now.AddMinutes(-AppLog.Interval))
-                     .Select(e => $"{e.Timestamp:yyyy-MM-dd | HH:mm:ss.ff} | {e.Message}");
+        RefreshLog();
         
-        Task.Run(async () => Headlines = await GetHeadlines());
-        Observable.Interval(TimeSpan.FromMinutes(30), ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => {
-                      Headlines = await GetHeadlines();
-                      
-                  });
+        Observable.Interval(TimeSpan.FromSeconds(30), ThreadPoolScheduler.Instance)
+            .Subscribe(_ => {
+                RefreshLog();
+                this.RaisePropertyChanged(nameof(Entries));
+            });
+        Headlines = Array.Empty<TickerItem>();
+        
+        Task.Run(GetHeadlines);
+           
+        
+        Observable.Interval(TimeSpan.FromMinutes(1), ThreadPoolScheduler.Instance)
+                  .Subscribe(async _ => await GetHeadlines());
     }
 
-    public IEnumerable<(string, string)> Headlines { get; set; } = Array.Empty<(string, string)>();
-
-    public async Task<IEnumerable<(string,string)>> GetHeadlines()
+    void RefreshLog()
     {
-        var url = "https://www.nabunetwork.com/feed/";
-        try
-        {
-            var feed = await FeedReader.ReadAsync(url);
-            return feed.Items.Select(item => (item.Title, item.Link)).ToArray();
-        }
-        catch
-        {
-            return Array.Empty<(string, string)>();
-        }
+        var now = DateTime.Now;
+        var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
+        
+        Entries = 
+            Repository.Collection<LogEntry>()
+            .Find(e => e.Timestamp > cutoff)
+            .OrderByDescending(e => e.Timestamp)
+            .Select(
+                e => $"{e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} {e.Name} {e.Message}"
+            ).ToList();
+    }
+
+    public ICollection<TickerItem> Headlines { get; set; }
+
+    static DateTime HeadlinesCached { get; set; }
+    public async Task GetHeadlines()
+    {
+        Headlines = (
+            (await Cache.GetOrSetAsync(
+                FeedUrl,
+                async cancel =>
+                {
+                    try
+                    {
+                        var feed = await FeedReader.ReadAsync(FeedUrl);
+                        var items = feed.Items.Take(4).Select(i => new TickerItem(i.Title, i.Link));
+                        return items;
+                    }
+                    catch
+                    {
+                        return Array.Empty<TickerItem>();
+                    }
+                },
+                new() { SlidingExpiration = TimeSpan.FromMinutes(30) },
+                new() { SlidingExpiration = TimeSpan.FromMinutes(30) }
+            )) ?? Array.Empty<TickerItem>()
+        ).ToList();
+
+        //this.RaisePropertyChanged(nameof(Headlines));
+
     }
 
     public MenuViewModel Menu { get; set; } 
@@ -216,3 +246,7 @@ public class HomeViewModel : ReactiveObject
 
 }
 
+internal class DistributedCacheOptions : DistributedCacheEntryOptions
+{
+    public TimeSpan SlidingExpiration { get; set; }
+}

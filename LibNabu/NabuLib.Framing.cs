@@ -21,6 +21,7 @@ public static partial class NabuLib
         socket.SendBufferSize = sBufferSize;
         socket.ReceiveBufferSize = rBufferSize;
         socket.LingerState = new LingerOption(false, 0);
+        //socket.DualMode = true;
         return socket;
     }
 }

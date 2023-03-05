@@ -24,52 +24,33 @@ public class PythonProtocol : Protocol
     public override byte[] Commands { get; }
     public override byte Version { get; } = 0x01;
 
-    class PyProto : Protocol
-    {
-        public PyProto(IConsole logger) : base(logger)
-        {
-        }
-
-        public override byte Version { get; } = 0x00;
-
-        public override byte[] Commands => Array.Empty<byte>();
-
-        public override Task Handle(byte unhandled, CancellationToken cancel)
-        {
-            return Task.CompletedTask;
-        }
-    }
 
     public override async Task Handle(byte unhandled, CancellationToken cancel)
     {
-        var p = new PyProto(Logger);
-        p.Attach(Settings, Stream);
-        string source = await File.ReadAllTextAsync(Protocol.Path);
+        var proxy = new ProxyProtocol(Logger);
+        proxy.Attach(Settings, Stream);
+        string source = await File.ReadAllTextAsync(Protocol.Path, cancel);
         await Task.Run(() =>
         {
-            using (var state = Py.GIL())
+            using var state = Py.GIL();
+            using PyModule scope = Py.CreateScope();
+            try
             {
-                using (PyModule scope = Py.CreateScope())
-                {
-                    try
-                    {
-                        scope.Set("incoming", unhandled.ToPython());
-                        scope.Set("adaptor", p.ToPython());
-                        scope.Set("logger", Logger.ToPython());
-                        scope.Exec(source);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.WriteError(ex.Message, ex);
-                    }
-                }
+                scope.Set("incoming", unhandled.ToPython());
+                scope.Set("adaptor", proxy.ToPython());
+                scope.Set("logger", Logger.ToPython());
+                scope.Exec(source);
             }
-            
+            catch (Exception ex)
+            {
+                Logger.WriteError(ex.Message, ex);
+            }
+
         }, cancel);
     }
 
   
-
+    /*
     protected static async Task EnsurePython(IConsole logger, string pythonLib)
     {
         Installer.LogMessage += logger.Write;
@@ -80,6 +61,7 @@ public class PythonProtocol : Protocol
         if (!pip_installed) await Installer.InstallPip();
         Runtime.PythonDLL = Path.Join(Installer.EmbeddedPythonHome, pythonLib);
     }
+    */
 
     public static void Startup(IConsole logger)
     {

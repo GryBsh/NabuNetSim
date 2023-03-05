@@ -8,9 +8,9 @@ namespace Nabu.Adaptor;
 /// <summary>
 /// The emulated adaptor, wrapping the actual communication Stream to the NABU PC
 /// </summary>
-public class EmulatedAdaptor : NabuService
+public class EmulatedAdaptor : NabuBase
 {
-    //readonly AdaptorSettings Settings;
+    readonly AdaptorSettings Settings;
     readonly Stream Stream;
     readonly BinaryReader Reader;
     readonly ClassicNabuProtocol NabuNet;
@@ -22,19 +22,19 @@ public class EmulatedAdaptor : NabuService
         ClassicNabuProtocol nabuNet,
         IEnumerable<IProtocol> protocols,
         IConsole logger,
-        Stream stream
+        Stream stream,
+        string? label = null
        
-    ) : base(logger, settings)
+    ) : base(logger, label)
     {
-        base.Settings = settings;
+        Settings = settings;
         NabuNet = nabuNet;
         Protocols = protocols;
-
         Stream = stream;
         Reader = new BinaryReader(stream);
-        NabuNet.Attach(base.Settings, Stream);
+        NabuNet.Attach(Settings, Stream);
         foreach (var protocol in Protocols)
-            protocol.Attach(base.Settings, Stream);
+            protocol.Attach(Settings, Stream);
     }
 
     public bool IsRunning { get; protected set; }

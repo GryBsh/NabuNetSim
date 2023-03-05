@@ -30,7 +30,6 @@ builder.Services.AddLogging(
 builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton(settings.Sources);
 builder.Services.AddHttpClient();
-builder.Services.AddSingleton<AppLog>();
 builder.Services.AddTransient<MainLayoutViewModel>();
 builder.Services.AddTransient<HomeViewModel>();
 Simulation.Register(builder.Services, settings);

@@ -10,6 +10,7 @@ using Python.Runtime;
 using Python.Included;
 using Nabu.Services;
 using NLog;
+using LiteDb.Extensions.Caching;
 
 namespace Nabu;
 
@@ -106,9 +107,12 @@ public class Simulation : BackgroundService, ISimulation
                         var token = Cancel[index].Token;
                         services[index] = settings.Type switch
                         {
-                            AdaptorType.Serial => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
-                            AdaptorType.TCP when ((TCPAdaptorSettings)settings).Client => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, settings, token)),
-                            AdaptorType.TCP => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, token)),
+                            AdaptorType.Serial 
+                                => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
+                            AdaptorType.TCP when settings is TCPAdaptorSettings tcp && tcp.Client 
+                                => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, settings, token)),
+                            AdaptorType.TCP 
+                                => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, token)),
                             _ => throw new NotImplementedException()
                         };
                         settings.Running = true;
@@ -130,6 +134,14 @@ public class Simulation : BackgroundService, ISimulation
         services.AddSingleton<NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
                 .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
+                .AddSingleton<IRepository, LiteDatabaseRepository>()
+                .AddLiteDbCache(
+                    options =>
+                    {
+                        options.Connection = LiteDB.ConnectionType.Shared;
+                        options.CachePath = settings.CacheDatabasePath;
+                    }
+                )
                 .AddSingleton<FileCache>();
 
         if (settings.Flags.Contains(Flags.EnablePython))
@@ -155,7 +167,8 @@ public class Simulation : BackgroundService, ISimulation
                 Runtime.PythonDLL = hits.OrderDescending().FirstOrDefault();
                 if (Runtime.PythonDLL != null)
                 {
-                    foreach (var proto in settings.Protocols)
+                    var pluginProtocols = settings.Protocols.Where(p => p.Type.ToLower() == ProtocolPluginTypes.Python.ToLower());
+                    foreach (var proto in pluginProtocols)
                     {
                         services.AddTransient<IProtocol>(
                             sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
@@ -167,6 +180,17 @@ public class Simulation : BackgroundService, ISimulation
             {
                 Console.WriteLine("Cannot find Python, disabling.");
                 settings.Flags.Remove(Flags.EnablePython);
+            }
+        }
+
+        if (settings.Flags.Contains(Flags.EnableJavaScript))
+        {
+            var pluginProtocols = settings.Protocols.Where(p => p.Type.ToLower() == ProtocolPluginTypes.JavaScript.ToLower());
+            foreach (var proto in pluginProtocols)
+            {
+                services.AddTransient<IProtocol>(
+                    sp => new JavaScriptProtocol(sp.GetService<IConsole<JavaScriptProtocol>>()!, proto)
+                );
             }
         }
 

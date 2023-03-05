@@ -16,7 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="..\Nabu.NetSim\JavaScriptProtocol.cs" Link="JavaScriptProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\MicrosoftExtensionsLoggingConsole.cs" Link="MicrosoftExtensionsLoggingConsole.cs" />
+    <Compile Include="..\Nabu.NetSim\ProxyProtocol.cs" Link="ProxyProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\PythonProtocol.cs" Link="PythonProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\Simulation.cs" Link="Simulation.cs" />
   </ItemGroup>
@@ -28,18 +30,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazorise" Version="1.2.0" />
-    <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.0" />
-    <PackageReference Include="Blazorise.Components" Version="1.2.0" />
-    <PackageReference Include="Blazorise.DataGrid" Version="1.2.0" />
-    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.0" />
-    <PackageReference Include="Blazorise.LoadingIndicator" Version="1.2.0" />
-    <PackageReference Include="Blazorise.RichTextEdit" Version="1.2.0" />
-    <PackageReference Include="Blazorise.Sidebar" Version="1.2.0" />
+    <PackageReference Include="Blazorise" Version="1.2.1" />
+    <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.1" />
+    <PackageReference Include="Blazorise.Components" Version="1.2.1" />
+    <PackageReference Include="Blazorise.DataGrid" Version="1.2.1" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.1" />
+    <PackageReference Include="Blazorise.LoadingIndicator" Version="1.2.1" />
+    <PackageReference Include="Blazorise.RichTextEdit" Version="1.2.1" />
+    <PackageReference Include="Blazorise.Sidebar" Version="1.2.1" />
+    <PackageReference Include="Jint" Version="3.0.0-beta-2047" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.2" />
-    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.1" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
     <PackageReference Include="Python.Included" Version="3.11.1" />
-    <PackageReference Include="ReactiveUI.Blazor" Version="18.4.20" />
+    <PackageReference Include="ReactiveUI.Blazor" Version="18.4.22" />
     <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="14.6.8" />
   </ItemGroup>
 

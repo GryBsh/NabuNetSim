@@ -10,8 +10,6 @@ namespace Nabu.Adaptor;
 
 public class TCPAdaptor
 {
-
-
     private TCPAdaptor() { }
 
     static void ServerListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
@@ -34,9 +32,9 @@ public class TCPAdaptor
         AdaptorSettings settings, 
         CancellationToken stopping
     ){
+        var tcpSettings = (TCPAdaptorSettings)settings;
         var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
-        var socket = NabuLib.Socket();
-        //socket.LingerState = new LingerOption(false, 0);
+        var socket = NabuLib.Socket(true, tcpSettings.SendBufferSize, tcpSettings.ReceiveBufferSize);
 
         if (!int.TryParse(settings.Port, out int port))
         {
@@ -66,7 +64,8 @@ public class TCPAdaptor
                      serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
-                     stream
+                     stream,
+                     $"{socket.RemoteEndPoint}"
                 );
                 
                 ServerListen(logger, adaptor, incoming, stream, stopping);

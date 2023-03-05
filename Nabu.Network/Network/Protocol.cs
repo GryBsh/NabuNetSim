@@ -182,8 +182,6 @@ public abstract class Protocol : NabuService, IProtocol
         Send(buffer);
     }
 
-
-
     public void SendFramed(byte header, params IEnumerable<byte>[] buffer)
     {
         var head = new byte[] { header };
@@ -222,7 +220,7 @@ public abstract class Protocol : NabuService, IProtocol
         ) return false;
 
         Stream = stream;
-        base.Settings = settings;
+        Settings = settings;
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         return true;
@@ -234,9 +232,7 @@ public abstract class Protocol : NabuService, IProtocol
     { 
         try
         {
-            
             await Handle(incoming, cancel);
-            
             return true;
         }
         catch (TimeoutException) {

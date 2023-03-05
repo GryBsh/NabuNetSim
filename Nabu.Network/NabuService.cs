@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.Services;
+using System.Collections.Concurrent;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
 
@@ -9,7 +10,7 @@ public abstract class NabuService : NabuBase
 {
   
     protected AdaptorSettings Settings { get; set; }
-    public NabuService(IConsole logger, AdaptorSettings settings) : base(logger)
+    public NabuService(IConsole logger, AdaptorSettings settings, string? label = null) : base(logger, label)
     {
         
         Settings = settings;
@@ -21,28 +22,7 @@ public abstract class NabuService : NabuBase
         return $"{Settings.Type}:{Settings.Port}:{message}";
     }
 
-    
-
 }
 
 
-public class PeriodicBackgroundWorker
-{
-    List<IDisposable> ScheduledTasks { get; } = new();
 
-    public int ScheduleTask(TimeSpan period, Action action)
-    {
-        var index = ScheduledTasks.Count;
-        ScheduledTasks.Add(
-            Observable.Interval(period, ThreadPoolScheduler.Instance).Subscribe(_ => action())
-        );
-        return index;
-    }
-
-    public void EndSchedule(int index) 
-    {
-        ScheduledTasks[index].Dispose();
-        ScheduledTasks.RemoveAt(index);
-    }
-
-}

@@ -25,6 +25,8 @@ public record TCPAdaptorSettings : AdaptorSettings
 {
     public override AdaptorType Type => AdaptorType.TCP;
     public bool Client { get; set; } = false;
+    public int ReceiveBufferSize { get; set; } = 8;
+    public int SendBufferSize { get; set; } = 8;
 }
 
 public record SerialAdaptorSettings : AdaptorSettings
