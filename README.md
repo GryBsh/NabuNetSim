@@ -2,7 +2,7 @@
 
 ![NABU NetSim](./Assets/ui.png)
 
-This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (MAME),
+This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (Marduk, MAME),
 and can host multiple instances of either. Making it possible to host a NABU Network from one
 Computer. The adaptor emulator is complete in that it handles all known messages from the NABU.
 But it's not guaranteed for any purpose, blah, blah, blah.
@@ -22,17 +22,22 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
-- > RetroNet support, including Cloud CP/M is experimental
 - > NHACP support is experimental.
 - > Python Support is experimental, and probably doesn't work on non-Windows platforms.
-- > The MagicalMysteryPacket confirms the GetStatus message, as documented, is backwards. The adaptor is sending status not asking for it.
+- > Javascript support is experimental.
 - > I'm 100% sure there are more.
 
 ## Systen Requirements
 
+Console:
+
 - OS: Windows, macOS, or Linux
 - CPU: Average x64, arm, or arm64 CPU. (I've tested on a Raspberry Pi 3,4 and it works well.)
-- Memory: 30MB base, 10MB per emulated adaptor, it uses less in my tests.
+- Memory: 100MB base, 10MB per emulated adaptor, it uses less in my tests.
+
+Web:
+
+- Memory: 300mb minimum, 1GB recommended.
 
 Realistically, a Pi 3 can serve a dozen or so adaptors, and a Pi 4 can handle 20+
 A PC can potentially serve hundreds.

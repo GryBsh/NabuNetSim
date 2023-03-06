@@ -33,6 +33,7 @@ jobs:
           mkdir $BIN/Files
           cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
           cp -f README.md $BIN
+          cp -f LICENSE $BIN
           rm -f $BIN/*.pdb
           zip -r nns-linux-$arch.zip $BIN
         done
@@ -47,6 +48,7 @@ jobs:
           mkdir $BIN/Files
           cp -f $CONFIG/appsettings.win.json $BIN/appsettings.json
           cp -f README.md $BIN
+          cp -f LICENSE $BIN
           rm -f $BIN/*.pdb
           zip -r nns-win-$arch.zip $BIN
         done
@@ -59,6 +61,7 @@ jobs:
         mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
+        cp -f LICENSE $BIN
         rm -f $BIN/*.pdb
         zip -r nns-macos.10.10-x64.zip $BIN
 
@@ -69,6 +72,7 @@ jobs:
         mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
+        cp -f LICENSE $BIN
         rm -f $BIN/*.pdb
         zip -r nns-macos.11+-x64.zip $BIN
 
@@ -79,6 +83,7 @@ jobs:
         #mkdir $BIN/Files
         #cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         #cp -f README.md $BIN
+        #cp -f LICENSE $BIN
         #rm -f $BIN/*.pdb
         #zip -r nns-macos-arm64.zip $BIN
     - name: Clear BIN
@@ -94,6 +99,7 @@ jobs:
           mkdir $BIN/Files
           cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
           cp -f README.md $BIN
+          cp -f LICENSE $BIN
           rm -f $BIN/*.pdb
           zip -r nnsweb-linux-$arch.zip $BIN
         done
@@ -108,6 +114,7 @@ jobs:
           mkdir $BIN/Files
           cp -f $CONFIG/appsettings.win.json $BIN/appsettings.json
           cp -f README.md $BIN
+          cp -f LICENSE $BIN
           cp -f $WIN_start $BIN
           rm -f $BIN/*.pdb
           zip -r nnsweb-win-$arch.zip $BIN
@@ -121,6 +128,7 @@ jobs:
         mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
+        cp -f LICENSE $BIN
         rm -f $BIN/*.pdb
         zip -r nnsweb-macos.10.10-x64.zip $BIN
 
@@ -131,6 +139,7 @@ jobs:
         mkdir $BIN/Files
         cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         cp -f README.md $BIN
+        cp -f LICENSE $BIN
         rm -f $BIN/*.pdb
         zip -r nnsweb-macos.11+-x64.zip $BIN
 
