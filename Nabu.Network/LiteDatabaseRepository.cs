@@ -10,11 +10,13 @@ public class LiteDatabaseRepository : IRepository
 
     public LiteDatabaseRepository(Settings settings)
     {
-        var cs = new ConnectionString();
-        cs.Upgrade = true;
-        cs.Filename = settings.DatabasePath; ;
+        if (Database is null) {
+            var cs = new ConnectionString();
+            cs.Upgrade = true;
+            cs.Filename = settings.DatabasePath;
+            Database ??= new LiteDatabase(cs);
+        }
 
-        Database ??= new LiteDatabase(cs);
         Database.Mapper.Entity<IEntity>().Id(e => e.Id);
     }
 

@@ -82,7 +82,7 @@ public class HomeViewModel : ReactiveObject
 
     public ICollection<TickerItem> Headlines { get; set; }
 
-    static DateTime HeadlinesCached { get; set; }
+  
     public async Task GetHeadlines()
     {
         Headlines = (
@@ -106,7 +106,7 @@ public class HomeViewModel : ReactiveObject
             )) ?? Array.Empty<TickerItem>()
         ).ToList();
 
-        //this.RaisePropertyChanged(nameof(Headlines));
+        this.RaisePropertyChanged(nameof(Headlines));
 
     }
 
@@ -246,7 +246,3 @@ public class HomeViewModel : ReactiveObject
 
 }
 
-internal class DistributedCacheOptions : DistributedCacheEntryOptions
-{
-    public TimeSpan SlidingExpiration { get; set; }
-}

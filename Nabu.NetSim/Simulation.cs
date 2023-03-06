@@ -134,7 +134,7 @@ public class Simulation : BackgroundService, ISimulation
         services.AddSingleton<NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
                 .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
-                .AddSingleton<IRepository, LiteDatabaseRepository>()
+                .AddTransient<IRepository, LiteDatabaseRepository>()
                 .AddLiteDbCache(
                     options =>
                     {

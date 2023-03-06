@@ -36,6 +36,17 @@ public class SettingsViewModel : ReactiveObject
                 Settings.Flags.RemoveAll(s => s is Flags.EnablePython);
         }
     }
+    public bool EnableJavaScript
+    {
+        get => Settings.Flags.Contains(Flags.EnableJavaScript);
+        set
+        {
+            if (value)
+                Settings.Flags.Add(Flags.EnableJavaScript);
+            else
+                Settings.Flags.RemoveAll(s => s is Flags.EnableJavaScript);
+        }
+    }
 }
 public class MenuViewModel : ReactiveObject
 {

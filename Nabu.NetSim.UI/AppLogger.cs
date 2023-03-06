@@ -8,6 +8,8 @@ using System;
 
 namespace Nabu.NetSim.UI;
 
+
+
 public class AppLogger : ILogger
 {
     private readonly string Name;
@@ -25,6 +27,8 @@ public class AppLogger : ILogger
         Provider = provider;
         Settings = settings;
         Repository = repository;
+
+        
     }
 
     IRepository Repository { get; }

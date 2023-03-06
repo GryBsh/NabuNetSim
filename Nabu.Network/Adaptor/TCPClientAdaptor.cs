@@ -14,7 +14,7 @@ public class TCPClientAdaptor
         
         logger.Write($"TCP Client to {socket.RemoteEndPoint}");
         try {
-            await adaptor.Listen(stopping);
+            await adaptor.Listen(stopping);           
         } catch (Exception ex) {
             logger.WriteError(ex.Message);
         }

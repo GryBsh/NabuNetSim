@@ -45,6 +45,7 @@ public class EmulatedAdaptor : NabuBase
     {
         IsRunning = true;
         Log("Waiting for NABU");
+        
         while (cancel.IsCancellationRequested is false)
         {
             try
