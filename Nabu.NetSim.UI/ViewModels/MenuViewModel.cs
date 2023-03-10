@@ -26,14 +26,20 @@ public class SettingsViewModel : ReactiveObject
         Settings = settings;
     }
 
+    void ToggleFlag(string flag, bool state)
+    {
+        if (state)
+            if (Settings.Flags.Contains(flag) is false)
+                Settings.Flags.Add(flag);
+        else
+            Settings.Flags.RemoveAll(s => s == flag);
+    }
+
     public bool EnablePython
     {
         get => Settings.Flags.Contains(Flags.EnablePython);
         set { 
-            if (value)
-                Settings.Flags.Add(Flags.EnablePython);
-            else
-                Settings.Flags.RemoveAll(s => s is Flags.EnablePython);
+            ToggleFlag(Flags.EnablePython, value);
         }
     }
     public bool EnableJavaScript
@@ -41,16 +47,13 @@ public class SettingsViewModel : ReactiveObject
         get => Settings.Flags.Contains(Flags.EnableJavaScript);
         set
         {
-            if (value)
-                Settings.Flags.Add(Flags.EnableJavaScript);
-            else
-                Settings.Flags.RemoveAll(s => s is Flags.EnableJavaScript);
+            ToggleFlag(Flags.EnableJavaScript, value);
         }
     }
 }
 public class MenuViewModel : ReactiveObject
 {
-    public MenuViewModel(HomeViewModel home, NabuNetwork sources)
+    public MenuViewModel(HomeViewModel home, INabuNetwork sources)
     {
         Home = home;
         Sources = sources;
@@ -59,7 +62,7 @@ public class MenuViewModel : ReactiveObject
 
     public SettingsViewModel Settings { get; }
     public HomeViewModel Home { get;  }
-    public NabuNetwork Sources { get; }
+    public INabuNetwork Sources { get; }
 
     void NotifyChange()
     {

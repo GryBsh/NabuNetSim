@@ -1,7 +1,4 @@
 using Nabu;
-using Nabu.Adaptor;
-using Nabu.Network;
-using Nabu.NetSimWeb;
 using Blazorise;
 using Blazorise.Bootstrap5;
 using Blazorise.Icons.FontAwesome;
@@ -13,6 +10,7 @@ using ReactiveUI;
 using Blazorise.LoadingIndicator;
 using Blazorise.RichTextEdit;
 using NLog.Extensions.Logging;
+using LiteDb.Extensions.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,6 +30,14 @@ builder.Services.AddSingleton(settings.Sources);
 builder.Services.AddHttpClient();
 builder.Services.AddTransient<MainLayoutViewModel>();
 builder.Services.AddTransient<HomeViewModel>();
+builder.Services.AddSingleton<IRepository, LiteDatabaseRepository>();
+builder.Services.AddLiteDbCache(
+                    options =>
+                    {
+                        options.Connection = LiteDB.ConnectionType.Shared;
+                        options.CachePath = settings.CacheDatabasePath;
+                    }
+                );
 Simulation.Register(builder.Services, settings);
 
 builder.Services.AddRazorPages();

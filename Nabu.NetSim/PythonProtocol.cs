@@ -25,7 +25,7 @@ public class PythonProtocol : Protocol
     public override byte Version { get; } = 0x01;
 
 
-    public override async Task Handle(byte unhandled, CancellationToken cancel)
+    protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         var proxy = new ProxyProtocol(Logger);
         proxy.Attach(Settings, Stream);

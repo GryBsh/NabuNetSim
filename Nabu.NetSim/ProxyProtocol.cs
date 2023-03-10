@@ -13,7 +13,7 @@ class ProxyProtocol : Protocol
 
     public override byte[] Commands => Array.Empty<byte>();
 
-    public override Task Handle(byte unhandled, CancellationToken cancel)
+    protected override Task Handle(byte unhandled, CancellationToken cancel)
     {
         return Task.CompletedTask;
     }

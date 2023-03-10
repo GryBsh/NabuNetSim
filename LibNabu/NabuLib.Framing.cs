@@ -16,12 +16,11 @@ public static partial class NabuLib
             SocketType.Stream,
             ProtocolType.Tcp
         );
+                
         socket.NoDelay = noDelay;
-        //socket.DontFragment = true;
         socket.SendBufferSize = sBufferSize;
         socket.ReceiveBufferSize = rBufferSize;
         socket.LingerState = new LingerOption(false, 0);
-        //socket.DualMode = true;
         return socket;
     }
 }

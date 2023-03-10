@@ -1,12 +1,11 @@
 ﻿using LiteDB;
-using Nabu.Services;
 
 namespace Nabu;
 
 public class LiteDatabaseRepository : IRepository
 {
     private bool disposedValue;
-    protected static LiteDatabase Database { get; set; }
+    protected static LiteDatabase? Database { get; set; }
 
     public LiteDatabaseRepository(Settings settings)
     {
@@ -15,14 +14,13 @@ public class LiteDatabaseRepository : IRepository
             cs.Upgrade = true;
             cs.Filename = settings.DatabasePath;
             Database ??= new LiteDatabase(cs);
+            Database.Mapper.Entity<IEntity>().Id(e => e.Id);
         }
-
-        Database.Mapper.Entity<IEntity>().Id(e => e.Id);
     }
 
     public ILiteCollection<T> Collection<T>()
     {
-        return Database.GetCollection<T>();
+        return Database!.GetCollection<T>();
     }
 
     protected virtual void Dispose(bool disposing)
@@ -31,7 +29,7 @@ public class LiteDatabaseRepository : IRepository
         {
             if (disposing)
             {
-                Database.Dispose();
+                Database!.Dispose();
             }
             disposedValue = true;
         }

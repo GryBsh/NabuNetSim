@@ -85,3 +85,5 @@ public record CachedObject(string FilePath, DateTime Timestamp, TimeSpan TTL, by
         GC.SuppressFinalize(this);
     }
 }
+    // DJ: no one wants your code, its crap. And I never got your message, I'm all set helping you out.
+    // P.S Caught you looking. ;p

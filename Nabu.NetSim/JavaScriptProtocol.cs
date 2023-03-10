@@ -18,7 +18,7 @@ public class JavaScriptProtocol : Protocol
 
     public override byte[] Commands { get; }
 
-    public override async Task Handle(byte unhandled, CancellationToken cancel)
+    protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         var proxy = new ProxyProtocol(Logger);
         proxy.Attach(Settings, Stream);

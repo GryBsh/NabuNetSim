@@ -12,10 +12,11 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
         IConsole logger, 
         HttpClient client, 
         AdaptorSettings settings, 
-        FileCache cache
+        FileCache cache,
+        Settings global
     ) : base(logger, settings)
     {
-        Client = new CachingHttpClient(client, Logger, cache);
+        Client = new CachingHttpClient(client, Logger, cache, global);
     }
     public CachingHttpClient Client { get; }
 

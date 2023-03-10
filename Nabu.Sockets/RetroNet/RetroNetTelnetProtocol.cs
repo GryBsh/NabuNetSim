@@ -1,17 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
-using Nabu.Messages;
+﻿using Nabu.Adaptor;
 using Nabu.Services;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading.Channels;
-using System.Threading.Tasks;
 
 
 namespace Nabu.Network.RetroNet;
@@ -71,7 +62,7 @@ public class RetroNetTelnetProtocol : Protocol
     CancellationTokenSource Cancel { get; set; } = new CancellationTokenSource();
     Timer? StartupDetection { get; set; }
 
-    public override async Task Handle(byte unhandled, CancellationToken cancel)
+    protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         WriteLine("Socialist Workers Terminal vL.T.S");
         WriteLine("\"It works for us now comrade!\"");

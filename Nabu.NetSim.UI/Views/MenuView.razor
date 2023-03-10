@@ -81,7 +81,7 @@
         </li>
         <li class="list-group-item @(ViewModel!.Home.HasMultipleImages(ViewModel.Selected) ? "" : "invisible")">
             <Icon Name="IconName.FolderOpen" />
-            Select Program
+            Program
             <Select TValue="string" @bind-SelectedValue="@ViewModel.Selected.Image">
                 <option value=""></option>
                 @foreach (var (displayName, name) in ViewModel!.AvailableImages())

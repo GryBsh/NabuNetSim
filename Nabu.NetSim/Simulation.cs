@@ -1,16 +1,12 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
 using Nabu.Network;
 using Nabu.Network.NHACP;
 using Nabu.Network.RetroNet;
-using System.Text;
 using Python.Runtime;
-using Python.Included;
 using Nabu.Services;
-using NLog;
-using LiteDb.Extensions.Caching;
+//using LiteDb.Extensions.Caching;
 
 namespace Nabu;
 
@@ -125,23 +121,11 @@ public class Simulation : BackgroundService, ISimulation
         }, stopping);
     }
 
-    
-
-    
-
     public static IServiceCollection Register(IServiceCollection services, Settings settings)
     {
-        services.AddSingleton<NabuNetwork>()
+        services.AddSingleton<INabuNetwork, NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
                 .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
-                .AddTransient<IRepository, LiteDatabaseRepository>()
-                .AddLiteDbCache(
-                    options =>
-                    {
-                        options.Connection = LiteDB.ConnectionType.Shared;
-                        options.CachePath = settings.CacheDatabasePath;
-                    }
-                )
                 .AddSingleton<FileCache>();
 
         if (settings.Flags.Contains(Flags.EnablePython))

@@ -40,7 +40,7 @@ public class EmulatedAdaptor : NabuBase
     public bool IsRunning { get; protected set; }
 
     #region Adaptor Loop   
-
+    
     public virtual async Task Listen(CancellationToken cancel)
     {
         IsRunning = true;
@@ -55,19 +55,10 @@ public class EmulatedAdaptor : NabuBase
 
                 // Locate the protocol handler for this command message
                 var handler = Protocols.FirstOrDefault(p => p.ShouldAccept(incoming));
-                if (handler is null) handler = NabuNet;
-                if (handler?.Attached is true) // If the handler has been attached to the adapter
-                {
-                    if (handler is ClassicNabuProtocol)
-                    {
-                        foreach (var p in Protocols) p.Reset();
-                    }
-
-                    if (await handler.Listen(incoming, cancel))
-                        continue; // Then continue to the next command message
-                    else break;
-                }
-
+                handler ??= NabuNet;
+                if (await handler.HandleMessage(incoming, cancel))
+                    continue; // Then continue to the next command message
+                
                 Trace("Adaptor Loop Break");
                 break;
             }

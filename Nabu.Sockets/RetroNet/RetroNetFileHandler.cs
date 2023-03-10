@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.Services;
+﻿using Nabu.Services;
 
 namespace Nabu.Network.RetroNet;
 

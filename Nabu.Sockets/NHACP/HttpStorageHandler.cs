@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+using System.Net;
 using Nabu.Services;
 
 namespace Nabu.Network.NHACP;
@@ -22,11 +22,19 @@ public class HttpStorageHandler : RAMStorageHandler
             }
             else
             {
-                return (false, response.ReasonPhrase ?? string.Empty, (int)response.StatusCode);
+                short errorCode = response.StatusCode switch {
+                    HttpStatusCode.Forbidden or 
+                        HttpStatusCode.Unauthorized => 0x07,
+                    HttpStatusCode.NotFound         => 0x03,
+
+                    _ => 0x00 // Undefined error
+                };
+                return (false, response.ReasonPhrase ?? string.Empty, errorCode);
             }
         }
         catch (Exception ex)
         {
+
             return (false, ex.Message, 500);
         }
     }

@@ -66,8 +66,8 @@
                     <br/>
                     <div class="log-frame col flex-lg-column">
                         <div class="log-view flex-grow-0">
-                            <Virtualize TItem="string" Items="@ViewModel!.Entries">
-                                <div><small>@context</small></div>
+                            <Virtualize TItem="LogEntry" Items="@ViewModel!.Entries">
+                                <div><small>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.ffff") @context.Name @context.Message</small></div>
                             </Virtualize>
                         </div>
                     </Div>

@@ -106,13 +106,9 @@ public abstract class Protocol : NabuService, IProtocol
     /// <param name="start">The start time</param>
     /// <param name="stop">The end time</param>
     /// <param name="length">The number of bytes transfered</param>
-    void TransferRate(DateTime start, DateTime stop, int length)
+    protected void TransferRate(DateTime start, DateTime stop, int length)
     {
-        var byteLength = Settings.Type switch
-        {
-            AdaptorType.Serial => 11, // 8 + 1 + 2
-            _ => 8
-        };
+        var byteLength = 11;
         var elapsed = stop - start;
         var rate = ((byteLength * length) - length) / (elapsed.TotalMilliseconds / 1000) / 1000;
         var unit = "kb/s";
@@ -140,18 +136,18 @@ public abstract class Protocol : NabuService, IProtocol
     {
         Trace($"NA: SEND: {FormatSeparated(bytes)}");
         
-        if (bytes.Length > 128)
-        { 
-            DateTime start = DateTime.Now;
-            Writer.Write(bytes);
+        //if (bytes.Length > 128)
+        //{ 
+        //    DateTime start = DateTime.Now;
+        //    Writer.Write(bytes);
             
-            DateTime end = DateTime.Now;
-            TransferRate(start, end, bytes.Length);
-        }
-        else
-        {
+        //    DateTime end = DateTime.Now;
+        //    TransferRate(start, end, bytes.Length);
+        //}
+        //else
+        //{
             Writer.Write(bytes);
-        }
+        //}
         Writer.Flush();
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
@@ -225,10 +221,9 @@ public abstract class Protocol : NabuService, IProtocol
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         return true;
     }
+    protected abstract Task Handle(byte unhandled, CancellationToken cancel);
 
-    public abstract Task Handle(byte unhandled, CancellationToken cancel);
-
-    public async Task<bool> Listen(byte incoming, CancellationToken cancel)
+    public async Task<bool> HandleMessage(byte incoming, CancellationToken cancel)
     { 
         try
         {

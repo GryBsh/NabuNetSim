@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
-using Nabu.Network.RetroNet;
+﻿using Nabu.Adaptor;
 using Nabu.Services;
 using System.Net.Sockets;
 
@@ -177,7 +175,7 @@ public class NabuNetSocketProtocol : Protocol
     #endregion
 
 
-    public override async Task Handle(byte command, CancellationToken cancel)
+    protected override async Task Handle(byte command, CancellationToken cancel)
     {
         Log($"Start v{Version}");
         Started();

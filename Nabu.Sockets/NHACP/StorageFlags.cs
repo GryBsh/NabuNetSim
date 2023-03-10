@@ -3,8 +3,9 @@
 [Flags]
 public enum StorageFlags : short
 {
-    ReadWrite = 0b_0000_0000_0000_0000, //0
-    ReadOnly = 0b_0000_0000_0000_0001, //1
+    ReadWrite = 0x0000,
+    ReadOnly  = 0x0001, //1
+    Create    = 0x0002, //2
 }
 
 [Flags]

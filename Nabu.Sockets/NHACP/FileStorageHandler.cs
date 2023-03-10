@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Security;
 using Nabu.Services;
 
 namespace Nabu.Network.NHACP;
@@ -24,6 +24,22 @@ public class FileStorageHandler : IStorageHandler
             File = new FileInfo(path);
             var length = File.Exists ? (int)File.Length : 0;
             return Task.FromResult((true, string.Empty, length));
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Task.FromResult((false, ex.Message, 7));
+        }
+        catch (SecurityException ex)
+        {
+            return Task.FromResult((false, ex.Message, 7));
+        }
+        catch (FileNotFoundException ex) 
+        {
+            return Task.FromResult((false, ex.Message, 3));
+        }
+        catch (IOException ex) 
+        {
+            return Task.FromResult((false, ex.Message, 8));
         }
         catch (Exception ex)
         {

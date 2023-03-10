@@ -24,7 +24,7 @@ public class TCPAdaptor
             }
             stream.Dispose();
             logger.Write($"TCP Client from {socket.RemoteEndPoint} disconnected");
-        });
+        }, stopping);
     }
     
     public static async Task Start(

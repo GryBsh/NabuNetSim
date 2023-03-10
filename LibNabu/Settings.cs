@@ -17,6 +17,8 @@ public class Settings {
     public int MaxLogEntryAgeDays { get; set; } = 5;
     public int LogCleanupIntervalHours { get; set; } = 1;
 
+    public bool EnableLocalFileCache { get; set; } = true;
+    
     public string CacheDatabasePath { get; set; } = "cache.db";
     public string DatabasePath { get; set; } = "data.db";
 }

@@ -15,8 +15,10 @@ public partial class RetroNetProtocol : Protocol
     FileDetails[]? CurrentList { get; set; }
     HttpClient HttpClient { get; }
     FileCache FileCache { get; }
-    NabuNetwork NabuNet { get; }
+    INabuNetwork NabuNet { get; }
     Dictionary<string, byte[]> Cache { get; } = new();
+    readonly Settings Global;
+    
     byte NextIndex()
     {
         for (int i = 0x00; i < 0xFF; i++)
@@ -27,16 +29,19 @@ public partial class RetroNetProtocol : Protocol
         return 0xFF;
     }
 
+
     public RetroNetProtocol(
         IConsole<RetroNetProtocol> logger,
         HttpClient httpClient,
-        NabuNetwork nabuNet,
-        FileCache cache
+        INabuNetwork nabuNet,
+        FileCache cache,
+        Settings settings
     ) : base(logger)
     {
         HttpClient = httpClient;
         NabuNet = nabuNet;
         FileCache = cache;
+        Global = settings;
     }
 
     public override byte[] Commands { get; } = new byte[] {
@@ -63,7 +68,7 @@ public partial class RetroNetProtocol : Protocol
 
     public override byte Version { get; } = 0x01;
 
-    public override Task Handle(byte unhandled, CancellationToken cancel)
+    protected override Task Handle(byte unhandled, CancellationToken cancel)
     {
         try
         {
@@ -129,7 +134,7 @@ public partial class RetroNetProtocol : Protocol
     {
         return filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings, FileCache),
+            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings, FileCache, Global),
             _ => new RetroNetFileHandler(Logger, Settings)
         };
     }

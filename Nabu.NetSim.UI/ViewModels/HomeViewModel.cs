@@ -1,22 +1,13 @@
 ﻿using Blazorise;
 using CodeHollow.FeedReader;
-using DynamicData;
-using DynamicData.Binding;
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Hosting;
 using ReactiveUI;
-using System.Collections.Generic;
 using System.IO.Ports;
-using System.Reactive;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
-using System.Xml;
-using static System.Net.WebRequestMethods;
 using Nabu.Network;
 using LiteDB;
 using LiteDb.Extensions.Caching;
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Caching.Distributed;
+using DynamicData;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
@@ -25,8 +16,8 @@ public record TickerItem(string Title, string Link);
 public class HomeViewModel : ReactiveObject
 {
     public Settings Settings { get; }
-    NabuNetwork Sources { get; }
-    public ICollection<string> Entries { get; private set; } = new List<string>();
+    INabuNetwork Sources { get; }
+    public List<LogEntry> Entries { get; private set; } = new List<LogEntry>();
     ISimulation? Simulation { get; }
     IRepository Repository { get; }
     IMultiLevelCache Cache { get; }
@@ -35,7 +26,7 @@ public class HomeViewModel : ReactiveObject
 
     public HomeViewModel(
         Settings settings, 
-        NabuNetwork sources, 
+        INabuNetwork sources, 
         ISimulation simulation,
         IRepository repository,
         IMultiLevelCache cache
@@ -50,40 +41,56 @@ public class HomeViewModel : ReactiveObject
 
         SourceNames = SourceFolders.Select(s => s.Name).ToArray();
 
-        RefreshLog();
-        
-        Observable.Interval(TimeSpan.FromSeconds(30), ThreadPoolScheduler.Instance)
+        PrimeLog();
+        GetHeadlines();
+
+        Observable.Interval(TimeSpan.FromMinutes(1))
             .Subscribe(_ => {
                 RefreshLog();
-                this.RaisePropertyChanged(nameof(Entries));
+                GC.Collect();
             });
-        Headlines = Array.Empty<TickerItem>();
         
-        Task.Run(GetHeadlines);
-           
-        
-        Observable.Interval(TimeSpan.FromMinutes(1), ThreadPoolScheduler.Instance)
-                  .Subscribe(async _ => await GetHeadlines());
+        Observable.Interval(TimeSpan.FromMinutes(10))
+                  .Subscribe(_ => {
+                      GetHeadlines();
+                      GC.Collect();
+                  });
+    }
+    DateTime LastUpdate = DateTime.Now;
+    async void PrimeLog()
+    {
+        await Task.Run(() =>
+        {
+            var now = DateTime.Now;
+            var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
+
+            Entries =
+                Repository.Collection<LogEntry>()
+                .Find(e => e.Timestamp > cutoff)
+                .OrderByDescending(e => e.Timestamp)
+                .ToList();
+            this.RaisePropertyChanged(nameof(Entries));
+            LastUpdate = now;
+        });
     }
 
     void RefreshLog()
     {
         var now = DateTime.Now;
         var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
-        
-        Entries = 
-            Repository.Collection<LogEntry>()
-            .Find(e => e.Timestamp > cutoff)
-            .OrderByDescending(e => e.Timestamp)
-            .Select(
-                e => $"{e.Timestamp:yyyy-MM-dd HH:mm:ss.fff} {e.Name} {e.Message}"
-            ).ToList();
+        var add = Repository.Collection<LogEntry>().Find(e => e.Timestamp > LastUpdate).OrderByDescending(e => e.Timestamp);
+        var remove = Entries.Where(e => e.Timestamp < cutoff);
+        Entries.AddRange(add);
+        Entries.RemoveMany(remove);
+        Entries = Entries.OrderByDescending(e => e.Timestamp).ToList();
+        LastUpdate = now;
+        this.RaisePropertyChanged(nameof(Entries));
     }
 
-    public ICollection<TickerItem> Headlines { get; set; }
+    public ICollection<TickerItem> Headlines { get; set; } = Array.Empty<TickerItem>();
 
   
-    public async Task GetHeadlines()
+    public async void GetHeadlines()
     {
         Headlines = (
             (await Cache.GetOrSetAsync(
@@ -101,8 +108,8 @@ public class HomeViewModel : ReactiveObject
                         return Array.Empty<TickerItem>();
                     }
                 },
-                new() { SlidingExpiration = TimeSpan.FromMinutes(30) },
-                new() { SlidingExpiration = TimeSpan.FromMinutes(30) }
+                new() { AbsoluteExpiration = DateTimeOffset.Now + TimeSpan.FromMinutes(5) },
+                new() { AbsoluteExpiration = DateTimeOffset.Now + TimeSpan.FromMinutes(10) }
             )) ?? Array.Empty<TickerItem>()
         ).ToList();
 
@@ -171,7 +178,7 @@ public class HomeViewModel : ReactiveObject
     {
         if (settings is null or NullAdaptorSettings) return false;
         var programs = Sources.Programs(settings);
-        return programs.Count() > 1 && programs.Count(p => p.Name == "000001") == 0;
+        return programs.Count() > 1 && programs.Count(p => p.Name == Constants.CycleMenuPak) == 0;
     }
 
     public void ToggleAllAdaptors()

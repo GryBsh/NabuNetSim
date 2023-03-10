@@ -27,8 +27,7 @@ public class AppLogProvider : ILoggerProvider
         Repository = repository;
 
         Observable.Interval(
-            TimeSpan.FromHours(Settings.LogCleanupIntervalHours), 
-            ThreadPoolScheduler.Instance
+            TimeSpan.FromHours(Settings.LogCleanupIntervalHours)
         ).Subscribe(_ =>
         {
             var cutoff = DateTime.Now.AddDays(-Settings.MaxLogEntryAgeDays);

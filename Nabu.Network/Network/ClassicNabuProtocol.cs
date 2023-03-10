@@ -7,7 +7,7 @@ namespace Nabu.Network;
 
 public class ClassicNabuProtocol : Protocol
 {
-    NabuNetwork Network { get; }
+    INabuNetwork Network { get; }
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     public override byte Version => 0x84;
     public short Channel { get; set; }
@@ -18,7 +18,8 @@ public class ClassicNabuProtocol : Protocol
 
     public ClassicNabuProtocol(
         IConsole<ClassicNabuProtocol> logger,
-        NabuNetwork network) : base(logger)
+        INabuNetwork network
+    ) : base(logger)
     {
         Network = network;
     }
@@ -138,8 +139,9 @@ public class ClassicNabuProtocol : Protocol
         if (segment == 0x00 &&
             pak == Message.TimePak)
         {
+            var time = TimePacket();
             Log("NPC: What Time it is?");
-            SendPacket(pak,TimePacket(), last: true);
+            SendPacket(pak, time, time.Length, last: true);
             return;
         }
 
@@ -166,7 +168,7 @@ public class ClassicNabuProtocol : Protocol
         };
 
         if (payload.Length == 0) Unauthorized();
-        else SendPacket(pak, payload, last: last);
+        else SendPacket(pak, payload, segmentData.Length, last: last);
     }
     #endregion
 
@@ -218,7 +220,7 @@ public class ClassicNabuProtocol : Protocol
     /// <summary>
     ///     Sends a packet to the device
     /// </summary>
-    void SendPacket(int pak, byte[] buffer, bool last = false)
+    void SendPacket(int pak, byte[] buffer, int totalLength, bool last = false)
     {
         
 
@@ -245,12 +247,10 @@ public class ClassicNabuProtocol : Protocol
         {
             var finished = DateTime.Now;
             Network.UncachePak(base.Settings, pak);
-            GC.Collect();
+            Task.Run(GC.Collect);
             
             if (started is null) return; // Time Packet is not timed.
-
-            var elapsed = finished - started.Value;
-            Log($"Finished in {elapsed.TotalSeconds:0.000}s");
+            TransferRate(started.Value, finished, totalLength);
             started = null;
         }
     }
@@ -266,7 +266,7 @@ public class ClassicNabuProtocol : Protocol
         return true;
     }
 
-    public override async Task Handle(byte incoming, CancellationToken cancel)
+    protected override async Task Handle(byte incoming, CancellationToken cancel)
     {
         switch (incoming)
         {
