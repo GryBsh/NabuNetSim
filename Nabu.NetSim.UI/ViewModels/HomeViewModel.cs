@@ -45,10 +45,10 @@ public class HomeViewModel : ReactiveObject
         GetHeadlines();
 
         Observable.Interval(TimeSpan.FromMinutes(1))
-            .Subscribe(_ => {
-                RefreshLog();
-                GC.Collect();
-            });
+                  .Subscribe(_ => {
+                      RefreshLog();
+                      GC.Collect();
+                  });
         
         Observable.Interval(TimeSpan.FromMinutes(10))
                   .Subscribe(_ => {
@@ -178,7 +178,7 @@ public class HomeViewModel : ReactiveObject
     {
         if (settings is null or NullAdaptorSettings) return false;
         var programs = Sources.Programs(settings);
-        return programs.Count() > 1 && programs.Count(p => p.Name == Constants.CycleMenuPak) == 0;
+        return programs.Count() > 1 && !programs.Any(p => p.Name == Constants.CycleMenuPak);
     }
 
     public void ToggleAllAdaptors()

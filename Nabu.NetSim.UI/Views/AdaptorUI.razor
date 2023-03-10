@@ -5,20 +5,21 @@
 
 
 <div class="main-menu container-fluid">
+    <div Class="row row-divider" />
+    <div class="row">
+        <ul class="news list-group list-group-flush list-group-horizontal-sm">
+            <li class="list-group-item center"><small>NABUNetwork.com News</small></li>
+            <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
+                <li class="list-group-item center"><small><a target="_blank" href="@context?.Link">@context?.Title</a></small></li>
+            </Virtualize>
+            <li class="list-group-item center"><small><a target="_blank" href="https://www.nabunetwork.com">More...</a></small></li>
+        </ul>
+    </div>
+    <div Class="row row-divider" /> 
     <div class="row">
         <div class="col flex-fill center title-col">
             <div class="container-fluid title-box">
-                <div Class="row row-divider" />
-                <div class="row">
-                    <ul class="news list-group list-group-flush list-group-horizontal-sm">
-                        <li class="list-group-item center"><small>NABUNetwork.com News</small></li>
-                        <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
-                            <li class="list-group-item center"><small><a target="_blank" href="@context?.Link">@context?.Title</a></small></li>
-                        </Virtualize>
-                        <li class="list-group-item center"><small><a target="_blank" href="https://www.nabunetwork.com">More...</a></small></li>
-                    </ul>
-                </div>
-                <div Class="row row-divider" /> 
+                
                 
                 <div class="row">
                     <div class="col col-6">
@@ -38,44 +39,45 @@
                    
                 </Div> -->
                   
-                <div class="row row-divider" />
-                <div class="row">
-                    <ul class="center news list-group list-group-flush list-group-horizontal-sm">
-                        <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
-                            <li class="list-group-item">
-                                <large><Icon Name="IconName.Plug"/></large>
-                                @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
-                                <large><Icon Name="IconName.Folder"/></large>
-                                @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")                                
-                            </li>
-                        </Virtualize>
-                        <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
-                            <li class="list-group-item">
-                                <large><Icon Name="IconName.Wifi"/></large>
-                                @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
-                                <large><Icon Name="IconName.Folder"/></large>
-                                @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")                                
-                            </li>
-                        </Virtualize>
-                    </ul>
-                </div>
                 
-                <div class="row row-divider" />
-                
-                <Div Class="row" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
-                    <br/>
-                    <div class="log-frame col flex-lg-column">
-                        <div class="log-view flex-grow-0">
-                            <Virtualize TItem="LogEntry" Items="@ViewModel!.Entries">
-                                <div><small>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.ffff") @context.Name @context.Message</small></div>
-                            </Virtualize>
-                        </div>
-                    </Div>
-                    <br/>
-                </Div>
-                <Div Class="row row-divider" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)"/>
                 
             </div>
         </div>
-    </div>          
+    </div>
+    <div class="row row-divider" />
+    <div class="row">
+        <ul class="center news list-group list-group-flush list-group-horizontal-sm">
+            <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
+                <li class="list-group-item">
+                    <large><Icon Name="IconName.Plug"/></large>
+                    @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                    <large><Icon Name="IconName.Folder"/></large>
+                    @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")                                
+                </li>
+            </Virtualize>
+            <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
+                <li class="list-group-item">
+                    <large><Icon Name="IconName.Wifi"/></large>
+                    @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                    <large><Icon Name="IconName.Folder"/></large>
+                    @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")                                
+                </li>
+            </Virtualize>
+        </ul>
+    </div>
+                
+    <div class="row row-divider" />
+                
+    <Div Class="row" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
+        <br/>
+        <div class="log-frame col flex-lg-column">
+            <div class="log-view flex-grow-0">
+                <Virtualize TItem="LogEntry" Items="@ViewModel!.Entries">
+                    <div><small>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.ffff") @context.Name @context.Message</small></div>
+                </Virtualize>
+            </div>
+        </Div>
+        <br/>
+    </Div>
+    <Div Class="row row-divider" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)"/>
 </div>
