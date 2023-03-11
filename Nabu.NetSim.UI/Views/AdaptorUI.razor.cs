@@ -6,6 +6,7 @@ namespace Nabu.NetSim.UI.Views;
 
 public partial class AdaptorUI : ReactiveComponentBase<HomeViewModel>
 {
+ 
     public AdaptorUI()
     {
         ViewModel = Locator.Current.GetService<HomeViewModel>();

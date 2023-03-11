@@ -13,6 +13,7 @@ namespace Nabu.NetSim.UI.ViewModels;
 
 public record TickerItem(string Title, string Link);
 
+
 public class HomeViewModel : ReactiveObject
 {
     public Settings Settings { get; }
@@ -23,7 +24,6 @@ public class HomeViewModel : ReactiveObject
     IMultiLevelCache Cache { get; }
 
     const string FeedUrl = "https://www.nabunetwork.com/feed/";
-
     public HomeViewModel(
         Settings settings, 
         INabuNetwork sources, 
@@ -38,11 +38,17 @@ public class HomeViewModel : ReactiveObject
         Simulation = simulation;
         Repository = repository;
         Menu = new(this, Sources);
+        
 
         SourceNames = SourceFolders.Select(s => s.Name).ToArray();
-
-        PrimeLog();
-        GetHeadlines();
+        Task.Run(async () =>
+        {
+            PrimeLog();
+            GetHeadlines();
+            await Task.Delay(TimeSpan.FromSeconds(1));
+            Loaded = true;
+            this.RaisePropertyChanged(nameof(Loaded));
+        });
 
         Observable.Interval(TimeSpan.FromMinutes(1))
                   .Subscribe(_ => {
@@ -57,21 +63,20 @@ public class HomeViewModel : ReactiveObject
                   });
     }
     DateTime LastUpdate = DateTime.Now;
-    async void PrimeLog()
-    {
-        await Task.Run(() =>
-        {
-            var now = DateTime.Now;
-            var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
+   
+    public bool Loaded { get; set; } = false;
 
-            Entries =
-                Repository.Collection<LogEntry>()
-                .Find(e => e.Timestamp > cutoff)
-                .OrderByDescending(e => e.Timestamp)
-                .ToList();
-            this.RaisePropertyChanged(nameof(Entries));
-            LastUpdate = now;
-        });
+    void PrimeLog()
+    {    
+        var now = DateTime.Now;
+        var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
+
+        Entries = Repository.Collection<LogEntry>()
+                    .Find(e => e.Timestamp > cutoff)
+                    .OrderByDescending(e => e.Timestamp)
+                    .ToList();
+        this.RaisePropertyChanged(nameof(Entries));
+        LastUpdate = now;
     }
 
     void RefreshLog()
@@ -85,6 +90,7 @@ public class HomeViewModel : ReactiveObject
         Entries = Entries.OrderByDescending(e => e.Timestamp).ToList();
         LastUpdate = now;
         this.RaisePropertyChanged(nameof(Entries));
+        
     }
 
     public ICollection<TickerItem> Headlines { get; set; } = Array.Empty<TickerItem>();

@@ -18,7 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
     <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
-    <PackageReference Include="Python.Included" Version="3.11.1" />
+    <PackageReference Include="Python.Included" Version="3.11.2" />
     <PackageReference Include="System.IO.Ports" Version="7.0.0" />
   </ItemGroup>
 

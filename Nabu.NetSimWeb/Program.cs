@@ -7,8 +7,6 @@ using Nabu.NetSim.UI.ViewModels;
 using Splat;
 using Splat.Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
-using Blazorise.LoadingIndicator;
-using Blazorise.RichTextEdit;
 using NLog.Extensions.Logging;
 using LiteDb.Extensions.Caching;
 
@@ -45,9 +43,7 @@ builder.Services.AddServerSideBlazor();
 builder.Services
     .AddBlazorise(options => {
         options.Immediate = true;
-    }).AddLoadingIndicator()
-    .AddBlazoriseRichTextEdit()
-    .AddBootstrap5Components()
+    }).AddBootstrap5Components()
     .AddBootstrap5Providers()
     .AddFontAwesomeIcons();
 

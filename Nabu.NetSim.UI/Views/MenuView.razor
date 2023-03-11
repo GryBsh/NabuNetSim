@@ -13,6 +13,10 @@
         <li class="list-group-item"><Icon Name="IconName.BookReader" />
             <a href="#" onclick="@(() => ViewModel!.Home.ToggleLog())">@ViewModel.Home.LogButtonText</a>
         </li>
+        <!--<li class="list-group-item">
+            <Icon Name="IconName.Code" />
+            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.CLI))">CLI</a>
+        </li>-->
     </ul>
 </Div>
 
@@ -91,6 +95,15 @@
             </Select>
         </li>
     </ul>
-    
-
 </Div>
+<Div Class="col col-6 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.CLI)>
+    <ul class="menu list-group list-group-flush list-group-sm borders">
+        <li class="list-group-item">
+            <Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
+        </li>
+
+    </ul>
+</Div>
+
+

@@ -36,7 +36,7 @@ body {
 /* Layout */
 
 #page {
-    height: -webkit-fill-available;
+    /*height: -webkit-fill-available;*/
     width: -webkit-fill-available;
     position: relative;
     padding-top: 10px;
@@ -133,7 +133,7 @@ body {
 }
 
 .main-menu > .row {
-    display: flex;
+    /*display: flex;*/
     flex-flow:  row;
     /* border-left: var(--border); */
     /* border-right: var(--border); */

@@ -15,7 +15,8 @@ public enum MenuPage
     Settings,
     AdaptorSettings,
     Features,
-    MAME
+    MAME,
+    CLI
 }
 
 public class SettingsViewModel : ReactiveObject
