@@ -243,11 +243,12 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
 
         var path = source.Path;
+        var cycleFile = false;
         var image = pak switch
         {
 
             > 1 => FormatTriple(pak),
-            1 when Empty(settings.Image) => NabuLib.FormatTriple(1),
+            1 when Empty(settings.Image) => FormatTriple(1),
             1 => settings.Image!,
             _ => null
         };
@@ -255,10 +256,15 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         if (image == null)
             return (ImageType.None, ZeroBytes);
 
-        var prg = SourceCache[source].FirstOrDefault(p => p.Name == image) ??
-                  SourceCache[source].FirstOrDefault();
+        var prg = SourceCache[source].FirstOrDefault(p => p.Name == image);
         //var prg = programs.FirstOrDefault(p => p.Name == image) ?? 
         //          programs.FirstOrDefault();
+
+        if (prg is null && pak > Constants.CycleMenuNumber)
+        {
+            prg = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == image) ??
+                  SourceCache[source].FirstOrDefault();     
+        }
 
         if (prg is null)
             return (ImageType.None, ZeroBytes);
