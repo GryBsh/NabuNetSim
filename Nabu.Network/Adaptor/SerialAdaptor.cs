@@ -55,7 +55,7 @@ public class SerialAdaptor
             catch (Exception ex)
             {
                 logger.WriteWarning($"Serial Adaptor: {ex.Message}");
-                Thread.Sleep(5000);
+                await Task.Delay(5000);
             }
 
         if (serial.IsOpen is false)

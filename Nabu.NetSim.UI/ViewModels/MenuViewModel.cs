@@ -27,29 +27,21 @@ public class SettingsViewModel : ReactiveObject
         Settings = settings;
     }
 
-    void ToggleFlag(string flag, bool state)
+    public bool EnableLocalFileCache
     {
-        if (state)
-            if (Settings.Flags.Contains(flag) is false)
-                Settings.Flags.Add(flag);
-        else
-            Settings.Flags.RemoveAll(s => s == flag);
+        get => Settings.EnableLocalFileCache; 
+        set => Settings.EnableLocalFileCache = value;
     }
 
     public bool EnablePython
     {
-        get => Settings.Flags.Contains(Flags.EnablePython);
-        set { 
-            ToggleFlag(Flags.EnablePython, value);
-        }
+        get => Settings.EnablePython; 
+        set => Settings.EnablePython = value;
     }
     public bool EnableJavaScript
     {
-        get => Settings.Flags.Contains(Flags.EnableJavaScript);
-        set
-        {
-            ToggleFlag(Flags.EnableJavaScript, value);
-        }
+        get => Settings.EnableJavaScript; 
+        set => Settings.EnableJavaScript = value;
     }
 }
 public class MenuViewModel : ReactiveObject

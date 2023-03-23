@@ -1,10 +1,13 @@
-﻿using InvertedTomato.IO;
+﻿//using InvertedTomato.IO;
 using Nabu.Services;
 
 namespace Nabu;
 
 public static partial class NabuLib
 {
+
+    
+
     /// <summary>
     ///    Generates the CRC bytes of a packet
     ///    from the CRC table.
@@ -20,6 +23,8 @@ public static partial class NabuLib
             crc <<= 8;
             crc ^= Constants.CRCTable[b];
         }
+
+        
 
         /*
         var crc = CrcAlgorithm

@@ -54,8 +54,7 @@ public class EmulatedAdaptor : NabuBase
                 byte incoming = Reader.ReadByte();
 
                 // Locate the protocol handler for this command message
-                var handler = Protocols.FirstOrDefault(p => p.ShouldAccept(incoming));
-                handler ??= NabuNet;
+                var handler = Protocols.FirstOrDefault(p => p.ShouldAccept(incoming)) ?? NabuNet;
                 if (await handler.HandleMessage(incoming, cancel))
                     continue; // Then continue to the next command message
                 

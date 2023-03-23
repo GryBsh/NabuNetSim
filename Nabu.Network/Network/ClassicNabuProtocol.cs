@@ -12,7 +12,7 @@ public class ClassicNabuProtocol : Protocol
     public override byte Version => 0x84;
     public short Channel { get; set; }
     public bool ChannelKnown => Channel is > 0 and < 0x100;
-    DateTime? started = null;
+    DateTime? Started = null;
 
     AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 
@@ -74,7 +74,12 @@ public class ClassicNabuProtocol : Protocol
                 break;
             case StatusMessage.AdaptorReady: // <-- NPC Program/DOS Loaded
                 Log($"NPC: Finished? NA: {nameof(Message.Finished)}");
-                Finished();
+                if (Network.Source(Settings).EnableQuirkLoader)
+                {
+                    Log($"EXPLOITED!");
+                    Finished();
+                }
+                else StatusResult(Status.SignalLock);
                 break;
             default:
                 Log($"Unsupported Status: {data:X02}");
@@ -82,16 +87,16 @@ public class ClassicNabuProtocol : Protocol
         }
     }
 
-    void SetStatus()
+    void SetAdaptorMode()
     {
         byte[] status = Recv(2);
         switch (status[0])
         {
             case 0x0F:
-                Log("NPC: Running");
+                Log("NPC: Transfer");
                 break;
             case 0x1F:
-                Log("NPC: Loading");
+                Log("NPC: Stop");
                 break;
             default:
                 Log($"NPC: Status: {Format(status[0])}");
@@ -118,7 +123,10 @@ public class ClassicNabuProtocol : Protocol
         }
         Confirmed();
         Log($"Channel Code: {Channel:X04}");
+
     }
+
+    bool EnableQuirkLoader = false;
 
     /// <summary>
     ///  Handles the Segment Request message - 0x84
@@ -130,10 +138,13 @@ public class ClassicNabuProtocol : Protocol
         int pak = NabuLib.ToInt(Recv(3));
 
         // Anything packet except the time packet...
-        if (pak is 1 && started is null) 
-            started = DateTime.Now;
+        if (pak is not Message.TimePak && Started is null)
+        {
+            Started = DateTime.Now;
+            NabuLib.StartSafeNoGC(65536);
+        }
         // RACERS START YOUR ENGINES!
-
+        //if (pak is 0x191) pak = 0x15C;
         Log($"NPC: Segment: {segment:x04}, PAK: {FormatTriple(pak)}, NA: {nameof(StateMessage.Confirmed)}");
         Confirmed();
         if (segment == 0x00 &&
@@ -147,10 +158,10 @@ public class ClassicNabuProtocol : Protocol
 
         // Network Emulator
         var (type, segmentData) = await Network.Request(Settings, pak);
-
+        
         // Anything packet except the time packet...
-        if (pak is 1 && segment is 0 && started is null)
-            started = DateTime.Now;
+        if (pak is 1 && segment is 0 && Started is null)
+            Started = DateTime.Now;
         // RACERS START YOUR ENGINES!
 
         if (type is ImageType.None)
@@ -162,9 +173,9 @@ public class ClassicNabuProtocol : Protocol
 
         var (last, payload) = type switch
         {
-            ImageType.Raw => NabuLib.SliceFromRaw(Logger, segment, pak, segmentData),
             ImageType.Pak => NabuLib.SliceFromPak(Logger, segment, segmentData),
-            ImageType.EncryptedPak => NabuLib.SliceFromPak(Logger, segment, NabuLib.Unpak(segmentData))
+            ImageType.EncryptedPak => NabuLib.SliceFromPak(Logger, segment, NabuLib.Unpak(segmentData)),
+            _ => NabuLib.SliceFromRaw(Logger, segment, pak, segmentData)
         };
 
         if (payload.Length == 0) Unauthorized();
@@ -215,15 +226,13 @@ public class ClassicNabuProtocol : Protocol
         }
     }
 
-    
+
 
     /// <summary>
     ///     Sends a packet to the device
     /// </summary>
     void SendPacket(int pak, byte[] buffer, int totalLength, bool last = false)
     {
-        
-
         if (buffer.Length > Constants.MaxPacketSize)
         {
             Error("Packet too large");
@@ -246,12 +255,14 @@ public class ClassicNabuProtocol : Protocol
         if (last)
         {
             var finished = DateTime.Now;
+            
             Network.UncachePak(base.Settings, pak);
             Task.Run(GC.Collect);
             
-            if (started is null) return; // Time Packet is not timed.
-            TransferRate(started.Value, finished, totalLength);
-            started = null;
+            if (Started is null) return; // Time Packet is not timed.
+            NabuLib.EndSafeNoGC();
+            TransferRate(Started.Value, finished, totalLength);
+            Started = null;
         }
     }
     #endregion
@@ -282,7 +293,7 @@ public class ClassicNabuProtocol : Protocol
             case Message.SetStatus:
                 Ack();
                 Log($"NPC: {nameof(Message.SetStatus)}, NA: {nameof(Message.ACK)}");
-                SetStatus();
+                SetAdaptorMode();
                 break;
             case Message.GetStatus:
                 Ack();

@@ -41,8 +41,8 @@ body {
     position: relative;
     padding-top: 10px;
     color: var(--color);
-    min-width: 800px;
-    max-width: 900px;
+    min-width: 1000px;
+    max-width: 1000px;
 }
 
 #settings-editor > .flex-column {
@@ -117,7 +117,7 @@ body {
 }
 
 .menu > .list-group-item {
-    border-bottom-width: 4px;
+    border-bottom-width: 0px;
 }
 
 .news > li.list-group-item {

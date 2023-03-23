@@ -9,6 +9,8 @@ using Splat.Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using NLog.Extensions.Logging;
 using LiteDb.Extensions.Caching;
+using Nabu.Network.RetroNet;
+using Nabu.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,8 +28,10 @@ builder.Services.AddLogging(
 builder.Services.AddSingleton(settings);
 builder.Services.AddSingleton(settings.Sources);
 builder.Services.AddHttpClient();
-builder.Services.AddTransient<MainLayoutViewModel>();
-builder.Services.AddTransient<HomeViewModel>();
+builder.Services.AddScoped<MainLayoutViewModel>();
+builder.Services.AddScoped<HomeViewModel>();
+builder.Services.AddScoped<RetroNetChatViewModel>()
+                .AddScoped<IRetroNetChatClient, RetroNetChatClient>();
 builder.Services.AddSingleton<IRepository, LiteDatabaseRepository>();
 builder.Services.AddLiteDbCache(
                     options =>
@@ -36,6 +40,7 @@ builder.Services.AddLiteDbCache(
                         options.CachePath = settings.CacheDatabasePath;
                     }
                 );
+builder.Services.AddSingleton<IJob, LogCleanupJob>();
 Simulation.Register(builder.Services, settings);
 
 builder.Services.AddRazorPages();

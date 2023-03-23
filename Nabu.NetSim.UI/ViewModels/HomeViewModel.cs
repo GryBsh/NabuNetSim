@@ -8,6 +8,7 @@ using Nabu.Network;
 using LiteDB;
 using LiteDb.Extensions.Caching;
 using DynamicData;
+using Nabu.Adaptor;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
@@ -51,16 +52,18 @@ public class HomeViewModel : ReactiveObject
         });
 
         Observable.Interval(TimeSpan.FromMinutes(1))
-                  .Subscribe(_ => {
-                      RefreshLog();
-                      GC.Collect();
-                  });
-        
+                 .Subscribe(_ => {
+                     RefreshLog();
+                     GC.Collect();
+                 });
+
         Observable.Interval(TimeSpan.FromMinutes(10))
                   .Subscribe(_ => {
                       GetHeadlines();
                       GC.Collect();
                   });
+
+
     }
     DateTime LastUpdate = DateTime.Now;
    
@@ -184,7 +187,7 @@ public class HomeViewModel : ReactiveObject
     {
         if (settings is null or NullAdaptorSettings) return false;
         var programs = Sources.Programs(settings);
-        return programs.Count() > 1 && !programs.Any(p => p.Name == Constants.CycleMenuPak);
+        return programs.Count() > 1 && (Sources.Source(settings).EnableQuirkLoader is true || !programs.Any(p => p.Name == Constants.CycleMenuPak));
     }
 
     public void ToggleAllAdaptors()
@@ -220,13 +223,20 @@ public class HomeViewModel : ReactiveObject
   
     public string LogButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
 
-    
+    public string ChatButtonText { get => ChatVisible ? "Hide Chat" : "Show Chat"; }
 
     public bool LogVisible { get; set; } = false;
     public void ToggleLog()
     {
         LogVisible = !LogVisible;
         this.RaisePropertyChanged(nameof(LogVisible));
+    }
+
+    public bool ChatVisible { get; set; } = false;
+    public void ToggleChat()
+    {
+        ChatVisible = !ChatVisible;
+        this.RaisePropertyChanged(nameof(ChatVisible));
     }
 
     public bool SelectorVisible { get; set; } = false;

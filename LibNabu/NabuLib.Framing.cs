@@ -11,16 +11,18 @@ public static partial class NabuLib
 
     public static Socket Socket(bool noDelay = true, int sBufferSize = 8, int rBufferSize = 8)
     {
-        var socket = new Socket(
-            AddressFamily.InterNetwork,
-            SocketType.Stream,
-            ProtocolType.Tcp
-        );
-                
-        socket.NoDelay = noDelay;
-        socket.SendBufferSize = sBufferSize;
-        socket.ReceiveBufferSize = rBufferSize;
-        socket.LingerState = new LingerOption(false, 0);
+        var socket = 
+            new Socket(
+                AddressFamily.InterNetwork,
+                SocketType.Stream,
+                ProtocolType.Tcp
+            )
+            {
+                NoDelay = noDelay,
+                SendBufferSize = sBufferSize,
+                ReceiveBufferSize = rBufferSize,
+                LingerState = new LingerOption(false, 0)
+            };
         return socket;
     }
 }

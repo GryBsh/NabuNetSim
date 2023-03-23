@@ -49,6 +49,7 @@ public class TCPClientAdaptor
             } catch (Exception ex)
             {
                 logger.WriteWarning(ex.Message);
+                await Task.Delay(5000);
                 continue;
             }
             logger.Write($"TCP Client Connected to {hostname}:{port}");

@@ -2,7 +2,6 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Collections.Concurrent;
 using System.Reactive.Concurrency;
-using System.Reactive.Linq;
 
 namespace Nabu.NetSim.UI;
 
@@ -26,14 +25,7 @@ public class AppLogProvider : ILoggerProvider
         Config = config;
         Repository = repository;
 
-        Observable.Interval(
-            TimeSpan.FromHours(Settings.LogCleanupIntervalHours)
-        ).Subscribe(_ =>
-        {
-            var cutoff = DateTime.Now.AddDays(-Settings.MaxLogEntryAgeDays);
-            Repository.Collection<LogEntry>().DeleteMany(e => e.Timestamp < cutoff);
-            GC.Collect();
-        });
+        
     }
 
     public ILogger CreateLogger(string categoryName)
@@ -47,4 +39,3 @@ public class AppLogProvider : ILoggerProvider
         Loggers.Clear();
     }
 }
-

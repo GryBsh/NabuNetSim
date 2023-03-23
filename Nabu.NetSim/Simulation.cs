@@ -16,10 +16,13 @@ public class Simulation : BackgroundService, ISimulation
     readonly AdaptorSettings[] DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
     Settings Settings { get; }
+    readonly IEnumerable<IJob> Jobs;
+
     public Simulation(
         IConsole<Simulation> logger,
         Settings settings,
-        IServiceProvider serviceProvider
+        IServiceProvider serviceProvider,
+        IEnumerable<IJob> jobs
     )
     {
         Logger = logger;
@@ -29,6 +32,7 @@ public class Simulation : BackgroundService, ISimulation
             settings.Adaptors.TCP
         ).ToArray();
         ServiceProvider = serviceProvider;
+        Jobs = jobs;
     }
 
 
@@ -51,6 +55,9 @@ public class Simulation : BackgroundService, ISimulation
         {
             PythonProtocol.Startup(Logger);
         }
+
+        foreach (var job in Jobs)
+            job.Start();
 
         Cancel = NabuLib.SetLength(
             DefinedAdaptors.Length,

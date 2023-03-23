@@ -26,6 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\LIbNabu.LiteDB\LIbNabu.LiteDB.csproj" />
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />
   </ItemGroup>
 

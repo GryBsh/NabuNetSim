@@ -21,42 +21,46 @@
             <div class="col flex-fill center title-col">
                 <div class="container-fluid title-box">
                     <div class="row">
-                        <div class="col col-6">
+                       
+                        <div class="col">
                             <Image class="logo" Source="_content/Nabu.NetSim.UI/nabu.png" />
 
                         </div>
+                        
+                         <div class="col center-all">
+                            <div><small>Adaptors:</small></div>
+                            <ul class="news list-group list-group-flush">
+                                <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
+                                    <li class="list-group-item">
+                                        <large><Icon Name="IconName.Plug"/></large>
+                                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                        <large><Icon Name="IconName.Folder"/></large>
+                                        @context.Source/@(
+                                    !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
+                                    )                                
+                                    </li>
+                                </Virtualize>
+                                <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
+                                    <li class="list-group-item">
+                                        <large><Icon Name="IconName.Wifi"/></large>
+                                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                        <large><Icon Name="IconName.Folder"/></large>
+                                        @context.Source/@(
+                                            !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
+                                        )                                
+                                    </li>
+                                </Virtualize>
+                            </ul>
+                        </div>
                         <MenuView ViewModel="@ViewModel!.Menu" />
+                        
                     </div>
                 </div>
             </div>
         </div>
         <div class="row row-divider" />
-        <div class="row">
-            <ul class="center news list-group list-group-flush list-group-horizontal-sm">
-                <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
-                    <li class="list-group-item">
-                        <large><Icon Name="IconName.Plug"/></large>
-                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
-                        <large><Icon Name="IconName.Folder"/></large>
-                        @context.Source/@(
-                    !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-                    )                                
-                    </li>
-                </Virtualize>
-                <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
-                    <li class="list-group-item">
-                        <large><Icon Name="IconName.Wifi"/></large>
-                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
-                        <large><Icon Name="IconName.Folder"/></large>
-                        @context.Source/@(
-                            !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-                        )                                
-                    </li>
-                </Virtualize>
-            </ul>
-        </div>
+        
 
-        <div class="row row-divider" />
 
         <Div Class="row" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
             <br/>
@@ -70,7 +74,14 @@
             <br/>
         </Div>
         <Div Class="row row-divider" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)"/>
-
+        <!--
+        <Div Class="row" Visibility="@(ViewModel!.ChatVisible ? Visibility.Visible : Visibility.Invisible)">
+            <br/>
+                <RetroNetChatView />
+            <br/>
+        </Div>
+        <Div Class="row row-divider" Visibility="@(ViewModel!.ChatVisible ? Visibility.Visible : Visibility.Invisible)"/>
+        -->
     </Div>
 } else
 {

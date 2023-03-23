@@ -3,7 +3,7 @@ using Nabu.Services;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-
+using System;
 
 namespace Nabu.Network.RetroNet;
 
@@ -59,7 +59,7 @@ public class RetroNetTelnetProtocol : Protocol
         return input;
     }
 
-    CancellationTokenSource Cancel { get; set; } = new CancellationTokenSource();
+    //CancellationTokenSource Cancel { get; set; } = new CancellationTokenSource();
     Timer? StartupDetection { get; set; }
 
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
@@ -67,7 +67,8 @@ public class RetroNetTelnetProtocol : Protocol
         WriteLine("Socialist Workers Terminal vL.T.S");
         WriteLine("\"It works for us now comrade!\"");
         WriteLine();
-        while (cancel.IsCancellationRequested is false)
+        var cancelLoop = CancellationTokenSource.CreateLinkedTokenSource(cancel, CancellationToken.None);
+        while (cancelLoop.IsCancellationRequested is false)
             try
             {
                 var hostname = Prompt("Hostname");
@@ -94,21 +95,37 @@ public class RetroNetTelnetProtocol : Protocol
 
                 
                 Log($"Relaying Telnet to {hostname}:{port}");
-
-                Cancel = CancellationTokenSource.CreateLinkedTokenSource(cancel, CancellationToken.None);
+                
                 var remote = new NetworkStream(socket);
                 var nabu = Stream;
-                
+
                 try
                 {
-                    await Task.WhenAny(
-                        nabu.CopyToAsync(remote, Cancel.Token),
-                        remote.CopyToAsync(nabu, Cancel.Token)
-                    );
+                    while (cancelLoop.IsCancellationRequested is false) {
+                        if (remote!.DataAvailable)
+                        {
+                            var buffer = new Memory<byte>();
+                            var received = await remote!.ReadAtLeastAsync(buffer, 1, true, cancel);
+                            await nabu.WriteAsync(buffer, cancel);
+                        }
+
+                        var dataAvailable = nabu switch
+                        {
+                            NetworkStream ns => ns.DataAvailable,
+                            _ => nabu.Length > 0
+                        };
+
+                        if (dataAvailable)
+                        {
+                            var buffer = new Memory<byte>();
+                            var received = await remote!.ReadAtLeastAsync(buffer, 1, true, cancel);
+                            await remote.WriteAsync(buffer, cancel);
+                        }
+                    }
                 }
                 catch
                 {
-                    Cancel.Cancel();
+                    cancelLoop.Cancel();
                     return;
                 }
             }
@@ -122,11 +139,12 @@ public class RetroNetTelnetProtocol : Protocol
 
 
     }
-
+    /*
     public override void Reset()
     {
         Cancel?.Cancel();
 
     }
+    */
 }
 

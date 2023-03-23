@@ -5,12 +5,15 @@ using System.Net.Sockets;
 using System.Net;
 using System.Diagnostics;
 using Nabu.Services;
+using System.Text;
 
 namespace Nabu.Adaptor;
 
 public class TCPAdaptor
 {
     private TCPAdaptor() { }
+
+    public static Dictionary<string, TCPAdaptorSettings> Connections { get; } = new();
 
     static void ServerListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
     {
@@ -24,6 +27,10 @@ public class TCPAdaptor
             }
             stream.Dispose();
             logger.Write($"TCP Client from {socket.RemoteEndPoint} disconnected");
+            var name = $"{socket.RemoteEndPoint}";
+
+            Connections.Remove(name);
+
         }, stopping);
     }
     
@@ -36,7 +43,7 @@ public class TCPAdaptor
         var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
         var socket = NabuLib.Socket(true, tcpSettings.SendBufferSize, tcpSettings.ReceiveBufferSize);
 
-        if (!int.TryParse(settings.Port, out int port))
+        if (!int.TryParse(tcpSettings.Port, out int port))
         {
             port = Constants.DefaultTCPPort;
         };
@@ -57,18 +64,21 @@ public class TCPAdaptor
             try
             {
                 Socket incoming = await socket.AcceptAsync(stopping);
-                
+                var name = $"{incoming.RemoteEndPoint}";
+                var newSettings = (TCPAdaptorSettings)settings with { Port = name }; // CLONE
                 var stream  = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
-                     settings,
+                     newSettings,
                      serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
                      stream,
-                     $"{socket.RemoteEndPoint}"
+                     name
                 );
-                
+
+                Connections[name] = newSettings;
                 ServerListen(logger, adaptor, incoming, stream, stopping);
+                
             }
             catch (Exception ex)
             {

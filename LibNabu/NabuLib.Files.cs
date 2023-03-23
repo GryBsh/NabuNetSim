@@ -23,7 +23,8 @@
         {
             try
             {
-                using FileStream inputStream = File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
+                using FileStream inputStream = 
+                    File.Open(path, FileMode.Open, FileAccess.Read, FileShare.None);
                 return inputStream.Length > 0;
             }
             catch (IOException)

@@ -31,7 +31,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         Settings = settings;
         Sources = settings.Sources;
-        Http = new(http, logger, cache, settings);
+        Http = new(http, logger, cache);
         FileCache = cache;
         //Database = database;
 
@@ -45,9 +45,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         Observable.Interval(TimeSpan.FromMinutes(30))
             .Subscribe(_ => BackgroundRefresh(RefreshType.Remote));
     }
-
-
-
     public ProgramSource Source(AdaptorSettings settings)
         => Sources.First(s => s.Name.ToLower() == settings.Source?.ToLower());
 
@@ -179,7 +176,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
                     var (supported, menuPak, type) = ContainsPak(files);
 
-                    if (supported && menuPak is not null)
+                    if (supported && (source.EnableQuirkLoader is false && menuPak is not null))
                     {
                         programs.Add(new(
                             "Cycle Menu",
@@ -243,12 +240,12 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
 
         var path = source.Path;
-        var cycleFile = false;
+        //var cycleFile = false;
         var image = pak switch
         {
-
+            0x191 when source.EnableQuirkLoader => settings.Image!,
             > 1 => FormatTriple(pak),
-            1 when Empty(settings.Image) => FormatTriple(1),
+            1 when Empty(settings.Image) || source.EnableQuirkLoader => FormatTriple(1),
             1 => settings.Image!,
             _ => null
         };
@@ -262,8 +259,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
         if (prg is null && pak > Constants.CycleMenuNumber)
         {
-            prg = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == image) ??
-                  SourceCache[source].FirstOrDefault();     
+            prg = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == image);  
         }
 
         if (prg is null)
@@ -312,11 +308,11 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             bytes = await patch.Patch(prg, bytes);
         }
         */
-
+        var type = source.EnableQuirkLoader ? ImageType.QuirkLoadedPak : prg.ImageType;
         Log($"Type: {prg.ImageType}, Size: {bytes.Length}, Path: {path}");
 
         PakCache[(settings, source, pak)] = bytes;
-        return (prg.ImageType, bytes);
+        return (type, bytes);
     }
 
     public void UncachePak(AdaptorSettings settings, int pak)

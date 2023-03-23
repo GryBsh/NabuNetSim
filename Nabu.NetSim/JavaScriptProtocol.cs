@@ -1,7 +1,7 @@
 ﻿using Nabu.Adaptor;
 using Nabu.Network;
 using Nabu.Services;
-
+using Jint;
 namespace Nabu;
 
 public class JavaScriptProtocol : Protocol
@@ -26,11 +26,10 @@ public class JavaScriptProtocol : Protocol
         try
         {
             using var engine =
-                new Jint.Engine()
-                        .SetValue("incoming", unhandled)
-                        .SetValue("adaptor", proxy)
-                        .SetValue("logger", Logger);
-
+                new Engine().SetValue("incoming", unhandled)
+                            .SetValue("adaptor", proxy)
+                            .SetValue("logger", Logger);
+            
             engine.Execute(source);
         }
         catch (Exception ex)

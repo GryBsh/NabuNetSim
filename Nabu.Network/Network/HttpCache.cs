@@ -14,14 +14,14 @@ public class CachingHttpClient : IHttpCache
     
     protected static string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
     protected FileCache MemoryCache { get; }
-    readonly Settings Settings;
+    //readonly Settings Settings;
 
-    public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache, Settings settings)
+    public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache)
     {
         Http = http;
         Logger = logger;
         MemoryCache = cache;
-        Settings = settings;
+        //Settings = settings;
         Task.Run(() => NabuLib.EnsureFolder(CacheFolder));
     }
 
