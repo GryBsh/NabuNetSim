@@ -20,18 +20,16 @@ public class AppLogger : ILogger
         string name,
         AppLogProvider provider,
         AppLogConfiguration settings,
-        IRepository repository
+        IRepository<LogEntry> repository
     )
     {
         Name = name.Split('.')[^1];
         Provider = provider;
         Settings = settings;
-        Repository = repository;
-
-        
+        LogEntries = repository;
     }
 
-    IRepository Repository { get; }
+    IRepository<LogEntry> LogEntries { get; }
 
     public IDisposable BeginScope<TState>(TState state)
         where TState : notnull
@@ -53,7 +51,7 @@ public class AppLogger : ILogger
         if (eventId.Name?.StartsWith("System.Net.Http") is false) return;
 
         Task.Run(() =>
-            Repository.Collection<LogEntry>().Insert(
+            LogEntries.Insert(
                 new LogEntry(
                     Guid.NewGuid(),
                     DateTime.Now,
@@ -62,7 +60,8 @@ public class AppLogger : ILogger
                     Name,
                     formatter(state, exception),
                     exception
-                ))
+                )
+            )
         );
     }
 }

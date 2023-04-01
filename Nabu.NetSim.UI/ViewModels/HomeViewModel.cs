@@ -21,7 +21,7 @@ public class HomeViewModel : ReactiveObject
     INabuNetwork Sources { get; }
     public List<LogEntry> Entries { get; private set; } = new List<LogEntry>();
     ISimulation? Simulation { get; }
-    IRepository Repository { get; }
+    IRepository<LogEntry> Repository { get; }
     IMultiLevelCache Cache { get; }
 
     const string FeedUrl = "https://www.nabunetwork.com/feed/";
@@ -29,7 +29,7 @@ public class HomeViewModel : ReactiveObject
         Settings settings, 
         INabuNetwork sources, 
         ISimulation simulation,
-        IRepository repository,
+        IRepository<LogEntry> repository,
         IMultiLevelCache cache
     )
     {
@@ -46,7 +46,7 @@ public class HomeViewModel : ReactiveObject
         {
             PrimeLog();
             GetHeadlines();
-            await Task.Delay(TimeSpan.FromSeconds(1));
+            await Task.Delay(TimeSpan.FromSeconds(5));
             Loaded = true;
             this.RaisePropertyChanged(nameof(Loaded));
         });
@@ -54,13 +54,13 @@ public class HomeViewModel : ReactiveObject
         Observable.Interval(TimeSpan.FromMinutes(1))
                  .Subscribe(_ => {
                      RefreshLog();
-                     GC.Collect();
+                     //GC.Collect();
                  });
 
         Observable.Interval(TimeSpan.FromMinutes(10))
                   .Subscribe(_ => {
                       GetHeadlines();
-                      GC.Collect();
+                      //GC.Collect();
                   });
 
 
@@ -74,8 +74,7 @@ public class HomeViewModel : ReactiveObject
         var now = DateTime.Now;
         var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
 
-        Entries = Repository.Collection<LogEntry>()
-                    .Find(e => e.Timestamp > cutoff)
+        Entries = Repository.Select(e => e.Timestamp > cutoff)
                     .OrderByDescending(e => e.Timestamp)
                     .ToList();
         this.RaisePropertyChanged(nameof(Entries));
@@ -86,7 +85,7 @@ public class HomeViewModel : ReactiveObject
     {
         var now = DateTime.Now;
         var cutoff = now.AddMinutes(-Settings.MaxUIEntryAgeMinutes);
-        var add = Repository.Collection<LogEntry>().Find(e => e.Timestamp > LastUpdate).OrderByDescending(e => e.Timestamp);
+        var add = Repository.Select(e => e.Timestamp > LastUpdate).OrderByDescending(e => e.Timestamp);
         var remove = Entries.Where(e => e.Timestamp < cutoff);
         Entries.AddRange(add);
         Entries.RemoveMany(remove);
@@ -187,7 +186,7 @@ public class HomeViewModel : ReactiveObject
     {
         if (settings is null or NullAdaptorSettings) return false;
         var programs = Sources.Programs(settings);
-        return programs.Count() > 1 && (Sources.Source(settings).EnableQuirkLoader is true || !programs.Any(p => p.Name == Constants.CycleMenuPak));
+        return programs.Count() > 1 && (Sources.Source(settings).EnableExploitLoader is true || !programs.Any(p => p.Name == Constants.CycleMenuPak));
     }
 
     public void ToggleAllAdaptors()

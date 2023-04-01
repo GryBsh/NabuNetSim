@@ -6,7 +6,7 @@ public record ProgramSource
     public string Path { get; set; } = string.Empty;
     public SourceType SourceType { get; set; }
     public bool EnableRetroNet { get; set; }
-    public bool EnableQuirkLoader { get; set; }
+    public bool EnableExploitLoader { get; set; }
 }
 
 

@@ -8,7 +8,6 @@ using System.Xml;
 
 namespace Nabu.Network;
 
-
 public partial class NabuNetwork : NabuBase, INabuNetwork
 {
     CachingHttpClient Http { get; }
@@ -17,7 +16,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     List<ProgramSource> Sources { get; }
     ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
     ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), byte[]> PakCache { get; } = new();
-
 
     //readonly IRepository Database;
 
@@ -38,12 +36,13 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         //Database.Collection<NabuProgram>().EnsureIndex(p => p.Source);
 
         BackgroundRefresh(RefreshType.All);
-
+        /*
         Observable.Interval(TimeSpan.FromMinutes(1))
             .Subscribe(_ => BackgroundRefresh(RefreshType.Local));
 
         Observable.Interval(TimeSpan.FromMinutes(30))
             .Subscribe(_ => BackgroundRefresh(RefreshType.Remote));
+        */
     }
     public ProgramSource Source(AdaptorSettings settings)
         => Sources.First(s => s.Name.ToLower() == settings.Source?.ToLower());
@@ -97,12 +96,30 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     }
 
 
-    async void BackgroundRefresh(RefreshType refresh)
+    public void BackgroundRefresh(RefreshType refresh)
     {
-        RefreshSources(refresh);
-        if (refresh.HasFlag(RefreshType.Remote))
-            await Task.Run(GC.Collect);
+        Task.Run(() => {
+            RefreshSources(refresh);
+            if (refresh.HasFlag(RefreshType.Remote))
+                GC.Collect();
+        });
     }
+
+    async Task<(bool, NabuProgram[])> IsKnownListType(string name, string path)
+    {
+        var tasks = new Task<(bool, NabuProgram[])>[] {
+            IsNabuCaList(name, path),
+            IsNabuNetworkList(name, path)
+        };
+        
+        foreach (var task in tasks)
+        {
+            var (isList, programs) = await task;
+            if (isList) return (isList, programs);
+        }
+        return (false, Array.Empty<NabuProgram>());
+    }
+
 
     void RefreshSources(RefreshType refresh = RefreshType.All)
     {
@@ -121,18 +138,12 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                 if (isRemote) source.SourceType = SourceType.Remote;
                 else source.SourceType = SourceType.Local;
 
-
-
                 if (checkRemote && source.SourceType is SourceType.Remote)
                 {
                     var programs = new List<NabuProgram>();
                     source.SourceType = SourceType.Remote;
-                    var (isList, items) = await IsNabuCaList(source.Name, source.Path);
+                    var (isList, items) = await IsKnownListType(source.Name, source.Path);
                     var (isPak, pakUrl, type) = await IsPak(source.Path, 1);
-                    if (!isList)
-                    {
-                        (isList, items) = await IsNabuNetworkList(source.Name, source.Path);
-                    }
                     if (isList)
                     {
                         programs.AddRange(items);
@@ -146,7 +157,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             pakUrl,
                             source.SourceType,
                             type,
-                            //new[] { new PassThroughPatch(Logger) },
+                            new[] { new PassThroughPatch(Logger) },
                             true
                         ));
                     }
@@ -159,8 +170,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             source.Name,
                             source.Path,
                             source.SourceType,
-                            ImageType.Raw
-                        //new[] { new PassThroughPatch(Logger) }
+                            ImageType.Raw,
+                            new[] { new PassThroughPatch(Logger) }
                         ));
                     }
                     SourceCache[source] = programs;
@@ -176,7 +187,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
                     var (supported, menuPak, type) = ContainsPak(files);
 
-                    if (supported && (source.EnableQuirkLoader is false && menuPak is not null))
+                    if (supported && (source.EnableExploitLoader is false && menuPak is not null))
                     {
                         programs.Add(new(
                             "Cycle Menu",
@@ -185,7 +196,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             menuPak,
                             source.SourceType,
                             type,
-                            //new[] { new PassThroughPatch(Logger) },
+                            new[] { new PassThroughPatch(Logger) },
                             true
                         ));
                         files = files.Except(new[] { menuPak }).ToArray();
@@ -204,8 +215,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             source.Name,
                             file,
                             source.SourceType,
-                            ImageType.Raw
-                        //new[] { new PassThroughPatch(Logger) }
+                            ImageType.Raw,
+                            new[] { new PassThroughPatch(Logger) }
                         ));
                     }
                     SourceCache[source] = programs;
@@ -243,9 +254,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         //var cycleFile = false;
         var image = pak switch
         {
-            0x191 when source.EnableQuirkLoader => settings.Image!,
+            0x191 when source.EnableExploitLoader => settings.Image!,
             > 1 => FormatTriple(pak),
-            1 when Empty(settings.Image) || source.EnableQuirkLoader => FormatTriple(1),
+            1 when Empty(settings.Image) || source.EnableExploitLoader => FormatTriple(1),
             1 => settings.Image!,
             _ => null
         };
@@ -299,7 +310,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             Warning(ex.Message);
             return (ImageType.None, ZeroBytes);
         }
-        /*
+        
         foreach (var patch in prg.Patches)
         {
             if (patch.Name is not nameof(PassThroughPatch))
@@ -307,13 +318,13 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
             bytes = await patch.Patch(prg, bytes);
         }
-        */
-        var type = source.EnableQuirkLoader ? ImageType.QuirkLoadedPak : prg.ImageType;
+        
+        var type = source.EnableExploitLoader ? ImageType.QuirkLoadedPak : prg.ImageType;
         Log($"Type: {prg.ImageType}, Size: {bytes.Length}, Path: {path}");
 
         PakCache[(settings, source, pak)] = bytes;
         return (type, bytes);
-    }
+    }   
 
     public void UncachePak(AdaptorSettings settings, int pak)
     {
@@ -395,6 +406,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                 url,
                 SourceType.Remote,
                 ImageType.Raw,
+                new[] { new PassThroughPatch(Logger) }, 
                 false
             ));
         }
@@ -430,8 +442,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                 source,
                 url,
                 SourceType.Remote,
-                ImageType.Raw
-            //new[] { new PassThroughPatch(Logger) }
+                ImageType.Raw,
+                new[] { new PassThroughPatch(Logger) }
             ));
         }
         return (true, progs.ToArray());

@@ -65,7 +65,7 @@ public class TCPAdaptor
             {
                 Socket incoming = await socket.AcceptAsync(stopping);
                 var name = $"{incoming.RemoteEndPoint}";
-                var newSettings = (TCPAdaptorSettings)settings with { Port = name }; // CLONE
+                var newSettings = (TCPAdaptorSettings)settings with { Port = name, IsConnection = true }; // CLONE
                 var stream  = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
                      newSettings,

@@ -63,8 +63,8 @@ public class ClassicNabuProtocol : Protocol
             case StatusMessage.Signal: // <- NA Channel Lock Status
                 if (ChannelKnown)
                 {
-                    Debug($"NPC: {nameof(StatusMessage.Signal)}? NA: {nameof(Status.SignalLock)}");
-                    StatusResult(Status.SignalLock);
+                    Debug($"NPC: {nameof(StatusMessage.Signal)}? NA: {nameof(Status.Lock)}");
+                    StatusResult(Status.Lock);
                 }
                 else
                 {
@@ -72,14 +72,14 @@ public class ClassicNabuProtocol : Protocol
                     StatusResult(Status.NoSignal);
                 }
                 break;
-            case StatusMessage.AdaptorReady: // <-- NPC Program/DOS Loaded
+            case StatusMessage.Adaptor: // <-- NPC Program/DOS Loaded
                 Log($"NPC: Finished? NA: {nameof(Message.Finished)}");
-                if (Network.Source(Settings).EnableQuirkLoader)
+                if (Network.Source(Settings).EnableExploitLoader)
                 {
-                    Log($"EXPLOITED!");
-                    Finished();
+                    Log($"NA: Quirk Injected");
+                    StatusResult(Status.Transfer);
                 }
-                else StatusResult(Status.SignalLock);
+                else StatusResult(Status.Lock);
                 break;
             default:
                 Log($"Unsupported Status: {data:X02}");
@@ -87,16 +87,16 @@ public class ClassicNabuProtocol : Protocol
         }
     }
 
-    void SetAdaptorMode()
+    void SetStatus()
     {
         byte[] status = Recv(2);
         switch (status[0])
         {
-            case 0x0F:
+            case Status.Transfer:
                 Log("NPC: Transfer");
                 break;
-            case 0x1F:
-                Log("NPC: Stop");
+            case Status.Lock:
+                Log("NPC: Lock");
                 break;
             default:
                 Log($"NPC: Status: {Format(status[0])}");
@@ -125,8 +125,6 @@ public class ClassicNabuProtocol : Protocol
         Log($"Channel Code: {Channel:X04}");
 
     }
-
-    bool EnableQuirkLoader = false;
 
     /// <summary>
     ///  Handles the Segment Request message - 0x84
@@ -257,7 +255,7 @@ public class ClassicNabuProtocol : Protocol
             var finished = DateTime.Now;
             
             Network.UncachePak(base.Settings, pak);
-            Task.Run(GC.Collect);
+            //Task.Run(GC.Collect);
             
             if (Started is null) return; // Time Packet is not timed.
             NabuLib.EndSafeNoGC();
@@ -293,7 +291,7 @@ public class ClassicNabuProtocol : Protocol
             case Message.SetStatus:
                 Ack();
                 Log($"NPC: {nameof(Message.SetStatus)}, NA: {nameof(Message.ACK)}");
-                SetAdaptorMode();
+                SetStatus();
                 break;
             case Message.GetStatus:
                 Ack();

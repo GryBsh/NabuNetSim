@@ -26,8 +26,8 @@ public class SerialAdaptor
         {
             ReceivedBytesThreshold = 1,
             Handshake = Handshake.None,
-            RtsEnable = true,
-            DtrEnable = true,
+            //RtsEnable = true,
+            //DtrEnable = true,
             ReadBufferSize = 2,
             WriteBufferSize = 2,
         };

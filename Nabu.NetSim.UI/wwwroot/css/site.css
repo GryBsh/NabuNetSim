@@ -23,6 +23,9 @@ body {
     margin: auto;
 }
 
+.top {
+    margin-top: 0px;
+}
 
 .invisible {
     display: none;

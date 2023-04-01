@@ -13,12 +13,12 @@ public class AppLogProvider : ILoggerProvider
 {
     readonly IOptionsMonitor<AppLogConfiguration> Config;
     readonly ConcurrentDictionary<string, AppLogger> Loggers = new(StringComparer.OrdinalIgnoreCase);
-    IRepository Repository { get; }
+    IRepository<LogEntry> Repository { get; }
     readonly Settings Settings;
     public AppLogProvider(
         Settings settings,
         IOptionsMonitor<AppLogConfiguration> config,
-        IRepository repository
+        IRepository<LogEntry> repository
     )
     {
         Settings = settings;

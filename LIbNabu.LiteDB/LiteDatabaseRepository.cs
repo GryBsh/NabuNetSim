@@ -40,6 +40,8 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
         return Database!.GetCollection<T>().FindAll();
     }
 
+    public void Insert(params T[] items) => Database!.GetCollection<T>().Insert(items);
+    public void BulkInsert(params T[] items) => Database!.GetCollection<T>().InsertBulk(items);
     protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)
@@ -60,6 +62,7 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
     }
 }
 
+/*
 public class LiteDatabaseRepository : IRepository
 {
     private bool disposedValue;
@@ -102,3 +105,4 @@ public class LiteDatabaseRepository : IRepository
         GC.SuppressFinalize(this);
     }
 }
+*/

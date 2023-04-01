@@ -30,9 +30,7 @@ builder.Services.AddSingleton(settings.Sources);
 builder.Services.AddHttpClient();
 builder.Services.AddScoped<MainLayoutViewModel>();
 builder.Services.AddScoped<HomeViewModel>();
-builder.Services.AddScoped<RetroNetChatViewModel>()
-                .AddScoped<IRetroNetChatClient, RetroNetChatClient>();
-builder.Services.AddSingleton<IRepository, LiteDatabaseRepository>();
+builder.Services.AddSingleton(typeof(IRepository<>), typeof(LiteDBRepository<>));
 builder.Services.AddLiteDbCache(
                     options =>
                     {

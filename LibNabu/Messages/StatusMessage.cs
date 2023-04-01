@@ -7,5 +7,5 @@ public static class StatusMessage
     public const byte Ready = 0x05;
     public const byte Good = 0x06;
 
-    public const byte AdaptorReady = 0x1E;
+    public const byte Adaptor = 0x1E;
 }

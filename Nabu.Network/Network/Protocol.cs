@@ -17,8 +17,9 @@ public abstract class Protocol : NabuService, IProtocol
     
     int SendDelay = 0;
     public Protocol(
-        IConsole logger
-    ) : base(logger, new NullAdaptorSettings())
+        IConsole logger,
+        AdaptorSettings? settings = null
+    ) : base(logger, settings ?? new NullAdaptorSettings())
     {
         
         Reader = new BinaryReader(Stream, Encoding.ASCII);
@@ -174,7 +175,8 @@ public abstract class Protocol : NabuService, IProtocol
     #region Framed Protocols
     public void SendFramed(params byte[] buffer)
     {
-        Send(NabuLib.FromShort((short)buffer.Length));
+        var length = (short)buffer.Length;
+        Send(NabuLib.FromShort(length));
         Send(buffer);
     }
 

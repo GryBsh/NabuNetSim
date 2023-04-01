@@ -1,16 +1,20 @@
 ﻿@using Nabu.Adaptor;
 @inherits ReactiveComponentBase<MenuViewModel>
 
-<Div Class="col col-4 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.MainMenu)>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.MainMenu)>
     <div><small>Menu</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
             <Icon Name="IconName.SliderHorizontal" />
-            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Settings))">Settings</a>
+            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Adaptors))">Adaptors</a>
+        </li>
+        <li class="list-group-item">
+            <Icon Name="IconName.List" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Connections))">Connections</a>
         </li>
         <li class="list-group-item">
             <Icon Name="IconName.Adjust" />
-            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Features))">Features</a>
+            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Settings))">Settings</a>
         </li>
         <li class="list-group-item"><Icon Name="IconName.BookReader" />
             <a href="#" onclick="@(() => ViewModel!.Home.ToggleLog())">@ViewModel.Home.LogButtonText</a>
@@ -26,28 +30,43 @@
     </ul>
 </Div>
 
-<Div Class="col col-4 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.Features)>
-    <div><small>Features</small></div>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Settings)>
+    <div><small>Settings</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
             <Icon Name="IconName.Backward" />
             <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
         </li>
         <li class="list-group-item">
+            <Icon Name="IconName.Adjust" />
+            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Features))">Features</a>
+        </li>
+        
+    </ul>
+</Div>
+
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Features)>
+    <div><small>Features</small></div>
+    <ul class="menu list-group list-group-flush list-group-sm">
+        <li class="list-group-item">
+            <Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Settings))">Back</a>
+        </li>
+        <li class="list-group-item">
             <div class="row">
-                <div class="col col-1"><Check TValue="bool" Checked="@(ViewModel.Settings.EnablePython)" Disabled=true ReadOnly=true/></div>
+                <div class="col col-1"><Check TValue="bool" Checked="@(ViewModel.Settings.EnablePython)" Disabled=true ReadOnly=true/></div>&nbsp;
                 <div class="col margin-auto">Python Protocol Support</div>
             </div>
             <div class="row">
-                <div class="col col-1"><Check TValue="bool" Checked="@(ViewModel.Settings.EnableJavaScript)" Disabled=true ReadOnly=true /></div>
+                <div class="col col-1"><Check TValue="bool" Checked="@(ViewModel.Settings.EnableJavaScript)" Disabled=true ReadOnly=true /></div>&nbsp;
                 <div class="col margin-auto">JavaScript Protocol Support</div>
             </div>
         </li>
         
     </ul>
 </Div>
-<Div Class="col col-4 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.Settings)>
-    <div><small>Adaptor Settings</small></div>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Adaptors)>
+    <div><small>Adaptors</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item"><Icon Name="IconName.Backward" />
             <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a></li>
@@ -65,6 +84,16 @@
                 <a href="#" onclick="@(() => { ViewModel.SetSelected(tcp); })">TCP:@tcp.Port</a>
             </li>
         }
+        
+    </ul>
+</Div>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Connections)>
+    <div><small>Connections</small></div>
+    <ul class="menu list-group list-group-flush list-group-sm">
+        <li class="list-group-item">
+            <Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
+        </li>
         @foreach (var conn in TCPAdaptor.Connections.Values.ToArray())
         {
             <li class="list-group-item">
@@ -74,24 +103,27 @@
         }
     </ul>
 </Div>
-<Div Class="col col-4 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.AdaptorSettings)>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.AdaptorSettings)>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
             <Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Settings))">Back</a>
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Adaptors))">Back</a>
         </li>
-        <li class="list-group-item">
-            <Icon Name="@ViewModel!.Home.AdaptorButtonIcon(ViewModel.Selected)" />
+        @if (ViewModel.Selected is TCPAdaptorSettings t && t.IsConnection is false) {
+            <li class="list-group-item">
+                <Icon Name="@ViewModel!.Home.AdaptorButtonIcon(ViewModel.Selected)" />
             <a href="#" onclick="@(() => ViewModel!.Home.ToggleAdaptor(ViewModel.Selected))">@ViewModel!.AdaptorButtonText(ViewModel.Selected)</a>
         </li>
+        }
         <li class="list-group-item">
             <Icon Name="IconName.Server" />
             Source
             <Select TValue="string" SelectedValue="@ViewModel.Selected.Source"
                     SelectedValueChanged="@(
-                            v => {
-                                ViewModel.SetSource(v);
-                            })">
+                        v => {
+                            ViewModel.SetSource(v);
+                        }
+                    )">
                 @foreach (var source in ViewModel!.Home.SourceNames)
                 {
                     <option value="@source">@source</option>
@@ -111,7 +143,7 @@
         </li>
     </ul>
 </Div>
-<Div Class="col col-4 center-all" Visibility=@ViewModel!.IsVisible(MenuPage.CLI)>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.CLI)>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
             <Icon Name="IconName.Backward" />

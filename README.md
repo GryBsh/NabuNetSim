@@ -11,15 +11,17 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 ## Whats New
 
+- > Adds support for the latest NHACP v0.1 draft including support for IshkurCPM (included)
 - > Since even Nabu.Ca is using raw cycle files now, NetSim no longer supports encrypted PAK files.
 - > Restores support for RetroNet, including new support for Cloud CP/M.
 - > Web UI.
-- > Experimental Python support.
+- > Experimental Python / Javscript Protocol support.
 - > New Look, Same great taste!
 - > Docker support.
 
 ## Known Issues
 
+- > Use IshkurCPM with multiple connections at your own risk.
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
 - > NHACP support is experimental.
@@ -101,26 +103,36 @@ Preliminary Docker support is available, but is not extensively tested. It #Work
 ```bash
   docker build -f "./Nabu.NetSimWeb/Dockerfile" --force-rm -t nnswui:dev .
   docker run -d \
-    -p 5005:80 \
+    -p 5000:80 \
     -p 5816:5816 \
     -v /path/to/NABUs:/app/NABUs \ # for NABU files
     -v /path/to/Files:/app/Files \ # for NHACP/Retronet files
     -v /path/to/logs:/app/logs \   # Optional - for Logs, you can still view them in the container.
     -v /path/to/cache:/app/cache \ # Optional - for remote file caching.
+    -v /dev/ttyUSB0:/dev/ttyUSB0 \ # Optional - for serial port(s)
     --name fabulous-falconer \
     --restart unless-stopped \
     nnswui:dev
 ```
 
+Much like other pathed devices, you can map in your serial ports
+
 ## No hardware? No Problem
 
 NABU PC can be emulated with MAME, and the standalone NABU emulator [Marduk](https://github.com/buricco/marduk)
+
+
+## Brought to you by
+
+- [NabuNetwork.com](https://nabunetwork.com)
+- [NABU Discord](https://discord.gg/NgxTXvND2A)!
 
 ## Special Thanks
 
 - [Leo "The Undipsuted God-Legend" Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
+
 - [Geek with Social Skills](https://www.youtube.com/@geekwithsocialskills)
 - BriJohn: [NABU Mame](https://github.com/brijohn/mame/tree/nabupc_wip)
 - GTAMP: [NABU MAME Windows Builds](https://gtamp.com/nabu)

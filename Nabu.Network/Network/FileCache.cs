@@ -11,9 +11,6 @@ public class FileCache
     public static TimeSpan TTL { get; set; } = TimeSpan.FromMinutes(30);
     IConsole<FileCache> Logger { get; }
     
-    //readonly IMultiLevelCache cache;
-    //readonly Func<TimeSpan, MemoryCacheEntryOptions> memCacheOptions = ttl => new MemoryCacheEntryOptions() { SlidingExpiration = ttl };
-    //readonly Func<TimeSpan, DistributedCacheEntryOptions> longCacheOptions = ttl => new DistributedCacheEntryOptions() { SlidingExpiration = ttl };
     readonly ConcurrentDictionary<string, DateTime> _cacheTime = new();
     readonly ConcurrentDictionary<string, byte[]> _cache = new();
     
@@ -22,40 +19,20 @@ public class FileCache
     public FileCache(
         IConsole<FileCache> logger ,
         Settings settings
-        /*IMultiLevelCache cache*/
     ) {
         Settings = settings;
-        
-        //this.cache = cache;
         Logger = logger;
-        //Observable.Interval(TimeSpan.FromMinutes(1), ThreadPoolScheduler.Instance)
-            //.Subscribe(_ => ExpireCache());
     }
 
-    public async void CacheFile(string path, byte[] content, bool write = true)
-    {        
-        if (write) await File.WriteAllBytesAsync(path, content);
-        //await cache.SetAsync(path, content, memCacheOptions(TTL), longCacheOptions(TTL * 2));
- 
-        _cache[path] = content;
-        _cacheTime[path] = DateTime.Now;
-
-    }
-
-    /*
-    void ExpireCache()
+    public void CacheFile(string path, byte[] content, bool write = true)
     {
-        var now = DateTime.Now;
-        foreach (var (path, time) in _cacheTime)
+        Task.Run(async () =>
         {
-            if (now - time > TTL)
-            {
-                _cacheTime.TryRemove(path, out _);
-                _cache.TryRemove(path, out _);
-            }
-        }
+            if (write) await File.WriteAllBytesAsync(path, content);
+            _cache[path] = content;
+            _cacheTime[path] = DateTime.Now;
+        });
     }
-    */
 
     public async Task<byte[]> GetFile(string path)
     {
@@ -69,7 +46,6 @@ public class FileCache
             File.GetLastWriteTime(path) > cacheTime
         ) {
             content = await File.ReadAllBytesAsync(path);
-            //await cache.SetAsync(path, content, memCacheOptions(TTL), longCacheOptions(TTL * 2));
             CacheFile(path, content, false);
             return content;
         }
@@ -80,15 +56,6 @@ public class FileCache
         content = await File.ReadAllBytesAsync(path);
         CacheFile(path, content, false);
         return content;
-            /*await cache.GetOrSetAsync(
-                path, 
-                async cancel => {    
-                    _cacheTime[path] = DateTime.Now;
-                    return await File.ReadAllBytesAsync(path, cancel);
-                }, 
-                memCacheOptions(TTL), 
-                longCacheOptions(TTL * 2)
-            ) ?? Array.Empty<byte>();*/
     }
 
     public void CacheString(string path, string content, bool write = true)
@@ -96,8 +63,6 @@ public class FileCache
         Task.Run(async () =>
         {
             if (write) await File.WriteAllTextAsync(path, content);
-
-            //await cache.SetAsync(path, content, memCacheOptions(TTL), longCacheOptions(TTL * 2));
             _cache[path] = Encoding.UTF8.GetBytes(content);
             _cacheTime[path] = DateTime.Now;
         });
@@ -116,7 +81,6 @@ public class FileCache
             File.GetLastWriteTime(path) > cacheTime
         ){
             content = await File.ReadAllTextAsync(path);
-            //await cache.SetAsync(path, content, memCacheOptions(TTL), longCacheOptions(TTL * 2));
             CacheString(path, content, false);
             return content;
         }
@@ -127,18 +91,6 @@ public class FileCache
         content = await File.ReadAllTextAsync(path);
         CacheString(path, content, false);
         return content;
-
-            /*await cache.GetOrSetAsync(
-                path,
-                async cancel =>
-                {
-                    var text = await File.ReadAllTextAsync(path, cancel);
-                    _cacheTime[path] = DateTime.Now;
-                    return text;
-                },
-                memCacheOptions(TTL),
-                longCacheOptions(TTL * 2)
-            ) ?? string.Empty;*/
     }
 
     public DateTime LastChange(string path)

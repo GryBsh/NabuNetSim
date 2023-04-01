@@ -41,7 +41,7 @@ public class NabuNetSocketProtocol : Protocol
         SendFramed(
             0x82,
             NabuLib.FromShort(code),
-            NabuLib.ToSizedASCII(message)
+            NabuLib.ToSizedASCII(message) //<-- [length][characters....]
         );
     }
     void Loaded(short index)

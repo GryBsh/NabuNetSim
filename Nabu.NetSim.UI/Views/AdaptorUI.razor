@@ -1,6 +1,7 @@
 ﻿
 @using CodeHollow.FeedReader;
 @using ReactiveUI
+@using Nabu.Adaptor;
 @inherits ReactiveComponentBase<HomeViewModel>
 
 @if (ViewModel!.Loaded)
@@ -18,7 +19,7 @@
         </div>
         <div Class="row row-divider" /> 
         <div class="row">
-            <div class="col flex-fill center title-col">
+            <div class="col flex-fill title-col">
                 <div class="container-fluid title-box">
                     <div class="row">
                        
@@ -27,8 +28,8 @@
 
                         </div>
                         
-                         <div class="col center-all">
-                            <div><small>Adaptors:</small></div>
+                         <div class="col top">
+                            <div><small>Adaptors</small></div>
                             <ul class="news list-group list-group-flush">
                                 <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
                                     <li class="list-group-item">
@@ -51,6 +52,20 @@
                                     </li>
                                 </Virtualize>
                             </ul>
+                            <div><small>Connections</small></div>
+                            <ul class="news list-group list-group-flush">
+                                <Virtualize TItem="TCPAdaptorSettings" Items="@TCPAdaptor.Connections.Values">
+                                    <li class="list-group-item">
+                                        <large><Icon Name="IconName.Wifi"/></large>
+                                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                        <large><Icon Name="IconName.Folder"/></large>
+                                        @context.Source/@(
+                                            !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
+                                        )                                
+                                    </li>
+                                </Virtualize>
+                                
+                            </ul>
                         </div>
                         <MenuView ViewModel="@ViewModel!.Menu" />
                         
@@ -65,7 +80,7 @@
         <Div Class="row" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)">
             <br/>
             <div class="log-frame col flex-lg-column">
-                <div class="log-view flex-grow-0">
+                <div class="flex-grow-0">
                     <Virtualize TItem="LogEntry" Items="@ViewModel!.Entries">
                         <div><small>@context.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.ffff") @context.Name @context.Message</small></div>
                     </Virtualize>

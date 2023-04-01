@@ -2,10 +2,11 @@
 using Microsoft.Extensions.Hosting;
 using Nabu.Adaptor;
 using Nabu.Network;
-using Nabu.Network.NHACP;
 using Nabu.Network.RetroNet;
 using Python.Runtime;
 using Nabu.Services;
+using Nabu.Network.NHACP.V01;
+using Nabu.Network.NHACP.V0;
 //using LiteDb.Extensions.Caching;
 
 namespace Nabu;
@@ -138,40 +139,44 @@ public class Simulation : BackgroundService, ISimulation
         if (settings.Flags.Contains(Flags.EnablePython))
         {
             var pythonLib = string.Empty;
-            if (OperatingSystem.IsWindows())    pythonLib = "python311.dll";
-            else if (OperatingSystem.IsLinux()) pythonLib = "libpython3.11.so";
-            else if (OperatingSystem.IsMacOS()) pythonLib = "libpython3.11.dylib";
-
-            var pythonPath = string.Empty;
-
-            var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? Array.Empty<string>();
-            var hits = new List<string>();
-            foreach (var path in paths)
+            if (OperatingSystem.IsWindows())
             {
-                var searchPath = Path.Join(path, pythonLib);
-                if (File.Exists(searchPath))
-                    hits.Add(searchPath);
-            }
+                pythonLib = "python311.dll";
 
-            if (hits.Count > 0)
-            {
-                Runtime.PythonDLL = hits.OrderDescending().FirstOrDefault();
-                if (Runtime.PythonDLL != null)
+
+                var pythonPath = string.Empty;
+
+                var paths = Environment.GetEnvironmentVariable("PATH")?.Split(Path.PathSeparator) ?? Array.Empty<string>();
+                var hits = new List<string>();
+                foreach (var path in paths)
                 {
-                    var pluginProtocols = settings.Protocols.Where(p => p.Type.ToLower() == ProtocolPluginTypes.Python.ToLower());
-                    foreach (var proto in pluginProtocols)
+                    var searchPath = Path.Join(path, pythonLib);
+                    if (File.Exists(searchPath))
+                        hits.Add(searchPath);
+                }
+
+                if (hits.Count > 0)
+                {
+                    Runtime.PythonDLL = hits.OrderDescending().FirstOrDefault();
+                    if (Runtime.PythonDLL != null)
                     {
-                        services.AddTransient<IProtocol>(
-                            sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
-                        );
+                        var pluginProtocols = settings.Protocols.Where(p => p.Type.ToLower() == ProtocolPluginTypes.Python.ToLower());
+                        foreach (var proto in pluginProtocols)
+                        {
+                            services.AddTransient<IProtocol>(
+                                sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
+                            );
+                        }
                     }
                 }
+                else
+                {
+                    Console.WriteLine("Cannot find Python, disabling.");
+                    settings.Flags.Remove(Flags.EnablePython);
+                }
             }
-            else
-            {
-                Console.WriteLine("Cannot find Python, disabling.");
-                settings.Flags.Remove(Flags.EnablePython);
-            }
+            else if (OperatingSystem.IsLinux()) pythonLib = "libpython3.11.so";
+            else if (OperatingSystem.IsMacOS()) pythonLib = "libpython3.11.dylib";
         }
 
         if (settings.Flags.Contains(Flags.EnableJavaScript))
@@ -186,9 +191,11 @@ public class Simulation : BackgroundService, ISimulation
         }
 
         services.AddTransient<IProtocol, NHACPProtocol>()
+                .AddTransient<IProtocol, NHACPV01Protocol>()
                 .AddTransient<IProtocol, RetroNetTelnetProtocol>()
                 .AddTransient<IProtocol, RetroNetProtocol>()
                 .AddSingleton<ISimulation, Simulation>()
+                .AddSingleton<IJob, RefreshSourcesJob>()
                 .AddHostedService<Simulation>();
 
         return services;
