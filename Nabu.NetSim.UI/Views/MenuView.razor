@@ -105,15 +105,22 @@
 </Div>
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.AdaptorSettings)>
     <ul class="menu list-group list-group-flush list-group-sm">
-        <li class="list-group-item">
-            <Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Adaptors))">Back</a>
-        </li>
-        @if (ViewModel.Selected is TCPAdaptorSettings t && t.IsConnection is false) {
+        
+        @if (ViewModel.Selected is TCPAdaptorSettings t && t.IsConnection is true) {
+            <li class="list-group-item">
+                <Icon Name="IconName.Backward" />
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Connections))">Back</a>
+            </li>
+           
+        }else {
+            <li class="list-group-item">
+                <Icon Name="IconName.Backward" />
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Adaptors))">Back</a>
+            </li>
             <li class="list-group-item">
                 <Icon Name="@ViewModel!.Home.AdaptorButtonIcon(ViewModel.Selected)" />
-            <a href="#" onclick="@(() => ViewModel!.Home.ToggleAdaptor(ViewModel.Selected))">@ViewModel!.AdaptorButtonText(ViewModel.Selected)</a>
-        </li>
+                <a href="#" onclick="@(() => ViewModel!.Home.ToggleAdaptor(ViewModel.Selected))">@ViewModel!.AdaptorButtonText(ViewModel.Selected)</a>
+            </li>
         }
         <li class="list-group-item">
             <Icon Name="IconName.Server" />
