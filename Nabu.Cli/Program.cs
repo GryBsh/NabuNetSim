@@ -1,13 +1,11 @@
 ﻿
-
-// Create a type registrar and register any dependencies.
-// A type registrar is an adapter for a DI framework.
 using Microsoft.Extensions.DependencyInjection;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
-//var registrations = new ServiceCollection();
-//var app = new CommandApp<>(registrar);
+
+var registrations = new ServiceCollection();
+
+
 
 CancellationTokenSource CancelSource = new();
 
@@ -19,7 +17,6 @@ while (CancelSource.IsCancellationRequested is false) {
         CancelSource.Cancel();
     }
 }
-
 
 static class BuiltInCommands
 {

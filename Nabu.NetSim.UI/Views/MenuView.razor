@@ -148,6 +148,25 @@
                 }
             </Select>
         </li>
+        <li class="list-group-item">
+            <Icon Name="IconName.Forward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Storage))">Storage</a>
+        </li>
+    </ul>
+</Div>
+<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Storage)>
+    <ul class="menu list-group list-group-flush list-group-sm">
+        <li class="list-group-item">
+            <Icon Name="IconName.Backward" />
+            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.AdaptorSettings))">Back</a>
+        </li>
+        
+        <li class="list-group-item">
+            <Icon Name="IconName.Save" />
+            Storage<br />
+            <InputText @bind-Value="@ViewModel.Selected.StoragePath"></InputText>
+        </li>
+
     </ul>
 </Div>
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.CLI)>

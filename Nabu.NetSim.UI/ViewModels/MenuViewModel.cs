@@ -16,6 +16,7 @@ public enum MenuPage
     Settings,
     Connections,
     AdaptorSettings,
+    Storage,
     Features,
     MAME,
     CLI

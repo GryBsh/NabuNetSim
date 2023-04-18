@@ -48,7 +48,10 @@ public class AppLogger : ILogger
     {
         if (!IsEnabled(logLevel)) return;
 
-        if (eventId.Name?.StartsWith("System.Net.Http") is false) return;
+        if (eventId.Name is not null) 
+            return;
+        //if (eventId.Name?.StartsWith("Microsoft.AspNetCore") is false) 
+        //    return;
 
         Task.Run(() =>
             LogEntries.Insert(
