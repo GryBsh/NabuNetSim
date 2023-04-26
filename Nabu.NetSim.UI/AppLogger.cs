@@ -12,6 +12,7 @@ namespace Nabu.NetSim.UI;
 
 public class AppLogger : ILogger
 {
+    private readonly string FullName;
     private readonly string Name;
     private readonly AppLogProvider Provider;
     private readonly AppLogConfiguration Settings;
@@ -23,6 +24,7 @@ public class AppLogger : ILogger
         IRepository<LogEntry> repository
     )
     {
+        FullName = name;
         Name = name.Split('.')[^1];
         Provider = provider;
         Settings = settings;
@@ -36,7 +38,8 @@ public class AppLogger : ILogger
         => default!;
 
     public bool IsEnabled(LogLevel logLevel)
-        => logLevel >= Settings.LogLevel;
+        => logLevel >= Settings.LogLevel &&
+           (FullName.StartsWith("Microsoft.AspNetCore") is false);
 
     public void Log<TState>(
         LogLevel logLevel,
@@ -50,6 +53,7 @@ public class AppLogger : ILogger
 
         if (eventId.Name is not null) 
             return;
+        
         //if (eventId.Name?.StartsWith("Microsoft.AspNetCore") is false) 
         //    return;
 
