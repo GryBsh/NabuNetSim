@@ -25,56 +25,56 @@ jobs:
       with:
         dotnet-version: 7.0.x
     - name: Package NetSim Linux
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSim
         archs: x64 arm arm64
         os: linux
         
     - name: Package NetSim Windows
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSim
         archs: x64 arm arm64
         os: win
 
     - name: Package NetSim MacOS 10.10
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSim
         archs: x64
         os: osx.10.10
 
     - name: Package NetSim MacOS 11.0
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSim
         archs: x64
         os: osx.11.0
       
     - name: Package NetSim Web Linux
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSimWeb
         archs: x64 arm arm64
         os: linux
 
     - name: Package NetSim Web Windows
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSimWeb
         archs: x64 arm arm64
         os: win
 
     - name: Package NetSim Web MacOS 10.10
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSimWeb
         archs: x64
         os: osx.10.10
 
     - name: Package NetSim Web MacOS 11.0
-      uses: ./.github/workflows/package-platform.yml
+      uses: ./.github/workflows/package-platform.yaml
       with:
         project: NetSimWeb
         archs: x64
