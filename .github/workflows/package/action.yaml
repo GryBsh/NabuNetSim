@@ -40,7 +40,7 @@ runs:
         BIN="bin/$os/$arch"
         dotnet publish ./Nabu.$project -r $os-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
         mkdir $BIN/$PAK_output
-        for pak in PAKs
+        for pak in $PAKs
         do
           mkdir $BIN/$PAK_output/$pak
           cp -r $PAK/$pak $BIN/$PAK_output/$pak  
