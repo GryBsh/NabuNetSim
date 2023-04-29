@@ -5,19 +5,20 @@ namespace Nabu.Network.NHACP.V01;
 
 public class HttpStorageHandler : RAMStorageHandler
 {
-    public HttpStorageHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
+    readonly CachingHttpClient Http;
+    public HttpStorageHandler(IConsole logger, AdaptorSettings settings, HttpClient http, FileCache cache) : base(logger, settings)
     {
+        Http = new CachingHttpClient(http, logger, cache);
     }
 
     public override async Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
     {
         try
-        {
-            using var client = new HttpClient();
-            using var response = await client.GetAsync(uri);
+        { 
+            var response = await Http.GetHead(uri);
             if (response.IsSuccessStatusCode)
             {
-                Buffer = await response.Content.ReadAsByteArrayAsync();
+                Buffer = await Http.GetBytes(uri);
                 return (true, string.Empty, Buffer.Length, NHACPError.Undefined);
             }
             else

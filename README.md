@@ -11,13 +11,7 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 ## Whats New
 
-- > Adds support for the latest NHACP v0.1 draft including support for IshkurCPM (included)
-- > Since even Nabu.Ca is using raw cycle files now, NetSim no longer supports encrypted PAK files.
-- > Restores support for RetroNet, including new support for Cloud CP/M.
-- > Web UI.
-- > Experimental Python / Javscript Protocol support.
-- > New Look, Same great taste!
-- > Docker support.
+- > Hybrid IskurCPM support, allows physical disk drives
 
 ## Known Issues
 
@@ -39,7 +33,7 @@ Console:
 
 Web:
 
-- Memory: 300mb minimum, 1GB recommended.
+- Memory: 100MB minimum, 512MB-1GB recommended.
 
 Realistically, a Pi 3 can serve a dozen or so adaptors, and a Pi 4 can handle 20+
 A PC can potentially serve hundreds.
@@ -57,6 +51,8 @@ The console service app runs headless, and runs in a set configuration. Configur
 The Web UI is a web based interface, that allows you to configure the service on the fly.
 
 For most regular users, the Web UI is recommended.
+
+**Each release package starts with `nns`, for headless, or `nnsweb` for the Web UI. Choose the one for your desired platform/architecture**
 
 ### Configuration
 
@@ -96,6 +92,17 @@ For most regular users, the Web UI is recommended.
 
 ## Advanced
 
+### Changing the hostname, port (Web UI)
+
+Add the following property to the appsettings.json config file:
+
+```json
+  "Urls": "http://*:5000"
+```
+
+To change the hostname, replace `*` with the hostname or IP address you want to use.
+To change the port number, replace `5000` with the port number you want to use.
+
 ### Docker (Linux)
 
 Preliminary Docker support is available, but is not extensively tested. It #WorksOnMyMachine.
@@ -129,7 +136,7 @@ NABU PC can be emulated with MAME, and the standalone NABU emulator [Marduk](htt
 
 ## Special Thanks
 
-- [Leo "The Undipsuted God-Legend" Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
+- [Leo "The Undisputed God-Legend" Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
 

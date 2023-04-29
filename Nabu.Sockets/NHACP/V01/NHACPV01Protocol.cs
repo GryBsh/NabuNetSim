@@ -49,6 +49,8 @@ public enum NHACPSeekOrigin
 
 public class NHACPV01Protocol : Protocol
 {
+    HttpClient Http;
+    FileCache FileCache;
     Dictionary<byte, NHACPV01Session> Sessions { get; }
 
     Dictionary<NHACPError, string> ErrorMessages { get; } = new()
@@ -72,9 +74,11 @@ public class NHACPV01Protocol : Protocol
         [NHACPError.NotADirectory]      = "Not a Directory"
     };
 
-    public NHACPV01Protocol(IConsole<NHACPV01Protocol> logger) : base(logger)
+    public NHACPV01Protocol(IConsole<NHACPV01Protocol> logger, HttpClient http, FileCache fileCache) : base(logger)
     {
         Sessions = new();
+        Http = http;
+        FileCache = fileCache;
     }
 
     byte NextIndex(byte sessionId)
@@ -163,7 +167,7 @@ public class NHACPV01Protocol : Protocol
             Sessions[sessionId][index] = uri switch
             {
                 var path when path.StartsWith("http") || path.StartsWith("https")
-                            => new HttpStorageHandler(Logger, Settings),
+                            => new HttpStorageHandler(Logger, Settings, Http, FileCache),
                 var path when path.StartsWith("0x")
                             => new RAMStorageHandler(Logger, Settings),
                 _ => new FileStorageHandler(Logger, Settings)

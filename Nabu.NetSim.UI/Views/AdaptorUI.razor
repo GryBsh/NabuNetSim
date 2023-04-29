@@ -18,7 +18,7 @@
             </ul>
         </div>
         <div Class="row row-divider" /> 
-        <div class="row">
+        <div class="row" style="height: 400px">
             <div class="col flex-fill title-col">
                 <div class="container-fluid title-box">
                     <div class="row">
@@ -27,14 +27,13 @@
                             <Image class="logo" Source="_content/Nabu.NetSim.UI/nabu.png" />
 
                         </div>
-                        
-                         <div class="col top">
+                        <div class="col top">
                             <div><small>Adaptors</small></div>
                             <ul class="news list-group list-group-flush">
                                 <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
                                     <li class="list-group-item">
                                         <large><Icon Name="IconName.Plug"/></large>
-                                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                        <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br/>
                                         <large><Icon Name="IconName.Folder"/></large>
                                         @context.Source/@(
                                     !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
@@ -44,7 +43,7 @@
                                 <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
                                     <li class="list-group-item">
                                         <large><Icon Name="IconName.Wifi"/></large>
-                                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                        <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br/>
                                         <large><Icon Name="IconName.Folder"/></large>
                                         @context.Source/@(
                                             !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
@@ -57,7 +56,7 @@
                                 <Virtualize TItem="TCPAdaptorSettings" Items="@TCPAdaptor.Connections.Values">
                                     <li class="list-group-item">
                                         <large><Icon Name="IconName.Wifi"/></large>
-                                        @context.Port:@ViewModel!.AdaptorStatus(context)<br/>
+                                        <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br/>
                                         <large><Icon Name="IconName.Folder"/></large>
                                         @context.Source/@(
                                             !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
@@ -67,6 +66,7 @@
                                 
                             </ul>
                         </div>
+                        
                         <MenuView ViewModel="@ViewModel!.Menu" />
                         
                     </div>

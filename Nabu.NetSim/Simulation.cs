@@ -52,7 +52,7 @@ public class Simulation : BackgroundService, ISimulation
 
     protected override async Task ExecuteAsync(CancellationToken stopping)
     {
-        if (Settings.Flags.Contains(Flags.EnablePython))
+        if (Settings.EnablePython)
         {
             PythonProtocol.Startup(Logger);
         }
@@ -136,7 +136,7 @@ public class Simulation : BackgroundService, ISimulation
                 .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
                 .AddSingleton<FileCache>();
 
-        if (settings.Flags.Contains(Flags.EnablePython))
+        if (settings.EnablePython)
         {
             var pythonLib = string.Empty;
             if (OperatingSystem.IsWindows())
@@ -172,14 +172,14 @@ public class Simulation : BackgroundService, ISimulation
                 else
                 {
                     Console.WriteLine("Cannot find Python, disabling.");
-                    settings.Flags.Remove(Flags.EnablePython);
+                    settings.EnablePython = false;
                 }
             }
             else if (OperatingSystem.IsLinux()) pythonLib = "libpython3.11.so";
             else if (OperatingSystem.IsMacOS()) pythonLib = "libpython3.11.dylib";
         }
 
-        if (settings.Flags.Contains(Flags.EnableJavaScript))
+        if (settings.EnableJavaScript)
         {
             var pluginProtocols = settings.Protocols.Where(p => p.Type.ToLower() == ProtocolPluginTypes.JavaScript.ToLower());
             foreach (var proto in pluginProtocols)
