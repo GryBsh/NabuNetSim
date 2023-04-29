@@ -47,7 +47,7 @@ runs:
         done
         cp -r $NABUs $BIN
         cp -r $Files $BIN
-        if [ $os == osx* ]; then
+        if [[ $os == osx* ]]; then
           cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
         else
           cp -f $CONFIG/appsettings.$os.json $BIN/appsettings.json
