@@ -1,0 +1,43 @@
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+      archs:
+        required: true
+        type: string
+      os:
+        required: true
+        type: string
+
+jobs:
+  package-platform:
+    runs-on: ubuntu-latest
+    env:
+      os: ${{ inputs.os }}
+      archs: ${{ inputs.archs }}
+      project: ${{ inputs.project }}
+      PAK: Assets/PAKs
+      NABUs: Assets/NABUs
+      Files: Assets/Files
+      CONFIG: Assets/Config
+      WIN_start: Assets/start.cmd
+    steps:
+    - name: Package ${{ inputs.project }} for ${{ inputs.os }} ${{ inputs.archs }}
+      run: |
+        for arch in $archs; 
+        do
+          BIN="bin/$os/$arch"
+          dotnet publish ./$project -r linux-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+          cp -r $PAK $BIN
+          cp -r $NABUs $BIN
+          cp -r $Files $BIN
+          cp -f $CONFIG/appsettings.linux.json $BIN/appsettings.json
+          rm -f $BIN/appsettings.Development.json
+          cp -f README.md $BIN
+          cp -f LICENSE $BIN
+          rm -f $BIN/*.pdb
+          zip -r nns-linux-$arch.zip $BIN
+        done
+      
