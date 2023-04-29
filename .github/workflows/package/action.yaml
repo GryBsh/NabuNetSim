@@ -42,7 +42,7 @@ runs:
         mkdir $BIN/$PAK_output
         for pak in $PAKs
         do
-          mkdir $BIN/$PAK_output/$pak
+          mkdir -p $BIN/$PAK_output/$pak
           cp -r $PAK/$pak $BIN/$PAK_output/$pak  
         done
         cp -r $NABUs $BIN
