@@ -8,7 +8,7 @@ on:
       - published
 
 jobs:
-  setup:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -16,68 +16,65 @@ jobs:
       uses: actions/setup-dotnet@v3
       with:
         dotnet-version: 7.0.x
-
-  Package-NetSim-Linux:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-      project: NetSim
-      archs: x64 arm arm64
-      os: linux
+    - name: Package NetSim Linux
+      uses: ./.github/workflows/package
+      with:
+        project: NetSim
+        archs: x64 arm arm64
+        os: linux
         
-  Package-NetSim-Windows:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-      project: NetSim
-      archs: x64 arm arm64
-      os: win
+    - name: Package NetSim Windows
+      uses: ./.github/workflows/package
+      with:
+        project: NetSim
+        archs: x64 arm arm64
+        os: win
 
-  Package-NetSim-MacOS-10-10:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-      project: NetSim
-      archs: x64
-      os: osx.10.10
+    - name: Package NetSim MacOS 10.10
+      uses: ./.github/workflows/package
+      with:
+        project: NetSim
+        archs: x64
+        os: osx.10.10
 
-  Package-NetSim-MacOS-11:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-      project: NetSim
-      archs: x64
-      os: osx.11.0
+    - name: Package NetSim MacOS 11.0
+      uses: ./.github/workflows/package
+      with:
+        project: NetSim
+        archs: x64
+        os: osx.11.0
       
-  Package-NetSim-Web-Linux:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-       project: NetSimWeb
-       archs: x64 arm arm64
-       os: linux
+    - name: Package NetSim Web Linux
+      uses: ./.github/workflows/package
+      with:
+        project: NetSimWeb
+        archs: x64 arm arm64
+        os: linux
 
-  Package-NetSim-Web-Windows:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-       project: NetSimWeb
-       archs: x64 arm arm64
-       os: win
+    - name: Package NetSim Web Windows
+      uses: ./.github/workflows/package
+      with:
+        project: NetSimWeb
+        archs: x64 arm arm64
+        os: win
 
-  Package-NetSim-Web-MacOS-10-10:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-      project: NetSimWeb
-      archs: x64
-      os: osx.10.10
+    - name: Package NetSim Web MacOS 10.10
+      uses: ./.github/workflows/package
+      with:
+        project: NetSimWeb
+        archs: x64
+        os: osx.10.10
 
-  Package-NetSim-Web-MacOS-11:
-    uses: ./.github/workflows/package-platform.yaml
-    with:
-      project: NetSimWeb
-      archs: x64
-      os: osx.11.0
+    - name: Package NetSim Web MacOS 11.0
+      uses: ./.github/workflows/package
+      with:
+        project: NetSimWeb
+        archs: x64
+        os: osx.11.0
 
         
-  release:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: softprops/action-gh-release@v1
+    - name: Release
+      uses: softprops/action-gh-release@v1
       if: startsWith(github.ref, 'refs/tags/')
       with:
         files: '*.zip'

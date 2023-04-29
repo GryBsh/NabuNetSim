@@ -1,0 +1,65 @@
+name: Build-Package
+description:  Build NNS packages for release
+
+inputs:
+  project:
+    description: Project Name
+    required: true
+  archs:
+    description: Architectures
+    required: true
+  os:
+    description: OS
+    required: true
+
+runs:
+  using: composite
+  steps:
+  - name: Package ${{ inputs.project }} for ${{ inputs.os }} (${{ inputs.archs }})
+    shell: bash
+    env:
+      webproject: NetSimWeb
+      os: ${{ inputs.os }}
+      archs: ${{ inputs.archs }}
+      project: ${{ inputs.project }}
+      PAK: Assets/PAKs
+      PAK_output: PAKs
+      PAKs: direct cycle1/raw cycle2/raw cycle2ex
+      NABUs: Assets/NABUs
+      Files: Assets/Files
+      CONFIG: Assets/Config
+      win_start: Assets/start.cmd
+    run: |
+      if [$project == $webproject]; then
+          name="nnsweb"
+      else
+          name="nns"
+      fi
+      for arch in $archs; 
+      do
+        BIN="bin/$os/$arch"
+        dotnet publish ./Nabu.$project -r $os-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
+        mkdir $BIN/$PAK_output
+        for pak in PAKs
+        do
+          mkdir $BIN/$PAK_output/$pak
+          cp -r $PAK/$pak $BIN/$PAK_output/$pak  
+        done
+        cp -r $NABUs $BIN
+        cp -r $Files $BIN
+        cp -f $CONFIG/appsettings.$os.json $BIN/appsettings.json
+        cp -f README.md $BIN
+        cp -f LICENSE $BIN
+        if [$os == 'win'] && [$project == $webproject]; then
+          cp -f $win_start $BIN
+        fi
+        rm -f $BIN/*.pdb
+        rm -f $BIN/appsettings.Development.json
+        cd $BIN
+        zip -r ../../../$name-$os-$arch.zip *
+        cd ../../../
+      done
+  - name: Clear BIN
+    run: rm -rf ./bin
+    shell: bash
+    
