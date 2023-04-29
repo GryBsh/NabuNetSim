@@ -30,7 +30,7 @@ runs:
       CONFIG: Assets/Config
       win_start: Assets/start.cmd
     run: |
-      if [$project == $webproject]; then
+      if [ $project == $webproject ]; then
           name="nnsweb"
       else
           name="nns"
@@ -47,10 +47,14 @@ runs:
         done
         cp -r $NABUs $BIN
         cp -r $Files $BIN
-        cp -f $CONFIG/appsettings.$os.json $BIN/appsettings.json
+        if [ $os == osx* ]; then
+          cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
+        else
+          cp -f $CONFIG/appsettings.$os.json $BIN/appsettings.json
+        fi
         cp -f README.md $BIN
         cp -f LICENSE $BIN
-        if [$os == 'win'] && [$project == $webproject]; then
+        if [ $os == 'win' ] && [ $project == $webproject ]; then
           cp -f $win_start $BIN
         fi
         rm -f $BIN/*.pdb
