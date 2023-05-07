@@ -6,12 +6,16 @@ using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
 using System.Threading.Channels;
 using Nabu.Services;
+using System.Net.Sockets;
+using System.Net;
+using System.Reactive.Linq;
 
 namespace Nabu.Network.RetroNet;
 
 public partial class RetroNetProtocol : Protocol
 {
     Dictionary<byte, IRetroNetFileHandle> Slots { get; } = new();
+    
     FileDetails[]? CurrentList { get; set; }
     HttpClient HttpClient { get; }
     FileCache FileCache { get; }
@@ -19,7 +23,7 @@ public partial class RetroNetProtocol : Protocol
     Dictionary<string, byte[]> Cache { get; } = new();
     readonly Settings Global;
     
-    byte NextIndex()
+    byte NextSlotIndex()
     {
         for (int i = 0x00; i < 0xFF; i++)
         {
@@ -28,7 +32,6 @@ public partial class RetroNetProtocol : Protocol
         }
         return 0xFF;
     }
-
 
     public RetroNetProtocol(
         IConsole<RetroNetProtocol> logger,
@@ -63,7 +66,16 @@ public partial class RetroNetProtocol : Protocol
         RetroNetCommands.FileMove,
         RetroNetCommands.FileOpen,
         RetroNetCommands.FileSize,
-        RetroNetCommands.FileStat
+        RetroNetCommands.FileStat,
+        RetroNetCommands.TCPHandleOpen, 
+        RetroNetCommands.TCPHandleClose, 
+        RetroNetCommands.TCPHandleSize,
+        RetroNetCommands.TCPHandleRead,
+        RetroNetCommands.TCPHandleWrite,
+        RetroNetCommands.TCPServerClientCount,
+        RetroNetCommands.TCPServerAvailable,
+        RetroNetCommands.TCPServerRead,
+        RetroNetCommands.TCPServerWrite,
     };
 
     public override byte Version { get; } = 0x01;
@@ -112,6 +124,24 @@ public partial class RetroNetProtocol : Protocol
                     return FileHandleReadSequence(cancel);
                 case RetroNetCommands.FileHandleSeek:
                     return FileHandleSeek(cancel);
+                case RetroNetCommands.TCPHandleOpen:
+                    return TCPHandleOpen();
+                case RetroNetCommands.TCPHandleClose:
+                    return TCPHandleHandleClose();
+                case RetroNetCommands.TCPHandleSize:
+                    return TCPHandleSize();
+                case RetroNetCommands.TCPHandleRead:
+                    return TCPHandleRead(cancel);
+                case RetroNetCommands.TCPHandleWrite:
+                    return TCPHandleWrite(cancel);
+                case RetroNetCommands.TCPServerClientCount:
+                    return TCPServerClientCount();
+                case RetroNetCommands.TCPServerAvailable:
+                    return TCPServerAvailable();
+                case RetroNetCommands.TCPServerRead: 
+                    return TCPServerRead(cancel);
+                case RetroNetCommands.TCPServerWrite:
+                    return TCPServerWrite(cancel);
                 default:
                     Warning($"Unsupported message: {Format(unhandled)}");
                     return Task.CompletedTask;
@@ -124,17 +154,74 @@ public partial class RetroNetProtocol : Protocol
         }
     }
 
-    void WriteBuffer(Span<byte> bytes)
+    void WriteBuffer(Memory<byte> bytes)
     {
         Writer.Write(NabuLib.FromShort((short)bytes.Length));
-        Writer.Write(bytes);
+        Writer.Write(bytes.ToArray());
+    }
+
+    public override bool Attach(AdaptorSettings settings, Stream stream)
+    {
+        Observable.Interval(TimeSpan.FromSeconds(10)).Subscribe(_ =>
+        {
+            if (settings is NullAdaptorSettings)
+                return;
+
+            var source = NabuNet.Source(Settings);
+            if (source is null)
+                return;
+            
+            if (Server is null && source.EnableRetroNet && source.EnableRetroNetTCPServer)
+            {
+                try
+                {
+                    var started = StartTCPServer(source);
+                    if (!started) return;
+
+                    Task.Run(async () =>
+                    {
+                        while (true)
+                        {
+                            try
+                            {
+                                await TCPServerListen();                            
+                            }
+                            catch (Exception ex) 
+                            {
+                                Logger.WriteWarning($"TCP Server Connection Attempt Failed: {ex.Message}");
+                            }
+                        }
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Logger.WriteError($"Failed to start TCP Server: {ex.Message}");
+                }
+            }
+            else if (Server is not null && (!source.EnableRetroNet || !source.EnableRetroNetTCPServer))
+            {
+                ShutdownTCPServer();
+            }
+        });
+        return base.Attach(settings, stream);
     }
     
+
+    public override void Detach()
+    {
+        if (Server is not null)
+        {
+            ShutdownTCPServer();
+        }
+        base.Detach();
+    }
+
     IRetroNetFileHandler FileHandler(string filename)
     {
+
         return filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings, FileCache, Global),
+            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings, FileCache),
             _ => new RetroNetFileHandler(Logger, Settings)
         };
     }
@@ -154,7 +241,7 @@ public partial class RetroNetProtocol : Protocol
         var flags = (FileListFlags)Recv();
         Log($"List: {path}\\{wildcard}");
         CurrentList = (await FileHandler(path).List(path, wildcard, flags)).ToArray();
-        Writer.Write((short)CurrentList.Count());
+        Writer.Write((short)CurrentList.Length);
     }
 
     private Task FileIndexStat(CancellationToken cancel)
@@ -198,30 +285,26 @@ public partial class RetroNetProtocol : Protocol
         //await FileOpen(filename, FileOpenFlags.ReadOnly, handle, cancel);
         Log($"Size: {filename}");
 
-        var size = Cache.ContainsKey(filename) switch
-        {
-            true => Cache[filename].Length,
-            false => await FileHandler(filename).Size(filename)
-        };
+        var size = await FileHandler(filename).Size(filename);
         Writer.Write(size);
     }
-
+        
     public override void Reset()
     {
-        if (Slots.Count > 0 || Cache.Count > 0)
+        Task.Run(() =>
         {
-            var cancel = CancellationToken.None;
             if (Slots.Count > 0)
             {
-                foreach (var b in Slots.Keys) Slots[b].Close(cancel);
-                Slots.Clear();
+                var cancel = CancellationToken.None;
+                if (Slots.Count > 0)
+                {
+                    foreach (var b in Slots.Keys) Slots[b].Close(cancel);
+                    Slots.Clear();
+                }
+                
+                base.Reset();
             }
-            if (Cache.Count > 0)
-            {
-                Cache.Clear();
-            }
-            base.Reset();
-        }
+        });
     }
 
     public override bool ShouldAccept(byte unhandled)
@@ -232,6 +315,8 @@ public partial class RetroNetProtocol : Protocol
 
         return command && enabled;
     }
+
+
 
     [GeneratedRegex("http[s]?://.*")]
     private static partial Regex Http();

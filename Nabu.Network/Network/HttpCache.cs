@@ -37,7 +37,7 @@ public class CachingHttpClient : IHttpCache
         }
     }
 
-    public async Task<(bool, bool, bool, DateTime)> GetUriStatus(string uri, string? path = null)
+    public async Task<UriStatus> GetUriStatus(string uri, string? path = null)
     {
         var head = await GetHead(uri);
         path ??= Path.Join(CacheFolder, NabuLib.SafeFileName(uri));
@@ -47,9 +47,9 @@ public class CachingHttpClient : IHttpCache
         {
             if (!head.IsSuccessStatusCode)
             {
-                return (false, false, false, DateTime.Now); //No download, not found, no local
+                return new (false, false, false, DateTime.Now); //No download, not found, no local
             }
-            return (true, true, false, DateTime.MinValue); //Download, Found, None
+            return new (true, true, false, DateTime.MinValue); //Download, Found, None
         }
 
         var modified = head.Content.Headers.LastModified;
@@ -57,9 +57,9 @@ public class CachingHttpClient : IHttpCache
 
         if (modified > lastCached)
         {
-            return (true, true, true, DateTime.MinValue);
+            return new (true, true, true, DateTime.MinValue);
         }
-        return (false, true, true, lastCached);
+        return new (false, true, true, lastCached);
     }
 
     public async Task<byte[]> GetBytes(string uri)

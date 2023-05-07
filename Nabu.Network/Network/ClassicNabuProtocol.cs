@@ -14,7 +14,7 @@ public class ClassicNabuProtocol : Protocol
     public bool ChannelKnown => Channel is > 0 and < 0x100;
     DateTime? Started = null;
 
-    AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
+    //AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 
     public ClassicNabuProtocol(
         IConsole<ClassicNabuProtocol> logger,
@@ -22,6 +22,7 @@ public class ClassicNabuProtocol : Protocol
     ) : base(logger)
     {
         Network = network;
+        Settings = new NullAdaptorSettings();
     }
 
     #region NabuNet Responses
@@ -254,7 +255,7 @@ public class ClassicNabuProtocol : Protocol
         {
             var finished = DateTime.Now;
             
-            Network.UncachePak(base.Settings, pak);
+            Network.UnCachePak(base.Settings, pak);
             //Task.Run(GC.Collect);
             
             if (Started is null) return; // Time Packet is not timed.
@@ -316,7 +317,7 @@ public class ClassicNabuProtocol : Protocol
                 break;
             #endregion
             default:
-                Warning($"Unsupported: {Format(incoming)}");
+                Warning($"Unsupported: 0x{Format(incoming)}");
                 break;
         }
 

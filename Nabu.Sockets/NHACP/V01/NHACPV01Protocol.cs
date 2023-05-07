@@ -11,42 +11,6 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace Nabu.Network.NHACP.V01;
 
 
-public class NHACPV01Session : Dictionary<byte, INHACPStorageHandler>, IDisposable
-{
-    private bool disposedValue;
-
-    public NHACPError LastError { get; set; } = NHACPError.Undefined;
-    public string LastErrorMessage = string.Empty;
-
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposedValue)
-        {
-            if (disposing)
-            {
-                foreach (var slot in this.Values) {
-                    slot.End();
-                }
-            }
-            disposedValue = true;
-        }
-    }
-    public void Dispose()
-    {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
-}
-
-public enum NHACPSeekOrigin
-{
-    Set = 0,
-    Current = 1,
-    End = 2
-}
-
-
 public class NHACPV01Protocol : Protocol
 {
     HttpClient Http;
@@ -112,7 +76,7 @@ public class NHACPV01Protocol : Protocol
         return NHACPMessage.Error(code, error).ToArray();
     }
 
-    private byte[] Hello(byte sessionId, byte[] buffer)
+    private byte[] Hello(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -151,7 +115,7 @@ public class NHACPV01Protocol : Protocol
         return NHACPMessage.NHACPStarted(sessionId, CurrentVersion, Emulator.Id).ToArray();
     }
 
-    public async Task<byte[]> StorageOpen(byte sessionId, byte[] buffer)
+    public async Task<byte[]> StorageOpen(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -189,7 +153,7 @@ public class NHACPV01Protocol : Protocol
         
     }
 
-    public async Task<byte[]> StorageGet(byte sessionId, byte[] buffer)
+    public async Task<byte[]> StorageGet(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -217,7 +181,7 @@ public class NHACPV01Protocol : Protocol
         }
 
     }
-    public async Task<byte[]> StoragePut(byte sessionId, byte[] buffer)
+    public async Task<byte[]> StoragePut(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -251,7 +215,7 @@ public class NHACPV01Protocol : Protocol
     public static Span<byte> StorageDateTime(byte[]? none) 
         => NHACPStructure.DateTime(DateTime.Now);
 
-    public byte[] StorageClose(byte sessionId, byte[] buffer)
+    public byte[] StorageClose(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -278,7 +242,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] ErrorDetails(byte sessionId, byte[] buffer)
+    public byte[] ErrorDetails(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -301,7 +265,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public async Task<byte[]> StorageGetBlock(byte sessionId, byte[] buffer)
+    public async Task<byte[]> StorageGetBlock(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -327,7 +291,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public async Task<byte[]> StoragePutBlock(byte sessionId, byte[] buffer)
+    public async Task<byte[]> StoragePutBlock(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -355,7 +319,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public async Task<byte[]> FileRead(byte sessionId, byte[] buffer)
+    public async Task<byte[]> FileRead(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -381,7 +345,7 @@ public class NHACPV01Protocol : Protocol
             return ErrorResult(sessionId, ex);
         }
     }
-    public async Task<byte[]> FileWrite(byte sessionId, byte[] buffer)
+    public async Task<byte[]> FileWrite(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -409,13 +373,13 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] FileSeek(byte sessionId, byte[] buffer)
+    public byte[] FileSeek(byte sessionId, Memory<byte> buffer)
     {
         try
         {
             var (i, index) = NabuLib.Pop(buffer, 1);
             (i, var offset) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
-            (i, var origin) = NabuLib.Slice(buffer, i, 1, o => (NHACPSeekOrigin)o[0]);
+            (i, var origin) = NabuLib.Slice(buffer, i, 1, o => (NHACPSeekOrigin)o.Span[0]);
             Log($"{sessionId} SEEK: {index}, Offset: {offset}, Origin: {origin}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
@@ -436,7 +400,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] FileGetInfo(byte sessionId, byte[] buffer)
+    public byte[] FileGetInfo(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -460,7 +424,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] FileSetSize(byte sessionId, byte[] buffer)
+    public byte[] FileSetSize(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -484,7 +448,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] ListDir(byte sessionId, byte[] buffer)
+    public byte[] ListDir(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -510,7 +474,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] GetDirEntry(byte sessionId, byte[] buffer)
+    public byte[] GetDirEntry(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -539,7 +503,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] Remove(byte sessionId, byte[] buffer)
+    public byte[] Remove(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -579,7 +543,7 @@ public class NHACPV01Protocol : Protocol
 
     }
 
-    public byte[] Rename(byte sessionId, byte[] buffer)
+    public byte[] Rename(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -618,7 +582,7 @@ public class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] MakeDir(byte sessionId, byte[] buffer)
+    public byte[] MakeDir(byte sessionId, Memory<byte> buffer)
     {
         try
         {
@@ -693,7 +657,8 @@ public class NHACPV01Protocol : Protocol
             0x10 => Remove(sessionId, buffer),
             0x11 => Rename(sessionId, buffer),
             0x12 => MakeDir(sessionId, buffer),
-            0xEF => Goodbye(sessionId)
+            0xEF => Goodbye(sessionId),
+            _ => Array.Empty<byte>()
         };
 
         if (result is null || result.Length == 0) return;

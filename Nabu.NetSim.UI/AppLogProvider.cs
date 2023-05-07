@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nabu.Services;
 using System.Collections.Concurrent;
 using System.Reactive.Concurrency;
 
@@ -24,8 +25,6 @@ public class AppLogProvider : ILoggerProvider
         Settings = settings;
         Config = config;
         Repository = repository;
-
-        
     }
 
     public ILogger CreateLogger(string categoryName)

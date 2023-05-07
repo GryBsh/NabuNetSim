@@ -46,12 +46,12 @@ public class NHACPProtocol : Protocol
             NabuLib.FromInt(length)
         );
     }
-    void DataBuffer(byte[] buffer)
+    void DataBuffer(Memory<byte> buffer)
     {
         SendFramed(
             0x84,
             NabuLib.FromShort((short)buffer.Length),
-            buffer
+            buffer.ToArray()
         );
     }
 
@@ -67,7 +67,7 @@ public class NHACPProtocol : Protocol
     #endregion
 
     #region ACP Operations
-    async Task Open(byte[] buffer)
+    async Task Open(Memory<byte> buffer)
     {
         Log($"NPC: Open");
         try
@@ -94,7 +94,7 @@ public class NHACPProtocol : Protocol
         }
     }
 
-    async Task Get(byte[] buffer)
+    async Task Get(Memory<byte> buffer)
     {
         Log($"NPC: Get");
         try
@@ -119,7 +119,7 @@ public class NHACPProtocol : Protocol
 
     }
 
-    async Task Put(byte[] buffer)
+    async Task Put(Memory<byte> buffer)
     {
         Log($"NPC: Put");
         try
@@ -145,7 +145,7 @@ public class NHACPProtocol : Protocol
         }
 
     }
-    async Task DateTime(byte[]? none)
+    async Task DateTime(Memory<byte> none)
     {
         Log($"NPC: DateTime");
         var (_, date, time) = await Storage.DateTime();
@@ -159,7 +159,7 @@ public class NHACPProtocol : Protocol
 
     #endregion
 
-    protected virtual Dictionary<byte, Func<byte[], Task>> PrepareHandlers()
+    protected virtual Dictionary<byte, Func<Memory<byte>, Task>> PrepareHandlers()
     {
         return new()
         {

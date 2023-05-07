@@ -2,6 +2,8 @@
 
 ![NABU NetSim](./Assets/ui.png)
 
+> NOTE: `NNS` is used to abbreviate `NABU NetSim` in this document.
+
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (Marduk, MAME),
 and can host multiple instances of either. Making it possible to host a NABU Network from one
 Computer. The adaptor emulator is complete in that it handles all known messages from the NABU.
@@ -9,17 +11,38 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
-## Whats New
+## Stand Out Features
+
+- > Supports multiple NABU adaptors, serial and TCP. You can use multiple serial adaptors and listen for clients on multiple ports at the same time if you so choose.
+- > Supports local file system NABU files and cycles, with the classic cycles included
+- > Supports feeds from NABUNetwork.com and Nabu.ca.
+- > Supports NHACP and Retronet.
+- > Deeply integrated offline caching of remote files/programs.
+- > Optional Web UI for configuration, with news from NabuNetwork.com.
+- > Extensible protocol support, you can add your own protocol handlers in Python or Javascript.
+
+## Whats New(ish)
 
 - > Hybrid IskurCPM support, allows physical disk drives
+- > RetroNet TCP Client/Server Support
+  - > Telnet/RetroNet Chat/etc are working.
+- > Revamped Web UI Log Viewer, with pagination and search
+  - > This does mean higher memory usage, but it's worth it.
+- > JavaScript support has switched from Jint to ClearScript V8.
+  - > This means support for all JavaScript Features like modules and the ability to use compile and use Typescript.
+- > Storage redirection support for NHACP and RetroNet, local and remote files are supported.
+  - > Useful for disk images, etc. This will enable future features like Client Storage Isolation.
+- > 98% of all byte arrays are now dealt with using `Span<T>` and `Memory<T>` for better performance, the fastest adaptor is now even faster!
 
 ## Known Issues
 
-- > Use IshkurCPM with multiple connections at your own risk.
+- > Use IshkurCPM with multiple connections at your own risk, should be solved in future by Client Storage Isolation.
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
+- > RetroNet support is experimental.
+- > Only one client way open and use the RetroNet TCP Server at a time, because the RetroNet was designed that way.
 - > NHACP support is experimental.
-- > Python Support is experimental, and probably doesn't work on non-Windows platforms.
+- > Python support is experimental, and probably doesn't work on non-Windows platforms.
 - > Javascript support is experimental.
 - > I'm 100% sure there are more.
 
@@ -33,7 +56,7 @@ Console:
 
 Web:
 
-- Memory: 100MB minimum, 512MB-1GB recommended.
+- Memory: 250MB minimum, 512MB-1GB recommended.
 
 Realistically, a Pi 3 can serve a dozen or so adaptors, and a Pi 4 can handle 20+
 A PC can potentially serve hundreds.
@@ -47,10 +70,10 @@ Nabu NetSim is available in 2 flavors:
 - Console Service App (Nabu.Netsim / nns)
 - Web UI (Nabu.NetsimWeb / nns-wui)
 
-The console service app runs headless, and runs in a set configuration. Configure, start, and go. This is ideal for in place installations, where the sources and adaptors needed are known and static. 
-The Web UI is a web based interface, that allows you to configure the service on the fly.
+The console service app runs headless, and runs in a set configuration. Configure, start, and go. This is ideal for in place installations, where the sources and adaptors needed are known and static.
+The Web UI is a web based interface, that allows you to configure the service on the fly, to a large degree. It also lets you manipulate individual sources for TCP clients post connection.
 
-For most regular users, the Web UI is recommended.
+Both have the same set of features, but for most regular users, the Web UI is recommended.
 
 **Each release package starts with `nns`, for headless, or `nnsweb` for the Web UI. Choose the one for your desired platform/architecture**
 
@@ -83,10 +106,36 @@ For most regular users, the Web UI is recommended.
       {
         "Name": "Nabu.Ca",
         "Path": "https://cloud.nabu.ca/HomeBrew/titles/filesv2.txt",
-        "EnableRetroNet": true           // Enable RetroNet support for this source
+        "EnableRetroNet": true,           // Enable RetroNet support for this source, false by default
+        "EnableRetroNetTCPServer": false, // Enable RetroNet TCP Server support for this source, false by default
+        "RetroNetTCPServerPort": 5815,    // The port to listen on for RetroNet TCP Server, 5815 by default
+        "StorageRedirects": {             // Storage Redirects for NHACP/Retronet, case sensitive
+          "C.dsk": "my/disk.dsk"
+        }
       }
-    ]
-  }
+    ],
+    // Optional Extensible Protocol Support
+    "Protocols": [
+      {
+        "Path": "test.js",                // Protocol Path
+        "type": "javascript",             // Protocol Type, javascript or python
+        "Commands": [ 131 ]              // Commands handled by this protocol
+      },
+    ],
+    "EnableJavaScript": false,            // Support for JavaScript custom protocols, disabled by default
+    "EnablePython": false,                // Support for Python custom protocols, disabled by default, experimental
+
+    // Other Settings
+    "EnableLocalFileCache": true,         // Enable local file caching of HTTP/HTTPS files, enabled by default
+
+    // Web UI Settings
+    "MaxLogEntryAgeHours": 12,            // How long to keep log entries in the UI, in hours, 12 hours by default
+    "LogCleanupIntervalMinutes": 15,      // How often to clean up old log entries, in hours, 15r by default
+    "CacheDatabasePath": "cache.db",      // The path to the UI cache database, relative to the working directory
+    "DatabasePath": "data.db",            // The path to the backend database, relative to the working directory
+  },
+  // Web UI Settings
+  "Urls": "http://*:5000"                 // The URL to listen on, * for all, *:5000 by default
 }
 ```
 
@@ -122,12 +171,18 @@ Preliminary Docker support is available, but is not extensively tested. It #Work
     nnswui:dev
 ```
 
-Much like other pathed devices, you can map in your serial ports
+## What's in the pipe (Coming Soon, in no particular order)
+
+- > User Storage Isolation
+  - > This will allow users to have their own copy of local storage files, and will avoid clobber issues with RetroNet and NHACP.
+- > NabuNetwork.com Headless Support
+  - > This will allow you to use the on NABU browser/launcher with NNS
+- > NAPA Package Support
+  - > NAPA is a package manager for NABU content. It allows authors to package their programs, storage content, custom protocols, and even pre-cached remote content, and make them available in a central repository.
 
 ## No hardware? No Problem
 
 NABU PC can be emulated with MAME, and the standalone NABU emulator [Marduk](https://github.com/buricco/marduk)
-
 
 ## Brought to you by
 

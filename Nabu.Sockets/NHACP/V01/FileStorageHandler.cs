@@ -27,7 +27,6 @@ public class FileStorageHandler : INHACPStorageHandler
         _directory = new DirectoryInfo(settings.StoragePath);
     }
 
-    
     public Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
     {
         Flags = flags;
@@ -76,7 +75,7 @@ public class FileStorageHandler : INHACPStorageHandler
         
     }
 
-    public async Task<(bool, string, NHACPError)> Put(int offset, byte[] buffer)
+    public async Task<(bool, string, NHACPError)> Put(int offset, Memory<byte> buffer)
     {
         if (_stream is null) 
             return (false, string.Empty, NHACPError.InvalidRequest);
@@ -125,7 +124,7 @@ public class FileStorageHandler : INHACPStorageHandler
         return result;
     }
 
-    public async Task<(bool, string, NHACPError)> Write(byte[] buffer)
+    public async Task<(bool, string, NHACPError)> Write(Memory<byte> buffer)
     {
         if (Position > Length)
         {

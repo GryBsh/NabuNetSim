@@ -12,7 +12,8 @@ public record LogEntry : IEntity
         EventId eventId,
         string name,
         string message,
-        Exception? exception
+        Exception? exception,
+        bool highlight = false
     )
     {
         Id = id;
@@ -22,6 +23,7 @@ public record LogEntry : IEntity
         Name = name;
         Message = message;
         Exception = exception;
+        Highlight = highlight;
     }
 
     public Guid Id { get; private set; } = Guid.Empty;
@@ -31,6 +33,7 @@ public record LogEntry : IEntity
     public string Name { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
     public Exception? Exception { get; set; }
+    public bool Highlight { get; set; }
 
 }
 

@@ -6,34 +6,27 @@ namespace Nabu.Network.RetroNetHandle;
 
 public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
 {
-    public RetroNetFileHandle(IConsole logger, AdaptorSettings settings) : base(logger, settings)
-    {
-
-    }
+    public RetroNetFileHandle(IConsole logger, AdaptorSettings settings) : base(logger, settings) { }
 
     //public FileInfo? FileHandle { get; set; }
     string Filename { get; set; } = string.Empty;
     FileOpenFlags? Flags { get; set; }
 
-    public Task Append(byte[] data, CancellationToken cancel)
+    public async Task Append(Memory<byte> data, CancellationToken cancel)
     {
         using var stream = Stream();
-        stream.Write(NabuLib.Append(Content(), data));
-        
-        return Task.CompletedTask;
+        await stream.WriteAsync(NabuLib.Append(Content(), data).ToArray(), cancel);
     }
 
     public Task Close(CancellationToken cancel)
     {
-        
         return Task.CompletedTask;
     }
 
-    public Task Delete(int offset, short length, CancellationToken cancel)
+    public async Task Delete(int offset, short length, CancellationToken cancel)
     {
         using var stream = Stream();
-        stream.Write(NabuLib.Delete(Content(), offset, length));
-        return Task.CompletedTask;
+        await stream.WriteAsync(NabuLib.Delete(Content(), offset, length).ToArray());
     }
 
     public Task<FileDetails> Details(CancellationToken cancel)
@@ -53,14 +46,14 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
         return Task.CompletedTask;
     }
 
-    public Task Insert(int offset, byte[] data, CancellationToken cancel)
+    public Task Insert(int offset, Memory<byte> data, CancellationToken cancel)
     {
         using var stream = Stream();
-        stream.Write(NabuLib.Insert(Content(), offset, data));
+        stream.Write(NabuLib.Insert(Content(), offset, data).ToArray());
         return Task.CompletedTask;
     }
 
-    Span<byte> Content()
+    Memory<byte> Content()
     {
         using var stream = Stream();
         using var reader = new BinaryReader(stream);
@@ -86,21 +79,21 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
         return Task.FromResult(true);
     }
 
-    public async Task<byte[]> Read(int offset, short readLength, CancellationToken cancel)
+    public async Task<Memory<byte>> Read(int offset, short readLength, CancellationToken cancel)
     {
-        var bytes = new byte[readLength];
+        var bytes = new Memory<byte>(new byte[readLength]);
         using var reader = Stream();
         reader.Seek(offset, SeekOrigin.Begin);
-        await reader.ReadAsync(bytes, 0, readLength, cancel);
+        await reader.ReadAsync(bytes, cancel);
         return bytes;
     }
 
 
 
-    public Task Replace(int offset, byte[] data, CancellationToken cancel)
+    public Task Replace(int offset, Memory<byte> data, CancellationToken cancel)
     {
         using var stream = Stream();
-        stream.Write(NabuLib.Replace(Content(), offset, data));
+        stream.Write(NabuLib.Replace(Content(), offset, data).ToArray());
         return Task.CompletedTask;
     }
 
@@ -112,7 +105,9 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
     }
 
     public int Position { get; protected set; } = 0;
-    public async Task<byte[]> ReadSequence(short readLength, CancellationToken cancel)
+
+
+    public async Task<Memory<byte>> ReadSequence(short readLength, CancellationToken cancel)
     {
         var end = Position + readLength;
         var length = new FileInfo(Filename).Length;
@@ -123,7 +118,7 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
         }
         if (Position >= length)
         {
-            return new byte[0];
+            return Array.Empty<byte>();
         }
         //Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
         var bytes = await Read(Position, readLength, cancel);

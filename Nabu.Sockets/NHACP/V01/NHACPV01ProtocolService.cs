@@ -81,7 +81,7 @@ public class NHACPV01ProtocolService
         }
     }
 
-    public Task<(bool, string, NHACPError)> Put(byte index, int offset, byte[] buffer)
+    public Task<(bool, string, NHACPError)> Put(byte index, int offset, Memory<byte> buffer)
     {
         try
         {

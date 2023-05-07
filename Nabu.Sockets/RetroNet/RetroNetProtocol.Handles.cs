@@ -3,6 +3,7 @@ using Nabu.Network.RetroNetHandle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -21,21 +22,23 @@ public partial class RetroNetProtocol : Protocol
 
     async Task FileOpen(string filename, FileOpenFlags flags, byte handle, CancellationToken cancel)
     {
-        if (handle is 0xFF) handle = NextIndex();
+        if (handle is 0xFF) handle = NextSlotIndex();
         Log($"Open: {handle} {filename}");
 
-        var bytes = await FileHandler(filename).Get(filename, cancel);
+        //var bytes = await FileHandler(filename).Get(filename, cancel);
 
         Slots[handle] = filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings, bytes),
-            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings, bytes),
+            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings, await FileHandler(filename).Get(filename, cancel)),
+            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings),
             _ => new RetroNetFileHandle(Logger, Settings)
         };
         var opened = await Slots[handle].Open(filename, flags, cancel);
         if (opened is false) Writer.Write(0xFF);
         else Writer.Write(handle);
     }
+
+    
 
     private async Task FileHandleClose(CancellationToken cancel)
     {
@@ -59,7 +62,7 @@ public partial class RetroNetProtocol : Protocol
     {
         var handle = Recv();
         var size = await Slots[handle].Size(cancel);
-        Log($"Size: {handle}");
+        Log($"Size: {handle} {size}");
         Writer.Write(size);
     }
 
@@ -144,4 +147,5 @@ public partial class RetroNetProtocol : Protocol
         Log($"Replace: {handle}: O:{offset}  L:{length}");
         await Slots[handle].Replace(offset, data, cancel);
     }
+
 }

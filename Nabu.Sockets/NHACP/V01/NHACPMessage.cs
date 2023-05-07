@@ -44,12 +44,12 @@ public static class NHACPMessage
         );
     }
 
-    public static Span<byte> Buffer(byte[] buffer)
+    public static Span<byte> Buffer(Memory<byte> buffer)
     {
         return Frame(
             0x84,
             NabuLib.FromShort((short)buffer.Length),
-            buffer
+            buffer.ToArray()
         );
     }
 

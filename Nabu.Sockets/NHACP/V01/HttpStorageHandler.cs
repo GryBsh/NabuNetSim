@@ -15,6 +15,7 @@ public class HttpStorageHandler : RAMStorageHandler
     {
         try
         { 
+            uri = NabuLib.Uri(Settings, uri);
             var response = await Http.GetHead(uri);
             if (response.IsSuccessStatusCode)
             {

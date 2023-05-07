@@ -7,6 +7,7 @@ using Python.Runtime;
 using Nabu.Services;
 using Nabu.Network.NHACP.V01;
 using Nabu.Network.NHACP.V0;
+using Nabu.JavaScript;
 //using LiteDb.Extensions.Caching;
 
 namespace Nabu;
@@ -42,10 +43,10 @@ public class Simulation : BackgroundService, ISimulation
     public void ToggleAdaptor(AdaptorSettings settings)
     {
 
-        if (settings.Next is ServiceShould.Run)
-            settings.Next = ServiceShould.Stop;
+        if (settings.State is ServiceShould.Run)
+            settings.State = ServiceShould.Stop;
         else
-            settings.Next = ServiceShould.Run;
+            settings.State = ServiceShould.Run;
 
     }
 
@@ -90,7 +91,7 @@ public class Simulation : BackgroundService, ISimulation
                 {
                     var settings = DefinedAdaptors[index];
                     
-                    if (settings.Next is ServiceShould.Stop)
+                    if (settings.State is ServiceShould.Stop)
                     {
                         if (services[index] != Task.CompletedTask)
                         {
@@ -105,7 +106,7 @@ public class Simulation : BackgroundService, ISimulation
                     if (settings.Enabled == false) continue;
 
                     // Is this service stopped?
-                    if (services[index].IsCompleted && settings.Next is ServiceShould.Run && settings.Enabled)
+                    if (services[index].IsCompleted && settings.State is ServiceShould.Run && settings.Enabled)
                     {
                         // If so, restart it
                         var token = Cancel[index].Token;

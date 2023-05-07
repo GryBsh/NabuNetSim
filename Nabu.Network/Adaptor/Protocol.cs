@@ -44,14 +44,14 @@ public abstract class Protocol : NabuService, IProtocol
         return b;
     }
 
-    public async Task<byte[]> RecvAsync(int length) 
+    public async Task<Memory<byte>> RecvAsync(int length) 
     {
-        var buffer = new byte[length];
-        await Stream.ReadAsync(buffer.AsMemory(0, length));
+        var buffer = new Memory<byte>(new byte[length]);
+        await Stream.ReadAsync(buffer);
         return buffer;
     }
 
-    public async Task<byte> RecvAsync() => (await RecvAsync(1))[0];
+    public async Task<byte> RecvAsync() => (await RecvAsync(1)).Span[0];
 
     /// <summary>
     ///     Receives a byte and returns if it was the expected byte

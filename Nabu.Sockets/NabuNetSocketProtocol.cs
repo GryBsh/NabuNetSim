@@ -51,12 +51,12 @@ public class NabuNetSocketProtocol : Protocol
             NabuLib.FromShort(index)
         );
     }
-    void DataBuffer(byte[] buffer)
+    void DataBuffer(Memory<byte> buffer)
     {
         SendFramed(
             0x84,
             NabuLib.FromShort((short)buffer.Length),
-            buffer
+            buffer.ToArray()
         );
     }
 
@@ -73,7 +73,7 @@ public class NabuNetSocketProtocol : Protocol
     #endregion
 
     #region Operations
-    async Task Open(byte[] buffer, CancellationToken cancel)
+    async Task Open(Memory<byte> buffer, CancellationToken cancel)
     {
         Log($"NPC: Open");
         try
@@ -123,7 +123,7 @@ public class NabuNetSocketProtocol : Protocol
         }
     }
 
-    async Task Read(byte[] buffer, CancellationToken cancel)
+    async Task Read(Memory<byte> buffer, CancellationToken cancel)
     {
         Log($"NPC: Get");
         try
@@ -149,7 +149,7 @@ public class NabuNetSocketProtocol : Protocol
 
     }
 
-    async Task Write(byte[] buffer, CancellationToken cancel)
+    async Task Write(Memory<byte> buffer, CancellationToken cancel)
     {
         Log($"NPC: Put");
         try

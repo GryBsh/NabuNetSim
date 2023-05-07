@@ -3,7 +3,7 @@ using Nabu.Services;
 
 namespace Nabu;
 
-class ProxyProtocol : Protocol
+public class ProxyProtocol : Protocol
 {
     public ProxyProtocol(IConsole logger) : base(logger)
     {

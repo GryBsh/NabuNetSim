@@ -1,7 +1,7 @@
 
 @font-face {
-    font-family: 'GlassTTYVT220';
-    src: url(../Modeseven-L3n5.ttf) format('truetype');
+    font-family: 'modeseven';
+    src: url(../webfonts/Modeseven-L3n5.ttf) format('truetype');
 }
 
 body {
@@ -12,8 +12,8 @@ body {
     --color: white;
     --inverse-background: var(--dark-background);
     background: var(--background);
-    --bs-font-family: 'GlassTTYVT220';
-    font-family: 'GlassTTYVT220';
+    --bs-font-family: 'modeseven';
+    font-family: 'modeseven';
     font-size: 10pt;
     --b-bar-light-background: var(--light-background);
 }
@@ -32,11 +32,19 @@ body {
     display: none;
 }
 
-.list-group-item > i {
+i {
     width: 20px;
     text-align: center;
 }
 
+.no-padding {
+    padding-left: 0px;
+    padding-right: 0px
+}
+
+.loading-phrase {
+    font-size: larger
+}
 /* Layout */
 
 #page {
@@ -68,8 +76,11 @@ body {
 
 .log-view {
     display: block;
-   
     width: 800px;
+}
+
+.log-highlight {
+    background-color: #21b03b;
 }
 
 .modal-body {
@@ -284,4 +295,4 @@ img.logo {
     .blazor-error-boundary::after {
         content: "An error has occurred."
     }
-    }
+}

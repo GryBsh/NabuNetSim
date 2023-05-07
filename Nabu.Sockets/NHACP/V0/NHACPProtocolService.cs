@@ -78,7 +78,7 @@ public class NHACPProtocolService : INHACPProtocolService
         }
     }
 
-    public Task<(bool, string)> Put(byte index, int offset, byte[] buffer)
+    public Task<(bool, string)> Put(byte index, int offset, Memory<byte> buffer)
     {
         try
         {

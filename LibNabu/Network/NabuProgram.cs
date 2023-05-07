@@ -9,23 +9,25 @@ public record NabuProgram
     }
 
     public NabuProgram(
-        string DisplayName,
-        string Name,
-        string Source,
-        string Path,
-        SourceType SourceType,
-        ImageType ImageType,
-        IProgramPatch[] Patches,
-        bool IsPakMenu = false
+        string displayName,
+        string name,
+        string source,
+        string path,
+        SourceType sourceType,
+        ImageType imageType,
+        IProgramPatch[] patches,
+        bool isPakMenu = false,
+        bool enableClientIsolation = false
     ) {
-        this.DisplayName = DisplayName;
-        this.Name = Name;
-        this.Source = Source;
-        this.Path = Path;
-        this.SourceType = SourceType;
-        this.ImageType = ImageType;
-        this.Patches = Patches;
-        this.IsPakMenu = IsPakMenu;
+        DisplayName = displayName;
+        Name = name;
+        Source = source;
+        Path = path;
+        SourceType = sourceType;
+        ImageType = imageType;
+        Patches = patches;
+        IsPakMenu = isPakMenu;
+        EnableClientIsolation = enableClientIsolation;
     }
 
     public string DisplayName { get; set; } = string.Empty;
@@ -36,4 +38,5 @@ public record NabuProgram
     public ImageType ImageType { get; set; }
     public IProgramPatch[] Patches { get; set; } = Array.Empty<IProgramPatch>();
     public bool IsPakMenu { get; set; }
+    public bool EnableClientIsolation { get; set; }
 }

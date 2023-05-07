@@ -14,10 +14,10 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffer">The packet data to generate a CRC for</param>
     /// <returns>The CRC bytes for the packet</returns>
-    public static Span<byte> GenerateCRC(byte[] buffer)
+    public static Span<byte> GenerateCRC(Memory<byte> buffer)
     {
         short crc = -1; // 0xFFFF
-        foreach (var byt in buffer)
+        foreach (var byt in buffer.ToArray())
         {
             byte b = (byte)(crc >> 8 ^ byt);
             crc <<= 8;
@@ -60,7 +60,7 @@ public static partial class NabuLib
         IConsole logger,
         short segmentIndex,
         int pakId,
-        Span<byte> buffer
+        Memory<byte> buffer
     )
     {
         int offset = segmentIndex * Constants.MaxPayloadSize;
@@ -135,7 +135,7 @@ public static partial class NabuLib
     /// <param name="segment"></param>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static (bool, byte[]) SliceFromPak(IConsole logger, short segment, byte[] buffer)
+    public static (bool, byte[]) SliceFromPak(IConsole logger, short segment, Memory<byte> buffer)
     {
         /*
          *  [  Pak   ]

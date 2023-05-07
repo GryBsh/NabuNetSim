@@ -56,13 +56,13 @@ public static class NHACPStructure
         .AsSpan();
     }
 
-    public static string String(byte[] buffer)
+    public static string String(Memory<byte> buffer)
     {
         var str = string.Empty;
         for (int j = 0; j < buffer.Length; j++)
         {
-            if (buffer[j] is 0x00) break;
-            str += (char)buffer[j];
+            if (buffer.Span[j] is 0x00) break;
+            str += (char)buffer.Span[j];
         }
         return str;
     }

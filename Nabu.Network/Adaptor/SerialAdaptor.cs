@@ -49,7 +49,7 @@ public class SerialAdaptor
             catch (UnauthorizedAccessException)
             {
                 logger.WriteError($"Serial Adaptor: Port {settings.Port} is inaccessible");
-                settings.Next = ServiceShould.Stop;
+                settings.State = ServiceShould.Stop;
                 break;
             }
             catch (Exception ex)

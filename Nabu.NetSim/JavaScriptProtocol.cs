@@ -4,6 +4,7 @@ using Nabu.Services;
 using Jint;
 namespace Nabu;
 
+/*
 public class JavaScriptProtocol : Protocol
 {
     ProtocolSettings Protocol { get; }
@@ -38,4 +39,5 @@ public class JavaScriptProtocol : Protocol
         }
     }
 }
+*/
 

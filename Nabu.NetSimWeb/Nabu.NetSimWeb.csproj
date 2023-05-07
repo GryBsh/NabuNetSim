@@ -18,7 +18,6 @@
   <ItemGroup>
     <Compile Include="..\Nabu.NetSim\JavaScriptProtocol.cs" Link="JavaScriptProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\MicrosoftExtensionsLoggingConsole.cs" Link="MicrosoftExtensionsLoggingConsole.cs" />
-    <Compile Include="..\Nabu.NetSim\ProxyProtocol.cs" Link="ProxyProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\PythonProtocol.cs" Link="PythonProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\Simulation.cs" Link="Simulation.cs" />
   </ItemGroup>
@@ -43,6 +42,7 @@
 
 
   <ItemGroup>
+    <ProjectReference Include="..\LibNabu.JavaScript\LibNabu.JavaScript.csproj" />
     <ProjectReference Include="..\LibNabu\LibNabu.csproj" />
     <ProjectReference Include="..\Nabu.NetSim.UI\Nabu.NetSim.UI.csproj" />
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />

@@ -12,7 +12,6 @@ public abstract class NabuBase
     }
     public string Label { get; }
     protected static bool Empty(string? str) => string.IsNullOrWhiteSpace(str);
-    protected static byte[] ZeroBytes => Array.Empty<byte>();
     protected static string FormatSeparated(params byte[] bytes) => NabuLib.FormatSeperated(bytes);
     protected static string Format(params byte[] bytes) => NabuLib.Format(bytes);
     protected static string Format(byte byt) => NabuLib.Format(byt);

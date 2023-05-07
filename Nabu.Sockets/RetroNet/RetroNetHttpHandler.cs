@@ -12,8 +12,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
         IConsole logger, 
         HttpClient client, 
         AdaptorSettings settings, 
-        FileCache cache,
-        Settings global
+        FileCache cache
     ) : base(logger, settings)
     {
         Client = new CachingHttpClient(client, Logger, cache);
@@ -22,6 +21,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 
     public async Task<byte[]> Get(string filename, CancellationToken cancel)
     {
+        filename = NabuLib.Uri(Settings, filename);
         try
         {
            return await Client.GetBytes(filename);
@@ -65,6 +65,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 
     public async Task<int> Size(string filename)
     {
+        filename = NabuLib.Uri(Settings, filename);
         var head = await Client.GetHead(filename);
         var size = (int?)head.Content.Headers.ContentLength ?? -1;
         Log($"HTTP: {filename}:{size}");

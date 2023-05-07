@@ -77,14 +77,14 @@
         </li>
         @foreach (var serial in ViewModel!.Home.Serial)
         {
-            <li class="list-group-item">
+            <li @key=serial class="list-group-item">
                 <Icon Name="IconName.Plug" />
                 <a href="#" onclick="@(() => { ViewModel.SetSelected(serial); })">@serial.Port</a>
             </li>
         }
         @foreach (var tcp in ViewModel!.Home.TCP)
         {
-            <li class="list-group-item">
+            <li @key=tcp class="list-group-item">
                 <Icon Name="IconName.Wifi" />
                 <a href="#" onclick="@(() => { ViewModel.SetSelected(tcp); })">TCP:@tcp.Port</a>
             </li>
@@ -101,7 +101,7 @@
         </li>
         @foreach (var conn in TCPAdaptor.Connections.Values.ToArray())
         {
-            <li class="list-group-item">
+            <li @key=conn class="list-group-item">
                 <Icon Name="IconName.Wifi" />
                 <a href="#" onclick="@(() => { ViewModel.SetSelected(conn); })">TCP:@conn.Port</a>
             </li>
@@ -134,25 +134,22 @@
             <Icon Name="IconName.Server" />
             Source
             <Select TValue="string" SelectedValue="@ViewModel.Selected.Source"
-                    SelectedValueChanged="@(
-                        v => {
-                            ViewModel.SetSource(v);
-                        }
-                    )">
+                    SelectedValueChanged="@(v => ViewModel.SetSource(v))">
                 @foreach (var source in ViewModel!.Home.SourceNames)
                 {
-                    <option value="@source">@source</option>
+                    <SelectItem @key=@source value="@source">@source</SelectItem>
                 }
             </Select>
         </li>
         <li class="list-group-item @(ViewModel!.Home.HasMultipleImages(ViewModel.Selected) ? "" : "invisible")">
             <Icon Name="IconName.FolderOpen" />
             Program
-            <Select TValue="string" @bind-SelectedValue="@ViewModel.Selected.Image">
-                <option value=""></option>
-                @foreach (var (displayName, name) in ViewModel!.AvailableImages())
+            <Select TValue="string" SelectedValue=@ViewModel.Selected.Image
+                SelectedValueChanged="@(v => ViewModel.SetImage(v))">
+                <!--<option value=""></option>-->
+                @foreach (var available in ViewModel.Images)
                 {
-                    <option value="@name">@displayName</option>
+                    <SelectItem @key=@available Value="@available.Name">@available.DisplayName</SelectItem>
                 }
             </Select>
         </li>
@@ -175,8 +172,8 @@
         
         <li class="list-group-item">
             <Icon Name="IconName.Save" />
-            Storage<br />
-            <InputText @bind-Value="@ViewModel.Selected.StoragePath"></InputText>
+            Storage
+            <TextEdit @bind-Text="@ViewModel.Selected.StoragePath"></TextEdit>
         </li>
 
     </ul>

@@ -1,4 +1,6 @@
-﻿namespace Nabu
+﻿using System;
+
+namespace Nabu
 {
     public partial class NabuLib
     {
@@ -10,8 +12,31 @@
         }
 
         public static string FilePath(AdaptorSettings settings, string filePath) {
-            filePath = filePath.Replace("..", string.Empty).Replace(":", string.Empty);
+           
+            foreach (var redirect in settings.StorageRedirects)
+            {
+                if (redirect.Key == filePath)
+                {
+                    filePath = redirect.Value;
+                    break;
+                }
+            }
+
             return Path.Combine(settings.StoragePath, filePath);
+        }
+
+        public static string Uri(AdaptorSettings settings, string uri)
+        {
+            foreach (var redirect in settings.StorageRedirects)
+            {
+                if (redirect.Key == uri)
+                {
+                    uri = redirect.Value;
+                    break;
+                }
+            }
+
+            return uri;
         }
 
         public static int FileSize(string path)

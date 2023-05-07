@@ -8,10 +8,10 @@ public static partial class NabuLib
     /// <param name="buffer"></param>
     /// <param name="offset"></param>
     /// <returns></returns>
-    public static (int, byte) Pop(byte[] buffer, int offset)
+    public static (int, byte) Pop(Memory<byte> buffer, int offset)
     {
         (int next, buffer) = Slice(buffer, offset, 1);
-        return (next, buffer[0]);
+        return (next, buffer.Span[0]);
     }
 
     /// <summary>
@@ -23,7 +23,7 @@ public static partial class NabuLib
     /// <param name="count"></param>
     /// <param name="converter"></param>
     /// <returns></returns>
-    public static (int, T) Slice<T>(Span<byte> buffer, int offset, int count, Func<byte[], T> converter)
+    public static (int, T) Slice<T>(Memory<byte> buffer, int offset, int count, Func<Memory<byte>, T> converter)
     {
         (int next, buffer) = Slice(buffer, offset, count);
         return (next, converter(buffer.ToArray()));
@@ -36,7 +36,7 @@ public static partial class NabuLib
     /// <param name="offset"></param>
     /// <param name="length"></param>
     /// <returns></returns>
-    public static (int, byte[]) Slice(Span<byte> buffer, int offset, int length)
+    public static (int, byte[]) Slice(Memory<byte> buffer, int offset, int length)
     {
         int next = offset + length;
         if (next >= buffer.Length) {
@@ -55,14 +55,14 @@ public static partial class NabuLib
     /// <param name="items"></param>
     /// <param name="fill"></param>
     /// <returns></returns>
-    public static Span<T> SetLength<T>(int length, Span<T> items, T fill)
+    public static Memory<T> SetLength<T>(int length, Memory<T> items, T fill)
     {
         if (items.Length == length) return items;
        
-        var result = new Span<T>(new T[length]);
+        var result = new Memory<T>(new T[length]);
         length = length > items.Length ? items.Length : length;
         items[..length].CopyTo(result);
-        result[length..].Fill(fill);
+        result[length..].Span.Fill(fill);
         return result;
     }
 
@@ -76,16 +76,17 @@ public static partial class NabuLib
     /// <param name="items"></param>
     /// <param name="fill"></param>
     /// <returns></returns>
-    public static Span<T> SetLength<T>(int length, Span<T> items, Func<T> fill)
+    public static Memory<T> SetLength<T>(int length, Memory<T> items, Func<T> fill)
     {
         if (items.Length == length) return items;
 
-        var result = new Span<T>(new T[length]);
+        var result = new Memory<T>(new T[length]);
         var count = items.Length;
+        
         items[..count].CopyTo(result);
         for (int i = count; i < length; i++)
         {
-            result[i] = fill();
+            result.Span[i] = fill();
         }
         return result;
     }
@@ -103,35 +104,35 @@ public static partial class NabuLib
                 yield return b;
     }
 
-    public static Span<byte> Append(Span<byte> buffer, Span<byte> data)
+    public static Memory<byte> Append(Memory<byte> buffer, Memory<byte> data)
     {
-        Span<byte> r = new byte[buffer.Length + data.Length];
+        Memory<byte> r = new byte[buffer.Length + data.Length];
         buffer.CopyTo(r);
         data.CopyTo(r[buffer.Length..(buffer.Length+data.Length)]);
         return r;
     }
 
-    public static Span<byte> Insert(Span<byte> buffer, int offset, Span<byte> data)
+    public static Memory<byte> Insert(Memory<byte> buffer, int offset, Memory<byte> data)
     {
         var end = offset + data.Length;
-        var length = end > data.Length ? end : data.Length;
-        Span<byte> r = new byte[length];
+        var length = end > buffer.Length ? end : buffer.Length;
+        Memory<byte> r = new byte[length];
         buffer[..offset].CopyTo(r);
         data.CopyTo(r[offset..(offset + data.Length)]);
         buffer[offset..].CopyTo(r[end..]);
         return r;
     }
 
-    public static Span<byte> Delete(Span<byte> buffer, int offset, int length)
+    public static Memory<byte> Delete(Memory<byte> buffer, int offset, int length)
     {
         var end = offset + length;   
-        Span<byte> r = new byte[length];
+        Memory<byte> r = new byte[length];
         buffer[..offset].CopyTo(r);
         buffer[end..].CopyTo(r[offset..]);
         return r;
     }
 
-    public static Span<byte> Replace(Span<byte> buffer, int offset, Span<byte> data)
+    public static Memory<byte> Replace(Memory<byte> buffer, int offset, Memory<byte> data)
     {
         var size = offset + data.Length;
         var length = size > buffer.Length ? size : buffer.Length;

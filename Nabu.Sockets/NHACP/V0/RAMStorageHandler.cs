@@ -42,7 +42,7 @@ public class RAMStorageHandler : IStorageHandler
         }
     }
 
-    public virtual Task<(bool, string)> Put(int offset, byte[] buffer)
+    public virtual Task<(bool, string)> Put(int offset, Memory<byte> buffer)
     {
         try
         {
@@ -53,7 +53,7 @@ public class RAMStorageHandler : IStorageHandler
                 Buffer.AsSpan().CopyTo(temp);
                 Buffer = temp;
             }
-            buffer.AsSpan().CopyTo(Buffer.AsSpan(offset));
+            buffer.CopyTo(Buffer[offset..]);
             return Task((true, string.Empty));
         }
         catch (Exception ex)

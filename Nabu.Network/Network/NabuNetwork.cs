@@ -14,8 +14,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     FileCache FileCache { get; set; }
     Settings Settings { get; }
     List<ProgramSource> Sources { get; }
-    ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
-    ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), byte[]> PakCache { get; } = new();
+    static ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
+    static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), byte[]> PakCache { get; } = new();
 
     //readonly IRepository Database;
 
@@ -31,27 +31,31 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         Sources = settings.Sources;
         Http = new(http, logger, cache);
         FileCache = cache;
-        //Database = database;
-
-        //Database.Collection<NabuProgram>().EnsureIndex(p => p.Source);
 
         BackgroundRefresh(RefreshType.All);
-        /*
-        Observable.Interval(TimeSpan.FromMinutes(1))
-            .Subscribe(_ => BackgroundRefresh(RefreshType.Local));
-
-        Observable.Interval(TimeSpan.FromMinutes(30))
-            .Subscribe(_ => BackgroundRefresh(RefreshType.Remote));
-        */
     }
-    public ProgramSource Source(AdaptorSettings settings)
-        => Sources.First(s => s.Name.ToLower() == settings.Source?.ToLower());
+    public ProgramSource? Source(AdaptorSettings settings)
+        => Source(settings.Source);
+
+    public ProgramSource? Source(string name)
+        => Sources.FirstOrDefault(s => s.Name.ToLower() == name.ToLower());
 
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
     {
         var source = Source(settings);
-        //var programs = Database.Collection<NabuProgram>().Find(p => p.Source == source.Name);
-        //if (programs.Any()) return programs;
+        return Programs(source);
+    }
+
+    public IEnumerable<NabuProgram> Programs(string name)
+    {
+        var source = Source(name);
+        if (source is null) return Array.Empty<NabuProgram>();
+
+        return Programs(source);
+    }
+
+    public IEnumerable<NabuProgram> Programs(ProgramSource source)
+    {
         if (SourceCache.TryGetValue(source, out IEnumerable<NabuProgram>? value))
             return value;
         return Array.Empty<NabuProgram>();
@@ -100,8 +104,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         Task.Run(() => {
             RefreshSources(refresh);
-            if (refresh.HasFlag(RefreshType.Remote))
-                GC.Collect();
         });
     }
 
@@ -221,8 +223,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                     }
                     SourceCache[source] = programs;
                 }
-                //Database.Collection<NabuProgram>().DeleteMany(p => p.Source == source.Name);
-                //Database.Collection<NabuProgram>().InsertBulk(programs);
             });
         }
     }
@@ -232,18 +232,13 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         if (Empty(settings.Source))
         {
             Warning("No Source Defined");
-            return (ImageType.None, ZeroBytes);
+            return (ImageType.None, Array.Empty<byte>());
         }
 
         var source = Source(settings);
 
-        //var programs = Database.Collection<NabuProgram>().Find(p => p.Source == source.Name);
-
         if (SourceCache.ContainsKey(source) is false)
-            return (ImageType.None, ZeroBytes);
-
-        //if (programs.Any() is false) 
-        //    return (ImageType.None, ZeroBytes);
+            return (ImageType.None, Array.Empty<byte>());
 
         if (PakCache.TryGetValue((settings, source, pak), out var value))
         {
@@ -251,7 +246,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
 
         var path = source.Path;
-        //var cycleFile = false;
         var image = pak switch
         {
             0x191 when source.EnableExploitLoader => settings.Image!,
@@ -262,7 +256,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         };
 
         if (image == null)
-            return (ImageType.None, ZeroBytes);
+            return (ImageType.None, Array.Empty<byte>());
 
         var prg = SourceCache[source].FirstOrDefault(p => p.Name == image);
         //var prg = programs.FirstOrDefault(p => p.Name == image) ?? 
@@ -274,7 +268,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
 
         if (prg is null)
-            return (ImageType.None, ZeroBytes);
+            return (ImageType.None, Array.Empty<byte>());
 
         if (prg.IsPakMenu && pak > Constants.CycleMenuNumber)
         {
@@ -295,20 +289,20 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         else path = prg.Path;
 
 
-        byte[] bytes = ZeroBytes;
+        byte[] bytes = Array.Empty<byte>();
         try
         {
             bytes = prg.SourceType switch
             {
                 SourceType.Remote => await Http.GetBytes(path),
                 SourceType.Local => await FileCache.GetFile(path),
-                _ => ZeroBytes
+                _ => Array.Empty<byte>()
             };
         }
         catch (Exception ex)
         {
             Warning(ex.Message);
-            return (ImageType.None, ZeroBytes);
+            return (ImageType.None, Array.Empty<byte>());
         }
         
         foreach (var patch in prg.Patches)
@@ -319,14 +313,14 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             bytes = await patch.Patch(prg, bytes);
         }
         
-        var type = source.EnableExploitLoader ? ImageType.QuirkLoadedPak : prg.ImageType;
+        var type = source.EnableExploitLoader ? ImageType.ExploitLoaded : prg.ImageType;
         Log($"Type: {prg.ImageType}, Size: {bytes.Length}, Path: {path}");
 
         PakCache[(settings, source, pak)] = bytes;
         return (type, bytes);
     }   
 
-    public void UncachePak(AdaptorSettings settings, int pak)
+    public void UnCachePak(AdaptorSettings settings, int pak)
     {
         var source = Source(settings);
         if (PakCache.ContainsKey((settings, source, pak)))
@@ -418,7 +412,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
         if (!uri.EndsWith(".txt")) { return (false, Array.Empty<NabuProgram>()); }
 
-        var (shouldDownload, found, cached, _) = await Http.GetUriStatus(uri);
+        var (_, found, cached, _) = await Http.GetUriStatus(uri);
         if (!found && !cached) { return (false, Array.Empty<NabuProgram>()); }
 
         var lines = (await Http.GetString(uri)).Split('\n');

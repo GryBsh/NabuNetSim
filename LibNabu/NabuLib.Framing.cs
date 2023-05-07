@@ -1,4 +1,6 @@
-﻿using System.Net.Sockets;
+﻿using System.Net.NetworkInformation;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Nabu;
 
@@ -24,6 +26,25 @@ public static partial class NabuLib
                 LingerState = new LingerOption(false, 0)
             };
         return socket;
+    }
+
+    public static IEnumerable<int> GetOpenPorts()
+    {
+        IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
+        IPEndPoint[] tcpEndPoints = properties.GetActiveTcpListeners();
+        return tcpEndPoints.Select(p => p.Port);
+    }
+
+    public static bool IsPortFree(int port) 
+        => GetOpenPorts().Contains(port) is false;
+
+    public static int GetFreePort(int start, int? count = null)
+    {
+        count ??= IPEndPoint.MaxPort - start;
+        var usedPorts = GetOpenPorts();
+        int unusedPort = 0;
+        unusedPort = Enumerable.Range(start, count.Value).Where(port => !usedPorts.Contains(port)).FirstOrDefault();
+        return unusedPort;
     }
 }
 

@@ -33,7 +33,7 @@ public interface INHACPProtocolService
     // ------------------------------------------
     // 0x03 |Index |Offset |Length |Buffer      |
     //      |1 byte|4 bytes|2 bytes|Length bytes|
-    Task<(bool, string)> Put(byte index, int offset, byte[] buffer);
+    Task<(bool, string)> Put(byte index, int offset, Memory<byte> buffer);
     // 0x81 ||                                      -> OK
     // - OR -
     // 0x82                                         -> ERROR    [error message]

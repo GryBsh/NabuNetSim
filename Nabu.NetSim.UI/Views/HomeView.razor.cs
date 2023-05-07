@@ -4,10 +4,10 @@ using Splat;
 
 namespace Nabu.NetSim.UI.Views;
 
-public partial class AdaptorUI : ReactiveComponentBase<HomeViewModel>
+public partial class HomeView : ReactiveComponentBase<HomeViewModel>
 {
  
-    public AdaptorUI()
+    public HomeView()
     {
         ViewModel = Locator.Current.GetService<HomeViewModel>();
     }

@@ -1,24 +1,69 @@
 ﻿
 using Microsoft.Extensions.DependencyInjection;
+using Nabu.Cli;
 using Spectre.Console;
-
-
-var registrations = new ServiceCollection();
-
-
+using Spectre.Console.Cli;
 
 CancellationTokenSource CancelSource = new();
 
-while (CancelSource.IsCancellationRequested is false) {
-    var command = AnsiConsole.Prompt(new TextPrompt<string>("NABU>"));
+var exitCodeMessages = new Dictionary<int, string>()
+{
+    [-1] = "Unknown Failure"
+};
 
-    if (command.ToLowerInvariant() is BuiltInCommands.ExitCommand)
+var registrations = new ServiceCollection();
+
+void HandleBuiltInCommands(string command)
+{
+    var cmd = command.ToLowerInvariant();
+    if (BuiltInCommands.List.Contains(cmd) is false) return;
+
+    Action? handler = cmd switch
     {
-        CancelSource.Cancel();
-    }
+        BuiltInCommands.Exit => () => CancelSource.Cancel(),
+        _ => null
+    };
+
+    handler?.Invoke();
 }
 
-static class BuiltInCommands
+CommandApp CreateApp(IServiceCollection registrations)
 {
-    public const string ExitCommand = "exit";
+    var registrar = new TypeRegistrar(registrations);
+    var app = new CommandApp(registrar);
+    app.Configure(
+        c =>
+        {
+            c.AddBranch(
+                "package",
+                package => package.AddCommand<NewPackageCommand>("new")
+            );
+        }
+    );
+    return app;
+}
+
+while (CancelSource.IsCancellationRequested is false) {
+    var command = AnsiConsole.Prompt(
+        new TextPrompt<string>("NABU>")
+    );
+
+    HandleBuiltInCommands(command);
+    if (CancelSource.IsCancellationRequested) 
+        break;
+
+    var app = CreateApp(registrations);
+    try
+    {
+        var result = app.Run(command.Split(' '));
+        if (result != 0 && result > -1)
+        {
+            AnsiConsole.MarkupLine(Nabu.Cli.Markup.Error(result, "Exit Code"));
+        }
+    }
+    catch (Exception ex)
+    {
+        AnsiConsole.MarkupLine(Nabu.Cli.Markup.Error(ex.Message));
+    }
+    
 }

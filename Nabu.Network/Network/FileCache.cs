@@ -3,6 +3,7 @@ using System.Text;
 using System.Collections.Concurrent;
 using System.Reactive.Concurrency;
 using System.Reactive.Linq;
+using System.ComponentModel;
 
 namespace Nabu.Network;
 
@@ -17,7 +18,7 @@ public class FileCache
     readonly Settings Settings;
 
     public FileCache(
-        IConsole<FileCache> logger ,
+        IConsole<FileCache> logger,
         Settings settings
     ) {
         Settings = settings;
@@ -26,11 +27,27 @@ public class FileCache
 
     public void CacheFile(string path, byte[] content, bool write = true)
     {
+        if (Settings.EnableLocalFileCache is false)
+            return;
         Task.Run(async () =>
         {
             if (write) await File.WriteAllBytesAsync(path, content);
             _cache[path] = content;
             _cacheTime[path] = DateTime.Now;
+        });
+    }
+
+    public void UnCache(string path)
+    {
+        if (Settings.EnableLocalFileCache is false)
+            return;
+        
+        if (!_cache.ContainsKey(path)) return;
+
+        Task.Run(() =>
+        {
+            _cache.Remove(path, out _);
+            _cacheTime.Remove(path, out _);
         });
     }
 
@@ -58,12 +75,15 @@ public class FileCache
         return content;
     }
 
-    public void CacheString(string path, string content, bool write = true)
+    public void CacheString(string path, string content, bool write = true, Encoding? encoding = null)
     {
+        if (Settings.EnableLocalFileCache is false)
+            return;
+        encoding ??= Encoding.UTF8;
         Task.Run(async () =>
         {
             if (write) await File.WriteAllTextAsync(path, content);
-            _cache[path] = Encoding.UTF8.GetBytes(content);
+            _cache[path] = encoding.GetBytes(content);
             _cacheTime[path] = DateTime.Now;
         });
     }

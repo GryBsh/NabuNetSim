@@ -70,14 +70,14 @@ public class FileStorageHandler : IStorageHandler
         }
     }
 
-    public async Task<(bool, string)> Put(int offset, byte[] buffer)
+    public async Task<(bool, string)> Put(int offset, Memory<byte> buffer)
     {
         try
         {
             if (Flags.HasFlag(StorageFlags.ReadOnly))
                 return (false, "File Opened Read Only");
             using var stream = File!.OpenWrite();
-            await stream.WriteAsync(buffer, offset, buffer.Length);
+            await stream.WriteAsync(buffer.ToArray(), offset, buffer.Length);
             return (true, string.Empty);
         }
         catch (Exception ex)

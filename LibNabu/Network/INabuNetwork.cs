@@ -2,12 +2,10 @@
 {
     public interface INabuNetwork
     {
+        ProgramSource Source(AdaptorSettings settings);
         IEnumerable<NabuProgram> Programs(AdaptorSettings settings);
         Task<(ImageType, byte[])> Request(AdaptorSettings settings, int pak);
-        ProgramSource Source(AdaptorSettings settings);
-
         void BackgroundRefresh(RefreshType refresh);
-
-        void UncachePak(AdaptorSettings settings, int pak);
+        void UnCachePak(AdaptorSettings settings, int pak);
     }
 }

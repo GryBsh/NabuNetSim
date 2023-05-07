@@ -55,10 +55,8 @@ public class EmulatedAdaptor : NabuBase
 
                 // Locate the protocol handler for this command message
                 var handler = Protocols.FirstOrDefault(p => p.ShouldAccept(incoming)) ?? NabuNet;
-                if (handler is ClassicNabuProtocol)
-                {
-                    //foreach (var p in Protocols) p.Reset();
-                }
+                if (handler == NabuNet)
+                    foreach (var protocol in Protocols) protocol.Reset();
                 if (await handler.HandleMessage(incoming, cancel))
                     continue; // Then continue to the next command message
                 

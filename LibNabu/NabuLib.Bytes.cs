@@ -10,9 +10,9 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="span"></param>
     /// <returns></returns>
-    public static int ToInt(params byte[] buffer)
+    public static int ToInt(Memory<byte> buffer)
     {
-        var span = SetLength<byte>(4, buffer, 0x00);
+        var span = SetLength<byte>(4, buffer, 0x00).Span;
         int r = 0;
         r |= span[0] << 0;
         r |= span[1] << 8;
@@ -43,9 +43,9 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static short ToShort(params byte[] buffer)
+    public static short ToShort(Memory<byte> buffer)
     {
-        var span = SetLength<byte>(2, buffer, 0x00);
+        var span = SetLength<byte>(2, buffer, 0x00).Span;
         int r = 0;
         r |= span[0] << 0;
         r |= span[1] << 8;
@@ -89,8 +89,8 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static string ToASCII(byte[] buffer) 
-        => Encoding.ASCII.GetString(buffer);
+    public static string ToASCII(Memory<byte> buffer) 
+        => Encoding.ASCII.GetString(buffer.ToArray());
 
     // <summary>
     ///     Converts  a String

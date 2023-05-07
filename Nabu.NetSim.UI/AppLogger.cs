@@ -5,6 +5,7 @@ using System.Linq;
 using Blazorise;
 using Microsoft.Extensions.Logging;
 using System;
+using Nabu.Services;
 
 namespace Nabu.NetSim.UI;
 

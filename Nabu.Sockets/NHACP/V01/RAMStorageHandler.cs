@@ -6,7 +6,7 @@ public class RAMStorageHandler : INHACPStorageHandler
 {
     protected IConsole Logger;
     protected AdaptorSettings Settings;
-    protected byte[] Buffer = Array.Empty<byte>();
+    protected Memory<byte> Buffer = Array.Empty<byte>();
 
     public int Position => throw new NotImplementedException();
 
@@ -43,7 +43,7 @@ public class RAMStorageHandler : INHACPStorageHandler
         }
     }
 
-    public virtual Task<(bool, string, NHACPError)> Put(int offset, byte[] buffer)
+    public virtual Task<(bool, string, NHACPError)> Put(int offset, Memory<byte> buffer)
     {
         try
         {
@@ -51,10 +51,10 @@ public class RAMStorageHandler : INHACPStorageHandler
             if (length > Buffer.Length)
             {
                 var temp = new byte[length];
-                Buffer.AsSpan().CopyTo(temp);
+                Buffer.Span.CopyTo(temp);
                 Buffer = temp;
             }
-            buffer.AsSpan().CopyTo(Buffer.AsSpan(offset));
+            buffer.CopyTo(Buffer[offset..]);
             return Task.FromResult((true, string.Empty, NHACPError.Undefined));
         }
         catch (Exception ex)
@@ -88,7 +88,7 @@ public class RAMStorageHandler : INHACPStorageHandler
         throw new NotImplementedException();
     }
 
-    public Task<(bool, string, NHACPError)> Write(byte[] buffer)
+    public Task<(bool, string, NHACPError)> Write(Memory<byte> buffer)
     {
         throw new NotImplementedException();
     }

@@ -21,7 +21,7 @@ public enum ImageType
     Raw,
     Pak,
     EncryptedPak,
-    QuirkLoadedPak
+    ExploitLoaded
 }
 
 public enum AdaptorType
