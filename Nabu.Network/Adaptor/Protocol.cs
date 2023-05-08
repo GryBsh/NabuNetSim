@@ -180,7 +180,7 @@ public abstract class Protocol : NabuService, IProtocol
         Send(buffer);
     }
 
-    public void SendFramed(byte header, params IEnumerable<byte>[] buffer)
+    public void SendFramed(byte header, params Memory<byte>[] buffer)
     {
         var head = new byte[] { header };
         var frame = NabuLib.Frame(head, buffer);

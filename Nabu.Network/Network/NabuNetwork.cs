@@ -15,7 +15,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     Settings Settings { get; }
     List<ProgramSource> Sources { get; }
     static ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
-    static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), byte[]> PakCache { get; } = new();
+    static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), Memory<byte>> PakCache { get; } = new();
 
     //readonly IRepository Database;
 
@@ -43,6 +43,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
     {
         var source = Source(settings);
+        if (source is null) return Array.Empty<NabuProgram>();
         return Programs(source);
     }
 
@@ -227,7 +228,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
     }
 
-    public async Task<(ImageType, byte[])> Request(AdaptorSettings settings, int pak)
+    public async Task<(ImageType, Memory<byte>)> Request(AdaptorSettings settings, int pak)
     {
         if (Empty(settings.Source))
         {
@@ -236,6 +237,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
 
         var source = Source(settings);
+        if (source is null)
+            return (ImageType.None, Array.Empty<byte>());
 
         if (SourceCache.ContainsKey(source) is false)
             return (ImageType.None, Array.Empty<byte>());
@@ -289,7 +292,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         else path = prg.Path;
 
 
-        byte[] bytes = Array.Empty<byte>();
+        Memory<byte> bytes = Array.Empty<byte>();
         try
         {
             bytes = prg.SourceType switch
@@ -310,7 +313,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             if (patch.Name is not nameof(PassThroughPatch))
                 Log($"NTWRK: Applying Patch: {patch.Name}");
 
-            bytes = await patch.Patch(prg, bytes);
+            bytes = await patch.Patch(prg, bytes.ToArray());
         }
         
         var type = source.EnableExploitLoader ? ImageType.ExploitLoaded : prg.ImageType;
@@ -323,6 +326,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     public void UnCachePak(AdaptorSettings settings, int pak)
     {
         var source = Source(settings);
+        if (source is null) return;
+
         if (PakCache.ContainsKey((settings, source, pak)))
         {
             Debug($"Removing pak {pak} from transfer cache");

@@ -36,7 +36,7 @@ public static partial class NabuLib
     /// <param name="offset"></param>
     /// <param name="length"></param>
     /// <returns></returns>
-    public static (int, byte[]) Slice(Memory<byte> buffer, int offset, int length)
+    public static (int, Memory<byte>) Slice(Memory<byte> buffer, int offset, int length)
     {
         int next = offset + length;
         if (next >= buffer.Length) {
@@ -97,11 +97,9 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffers"></param>
     /// <returns></returns>
-    public static IEnumerable<T> Concat<T>(params IEnumerable<T>[] buffers)
+    public static Memory<T> Concat<T>(params Memory<T>[] buffers)
     {
-        foreach (var buffer in buffers)
-            foreach (var b in buffer)
-                yield return b;
+        return buffers.SelectMany(x => x.ToArray()).ToArray();
     }
 
     public static Memory<byte> Append(Memory<byte> buffer, Memory<byte> data)
@@ -114,7 +112,7 @@ public static partial class NabuLib
 
     public static Memory<byte> Insert(Memory<byte> buffer, int offset, Memory<byte> data)
     {
-        var end = offset + data.Length;
+        var end = (buffer.Length - offset) + data.Length;
         var length = end > buffer.Length ? end : buffer.Length;
         Memory<byte> r = new byte[length];
         buffer[..offset].CopyTo(r);

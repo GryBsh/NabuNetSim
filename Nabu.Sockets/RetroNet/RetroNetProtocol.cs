@@ -311,7 +311,7 @@ public partial class RetroNetProtocol : Protocol
     {
         var command = base.ShouldAccept(unhandled);
         var source = NabuNet.Source(Settings);
-        var enabled = source.EnableRetroNet;
+        var enabled = source?.EnableRetroNet is true;
 
         return command && enabled;
     }

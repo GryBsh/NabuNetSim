@@ -30,7 +30,7 @@ public class RAMStorageHandler : INHACPStorageHandler
         }
     }
 
-    public Task<(bool, string, byte[], NHACPError)> Get(int offset, int length)
+    public Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length)
     {
         try
         {
@@ -39,7 +39,7 @@ public class RAMStorageHandler : INHACPStorageHandler
         }
         catch (Exception ex)
         {
-            return Task.FromResult((false, ex.Message, Array.Empty<byte>(), NHACPError.Undefined));
+            return Task.FromResult((false, ex.Message, new Memory<byte>(Array.Empty<byte>()), NHACPError.Undefined));
         }
     }
 
@@ -50,8 +50,8 @@ public class RAMStorageHandler : INHACPStorageHandler
             var length = buffer.Length + offset;
             if (length > Buffer.Length)
             {
-                var temp = new byte[length];
-                Buffer.Span.CopyTo(temp);
+                var temp = new Memory<byte>(new byte[length]);
+                Buffer.CopyTo(temp);
                 Buffer = temp;
             }
             buffer.CopyTo(Buffer[offset..]);
@@ -83,7 +83,7 @@ public class RAMStorageHandler : INHACPStorageHandler
         throw new NotImplementedException();
     }
 
-    public Task<(bool, string, byte[], NHACPError)> Read(int length)
+    public Task<(bool, string, Memory<byte>, NHACPError)> Read(int length)
     {
         throw new NotImplementedException();
     }

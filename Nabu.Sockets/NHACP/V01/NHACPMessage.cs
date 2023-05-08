@@ -7,35 +7,35 @@ public static class NHACPMessage
 
 
 
-    public static Span<byte> Frame(byte type, params IEnumerable<byte>[] message) {
+    public static Memory<byte> Frame(byte type, params Memory<byte>[] message) {
         return NabuLib.Frame(
             new[] { type },
             message
         );
     }
 
-    public static Span<byte> NHACPStarted(byte sessionId, short version, string id)
+    public static Memory<byte> NHACPStarted(byte sessionId, short version, string id)
     {
         return Frame(
             0x80,
             new byte[] { sessionId },
             NabuLib.FromShort(version),
-            NabuLib.ToSizedASCII("NONE")
+            NabuLib.ToSizedASCII("NONE").ToArray()
         );
     }
 
-    public static Span<byte> OK() => new byte[] { 0x81 };
+    public static Memory<byte> OK() => new byte[] { 0x81 };
 
-    public static Span<byte> Error(NHACPError code, string message)
+    public static Memory<byte> Error(NHACPError code, string message)
     {
         return Frame(
             0x82,
             NabuLib.FromShort((short)code),
-            NabuLib.ToSizedASCII(message)
+            NabuLib.ToSizedASCII(message).ToArray()
         );
     }
 
-    public static Span<byte> StorageLoaded(byte index, int size)
+    public static Memory<byte> StorageLoaded(byte index, int size)
     {
         return Frame(
             0x83,
@@ -44,7 +44,7 @@ public static class NHACPMessage
         );
     }
 
-    public static Span<byte> Buffer(Memory<byte> buffer)
+    public static Memory<byte> Buffer(Memory<byte> buffer)
     {
         return Frame(
             0x84,
@@ -53,7 +53,7 @@ public static class NHACPMessage
         );
     }
 
-    public static Span<byte> DateTime(DateTime date)
+    public static Memory<byte> DateTime(DateTime date)
     {
         return Frame(
             0x85,
@@ -61,16 +61,16 @@ public static class NHACPMessage
         );
     }
 
-    public static Span<byte> DirectoryEntry(string path)
+    public static Memory<byte> DirectoryEntry(string path)
     {
         return Frame(
             0x86,
             NHACPStructure.FileInfo(path).ToArray(),
-            NabuLib.ToSizedASCII(Path.GetFileName(path))
+            NabuLib.ToSizedASCII(Path.GetFileName(path)).ToArray()
         );
     }
 
-    public static Span<byte> Byte(byte byt)
+    public static Memory<byte> Byte(byte byt)
     {
         return Frame(
             0x87,
@@ -78,7 +78,7 @@ public static class NHACPMessage
         );
     }
 
-    public static Span<byte> Short(short shrt)
+    public static Memory<byte> Short(short shrt)
     {
         return Frame(
             0x88,
@@ -86,7 +86,7 @@ public static class NHACPMessage
         );
     }
 
-    public static Span<byte> Int(int number)
+    public static Memory<byte> Int(int number)
     {
         return Frame(
             0x88,

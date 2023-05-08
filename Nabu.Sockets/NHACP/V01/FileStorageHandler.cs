@@ -56,12 +56,12 @@ public class FileStorageHandler : INHACPStorageHandler
         return Task.FromResult((false, "Not found", Length, NHACPError.NotFound));
     }
 
-    public async Task<(bool, string, byte[], NHACPError)> Get(int offset, int length)
+    public async Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length)
     {
         if (_stream is null)
             return (false, string.Empty, Array.Empty<byte>(), NHACPError.InvalidRequest);
 
-        var buffer = new byte[length];
+        var buffer = new Memory<byte>(new byte[length]);
             
         var end = offset + length;
             
@@ -69,9 +69,9 @@ public class FileStorageHandler : INHACPStorageHandler
 
         Logger.WriteVerbose($"Reading {length} bytes from {offset}, File Length: {_stream.Length}");
         _stream.Seek(offset, SeekOrigin.Begin);
-        await _stream.ReadAsync(buffer.AsMemory(0, length));
+        await _stream.ReadAsync(buffer);
 
-        return (true, string.Empty, buffer, 0);
+        return (true, string.Empty, buffer.ToArray(), 0);
         
     }
 
@@ -114,7 +114,7 @@ public class FileStorageHandler : INHACPStorageHandler
     }
 
 
-    public async Task<(bool, string, byte[], NHACPError)> Read(int length)
+    public async Task<(bool, string, Memory<byte>, NHACPError)> Read(int length)
     {
         if (Position > Length) return (true, string.Empty, Array.Empty<byte>(), NHACPError.Undefined);
         if ((Position + length) > Length) length = Length - Position;

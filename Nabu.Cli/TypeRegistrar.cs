@@ -52,7 +52,7 @@ public sealed class TypeResolver : ITypeResolver, IDisposable
         _provider = provider ?? throw new ArgumentNullException(nameof(provider));
     }
 
-    public object Resolve(Type type)
+    public object? Resolve(Type? type)
     {
         if (type == null)
         {

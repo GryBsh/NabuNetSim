@@ -13,7 +13,7 @@ public class FileCache
     IConsole<FileCache> Logger { get; }
     
     readonly ConcurrentDictionary<string, DateTime> _cacheTime = new();
-    readonly ConcurrentDictionary<string, byte[]> _cache = new();
+    readonly ConcurrentDictionary<string, Memory<byte>> _cache = new();
     
     readonly Settings Settings;
 
@@ -25,13 +25,13 @@ public class FileCache
         Logger = logger;
     }
 
-    public void CacheFile(string path, byte[] content, bool write = true)
+    public void CacheFile(string path, Memory<byte> content, bool write = true)
     {
         if (Settings.EnableLocalFileCache is false)
             return;
         Task.Run(async () =>
         {
-            if (write) await File.WriteAllBytesAsync(path, content);
+            if (write) await File.WriteAllBytesAsync(path, content.ToArray());
             _cache[path] = content;
             _cacheTime[path] = DateTime.Now;
         });
@@ -51,13 +51,13 @@ public class FileCache
         });
     }
 
-    public async Task<byte[]> GetFile(string path)
+    public async Task<Memory<byte>> GetFile(string path)
     {
         if (Settings.EnableLocalFileCache is false)
             return await File.ReadAllBytesAsync(path);
 
-        var content = Array.Empty<byte>();
-        if (File.Exists(path) is false) return Array.Empty<byte>();
+        Memory<byte> content = Array.Empty<byte>();
+        if (File.Exists(path) is false) return content;
 
         if (_cacheTime.TryGetValue(path, out var cacheTime) &&
             File.GetLastWriteTime(path) > cacheTime
@@ -106,7 +106,7 @@ public class FileCache
         }
 
         if (_cache.TryGetValue(path, out var bytes))
-            return Encoding.UTF8.GetString(bytes);
+            return Encoding.UTF8.GetString(bytes.ToArray());
             
         content = await File.ReadAllTextAsync(path);
         CacheString(path, content, false);

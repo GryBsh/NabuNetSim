@@ -47,7 +47,7 @@ public class FileStorageHandler : IStorageHandler
         }
     }
 
-    public async Task<(bool, string, byte[])> Get(int offset, short length)
+    public async Task<(bool, string, Memory<byte>)> Get(int offset, short length)
     {
         try
         {

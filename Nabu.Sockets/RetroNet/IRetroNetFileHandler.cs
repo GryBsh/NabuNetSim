@@ -4,7 +4,7 @@ namespace Nabu.Network.RetroNet;
 
 public interface IRetroNetFileHandler
 {
-    Task<byte[]> Get(string filename, CancellationToken cancel);
+    Task<Memory<byte>> Get(string filename, CancellationToken cancel);
     Task<int> Size(string filename);
     Task<FileDetails> FileDetails(string filename);
     Task Delete(string filename);

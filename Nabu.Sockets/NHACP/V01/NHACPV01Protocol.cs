@@ -663,7 +663,7 @@ public class NHACPV01Protocol : Protocol
 
         if (result is null || result.Length == 0) return;
 
-        result = SendCRC ? NabuLib.Concat(result, new[] { CRC.GenerateCRC8(result) }).ToArray() 
+        result = SendCRC ? NabuLib.Concat<byte>(result, new[] { CRC.GenerateCRC8(result) }).ToArray() 
                          : result;
         SendFramed(result!);
     }

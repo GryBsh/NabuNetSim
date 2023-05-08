@@ -26,7 +26,7 @@ public class NHACPProtocol : Protocol
         SendFramed(
             0x80,
             NabuLib.FromShort(Version),
-            NabuLib.ToSizedASCII(Emulator.Id)
+            NabuLib.ToSizedASCII(Emulator.Id).ToArray()
         );
     }
 
@@ -35,7 +35,7 @@ public class NHACPProtocol : Protocol
         SendFramed(
             0x82,
             NabuLib.FromShort(code),
-            NabuLib.ToSizedASCII(message)
+            NabuLib.ToSizedASCII(message).ToArray()
         );
     }
     void StorageLoaded(short index, int length)
@@ -151,8 +151,8 @@ public class NHACPProtocol : Protocol
         var (_, date, time) = await Storage.DateTime();
         SendFramed(
             0x85,
-            NabuLib.ToSizedASCII(date),
-            NabuLib.ToSizedASCII(time)
+            NabuLib.ToSizedASCII(date).ToArray(),
+            NabuLib.ToSizedASCII(time).ToArray()
         );
         Log($"NA: DataTime Send");
     }
@@ -219,7 +219,7 @@ public class NHACPProtocol : Protocol
     public override bool ShouldAccept(byte unhandled)
     {
         return base.ShouldAccept(unhandled) &&
-               NabuNet.Source(Settings).EnableRetroNet is false;
+               NabuNet.Source(Settings)?.EnableRetroNet is false;
     }
 
 }

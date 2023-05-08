@@ -29,7 +29,7 @@ public class RAMStorageHandler : IStorageHandler
         }
     }
 
-    public Task<(bool, string, byte[])> Get(int offset, short length)
+    public Task<(bool, string, Memory<byte>)> Get(int offset, short length)
     {
         try
         {
@@ -38,7 +38,7 @@ public class RAMStorageHandler : IStorageHandler
         }
         catch (Exception ex)
         {
-            return Task((false, ex.Message, Array.Empty<byte>()));
+            return Task((false, ex.Message, new Memory<byte>(Array.Empty<byte>())));
         }
     }
 

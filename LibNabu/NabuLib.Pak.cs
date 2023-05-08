@@ -26,13 +26,13 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="pakData">The raw PAK data in bytes</param>
     /// <returns>A Segment spool</returns>
-    public static byte[] Unpak(byte[] pakData)
+    public static Memory<byte> Unpak(Memory<byte> pakData)
     {
         var cipher = DES.Create();
         cipher.Key = Constants.PakKey; //new byte[] { 0x6e, 0x58, 0x61, 0x32, 0x62, 0x79, 0x75, 0x7a };
         cipher.IV = Constants.PakIV;   //new byte[] { 0x0c, 0x15, 0x2b, 0x11, 0x39, 0x23, 0x43, 0x1b };
         cipher.Mode = CipherMode.CBC;
-        var data = cipher.CreateDecryptor().TransformFinalBlock(pakData, 0, pakData.Length);
+        var data = cipher.CreateDecryptor().TransformFinalBlock(pakData.ToArray(), 0, pakData.Length);
         return data;
     }
 }

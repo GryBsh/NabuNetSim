@@ -62,7 +62,7 @@ public class CachingHttpClient : IHttpCache
         return new (false, true, true, lastCached);
     }
 
-    public async Task<byte[]> GetBytes(string uri)
+    public async Task<Memory<byte>> GetBytes(string uri)
     {
         var safeName = NabuLib.SafeFileName(uri);
         var path = Path.Join(CacheFolder, safeName);

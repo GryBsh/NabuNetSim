@@ -75,7 +75,7 @@ public class ClassicNabuProtocol : Protocol
                 break;
             case StatusMessage.Adaptor: // <-- NPC Program/DOS Loaded
                 Log($"NPC: Finished? NA: {nameof(Message.Finished)}");
-                if (Network.Source(Settings).EnableExploitLoader)
+                if (Network.Source(Settings)?.EnableExploitLoader is true)
                 {
                     Log($"NA: Quirk Injected");
                     StatusResult(Status.Transfer);
@@ -187,7 +187,7 @@ public class ClassicNabuProtocol : Protocol
     /// <Summary>
     ///     Send the time packet to the device - segment: 00 pak: 7FFFFF
     /// </summary>
-    byte[] TimePacket()
+    Memory<byte> TimePacket()
     {
         //byte[] buffer = { 0x02, 0x02, 0x02, 0x54, 0x01, 0x01, 0x00, 0x00, 0x00 };
         var now = DateTime.Now;
@@ -211,9 +211,9 @@ public class ClassicNabuProtocol : Protocol
     /// <summary>
     ///     Escapes the Escape bytes in the packet with Escape.
     /// </summary>
-    static IEnumerable<byte> EscapeBytes(IEnumerable<byte> sequence)
+    static IEnumerable<byte> EscapeBytes(Memory<byte> sequence)
     {
-        foreach (byte b in sequence)
+        foreach (byte b in sequence.ToArray())
         {
             if (b == Message.Escape)
             {
@@ -230,7 +230,7 @@ public class ClassicNabuProtocol : Protocol
     /// <summary>
     ///     Sends a packet to the device
     /// </summary>
-    void SendPacket(int pak, byte[] buffer, int totalLength, bool last = false)
+    void SendPacket(int pak, Memory<byte> buffer, int totalLength, bool last = false)
     {
         if (buffer.Length > Constants.MaxPacketSize)
         {
@@ -243,22 +243,20 @@ public class ClassicNabuProtocol : Protocol
 
         Authorized();
 
-        buffer = EscapeBytes(buffer).ToArray();
+        var output = EscapeBytes(buffer);
         Debug($"NA: Sending Packet, {buffer.Length} bytes");
 
-        //var start = DateTime.Now;
-        Send(buffer);
-        //var stop = DateTime.Now;
-
+        Send(output.ToArray());
         Finished();        //Epilog
+
         if (last)
         {
             var finished = DateTime.Now;
             
             Network.UnCachePak(base.Settings, pak);
-            //Task.Run(GC.Collect);
-            
+
             if (Started is null) return; // Time Packet is not timed.
+
             NabuLib.EndSafeNoGC();
             TransferRate(Started.Value, finished, totalLength);
             Started = null;

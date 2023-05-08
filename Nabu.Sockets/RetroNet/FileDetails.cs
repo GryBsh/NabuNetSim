@@ -10,8 +10,8 @@ public record FileDetails
 
     public static implicit operator byte[](FileDetails file)
     {
-        var fn = NabuLib.ToSizedASCII(file.Filename, 64);
-        return NabuLib.Concat(
+        var fn = NabuLib.ToSizedASCII(file.Filename, 64).ToArray();
+        return NabuLib.Concat<byte>(
             BitConverter.GetBytes(file.FileSize),
             BitConverter.GetBytes((short)file.Created.Year),
             new[] {

@@ -6,9 +6,9 @@ namespace Nabu;
 
 public static partial class NabuLib
 {
-    public static Span<byte> Frame(byte[] header, params IEnumerable<byte>[] buffer)
+    public static Memory<byte> Frame(byte[] header, params Memory<byte>[] buffer)
     {
-        return Concat(header, Concat(buffer)).ToArray().AsSpan();
+        return Concat(header, Concat(buffer));
     }
 
     public static Socket Socket(bool noDelay = true, int sBufferSize = 8, int rBufferSize = 8)

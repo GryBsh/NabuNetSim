@@ -98,25 +98,25 @@ public class HomeViewModel : ReactiveObject
     }
 
     static string[] Phrases = new[] {
-            "👁️🚢👿",
-            "Assimilation in progress",
-            "Admiral! There be whales here!",
-            "Ay Sir, I'm working on it!",
-            "You should visit NABUNetwork.com",
-            "Hey Mr. 🦉",
-            "Standby for NABUfall",
-            "Your honor, I object to this preposterous poppycock",
-            "It works for us now, Comrade",
-            "Buy Pants",
-            "2 NABUs and a KayPro walk into a bar...",
-            "💣 0.015625 MEGA POWER 💣",
-            "9/10 Doctors would prefer not to endorse this product",
-            "NABU4Ever!",
-            "👸Beware the wrath of King NABU 👸",
-            "☎️ Please stay on the line, your call is important to us ☎️",
-            "🎵 Never gonna give you up. Never gonna let you down 🎵",
-            "Excuse me human, can I interest you in this pamphlet on the kingdom of NABU?"
-        };
+        "👁️🚢👿",
+        "Assimilation in progress",
+        "Admiral! There be whales here!",
+        "Ay Sir, I'm working on it!",
+        "You should visit NABUNetwork.com",
+        "Hey Mr. 🦉",
+        "Standby for NABUfall",
+        "Your honor, I object to this preposterous poppycock",
+        "It works for us now, Comrade",
+        "Buy Pants",
+        "2 NABUs and a KayPro walk into a bar...",
+        "💣 0.015625 MEGA POWER 💣",
+        "9/10 Doctors would prefer not to endorse this product",
+        "NABU4Ever!",
+        "👸Beware the wrath of King NABU 👸",
+        "☎️ Please stay on the line, your call is important to us ☎️",
+        "🎵 Never gonna give you up. Never gonna let you down 🎵",
+        "Excuse me human, can I interest you in this pamphlet on the kingdom of NABU?"
+    };
     public string Phrase => Phrases[Random.Shared.Next(0, Phrases.Length)];
     public string LogButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
 
@@ -136,7 +136,6 @@ public class HomeViewModel : ReactiveObject
         set
         {
             logSearch = value ?? string.Empty;
-            LogPage = 1;
             
             this.RaisePropertyChanged(nameof(LogSearch));
             this.RaisePropertyChanged(nameof(LogPages));
@@ -165,9 +164,9 @@ public class HomeViewModel : ReactiveObject
                             var term = LogSearch.ToLowerInvariant();
                             if (
                                 LogSearch != string.Empty && (
-                                    e.Timestamp.ToString(LogDateTimeFormat).ToLowerInvariant().Contains(LogSearch) ||
-                                    e.Name.ToLowerInvariant().Contains(LogSearch) ||
-                                    e.Message.ToLowerInvariant().Contains(LogSearch)
+                                    e.Timestamp.ToString(LogDateTimeFormat).ToLowerInvariant().Contains(term) ||
+                                    e.Name.ToLowerInvariant().Contains(term) ||
+                                    e.Message.ToLowerInvariant().Contains(term)
                                 )
                             ) e.Highlight = true;
                             else e.Highlight = false;
@@ -298,7 +297,7 @@ public class HomeViewModel : ReactiveObject
         if (settings is null or NullAdaptorSettings) return false;
         var programs = Sources.Programs(settings);
         var hasMultipleImages = programs.Count() > 1;
-        var exploitEnabled = Sources.Source(settings).EnableExploitLoader is true;
+        var exploitEnabled = Sources.Source(settings)?.EnableExploitLoader is true;
         var isNotPakCycle = !programs.Any(p => p.Name == Constants.CycleMenuPak);
         return hasMultipleImages && (exploitEnabled || isNotPakCycle);
     }

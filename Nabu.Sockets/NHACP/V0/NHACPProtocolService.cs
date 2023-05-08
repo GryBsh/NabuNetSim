@@ -65,7 +65,7 @@ public class NHACPProtocolService : INHACPProtocolService
         }
     }
 
-    public Task<(bool, string, byte[])> Get(byte index, int offset, short length)
+    public Task<(bool, string, Memory<byte>)> Get(byte index, int offset, short length)
     {
         try
         {
@@ -74,7 +74,7 @@ public class NHACPProtocolService : INHACPProtocolService
         }
         catch (Exception ex)
         {
-            return Task((false, ex.Message, Array.Empty<byte>()));
+            return Task((false, ex.Message, new Memory<byte>(Array.Empty<byte>())));
         }
     }
 

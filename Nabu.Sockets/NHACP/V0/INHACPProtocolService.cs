@@ -23,7 +23,7 @@ public interface INHACPProtocolService
     // -----------------------------
     // 0x02 |Index |Offset |Length |                -> GET
     //      |1 byte|4 bytes|2 bytes|
-    Task<(bool, string, byte[])> Get(byte index, int offset, short length);
+    Task<(bool, string, Memory<byte>)> Get(byte index, int offset, short length);
     // 0x84 |Length |Buffer      |                  -> BUFFER   [bytes]
     //      |2 bytes|Length bytes|
     // - OR -

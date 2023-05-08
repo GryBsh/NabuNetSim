@@ -19,7 +19,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
     }
     public CachingHttpClient Client { get; }
 
-    public async Task<byte[]> Get(string filename, CancellationToken cancel)
+    public async Task<Memory<byte>> Get(string filename, CancellationToken cancel)
     {
         filename = NabuLib.Uri(Settings, filename);
         try

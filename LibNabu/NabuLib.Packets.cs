@@ -56,7 +56,7 @@ public static partial class NabuLib
     /// <param name="pakId">The id of the desired PAK from which to draw the segment</param>
     /// <param name="buffer">The RAW program image data to slice the packet from</param>
     /// <returns></returns>
-    public static (bool, byte[]) SliceFromRaw(
+    public static (bool, Memory<byte>) SliceFromRaw(
         IConsole logger,
         short segmentIndex,
         int pakId,
@@ -76,7 +76,7 @@ public static partial class NabuLib
         var (next, slice) = Slice(buffer, offset, Constants.MaxPayloadSize);
         bool lastPacket = next is 0;
         int packetSize = slice.Length + Constants.HeaderSize + Constants.FooterSize;
-        var message = new byte[packetSize];
+        var message = new Memory<byte>(new byte[packetSize]);
         int idx = 0;
 
         /*
@@ -97,33 +97,33 @@ public static partial class NabuLib
          */
 
         // 16 bytes of header
-        message[idx++] = (byte)(pakId >> 16 & 0xFF);              //Pak MSB   
-        message[idx++] = (byte)(pakId >> 8 & 0xFF);               //              
-        message[idx++] = (byte)(pakId >> 0 & 0xFF);               //Pak LSB   
-        message[idx++] = (byte)(segmentIndex & 0xff);                //Segment LSB    
-        message[idx++] = 0x01;                                  //Owner         
-        message[idx++] = 0x7F;                                  //Tier MSB      
-        message[idx++] = 0xFF;
-        message[idx++] = 0xFF;
-        message[idx++] = 0xFF;                                  //Tier LSB
-        message[idx++] = 0x7F;                                  //Mystery Byte
-        message[idx++] = 0x80;                                  //Mystery Byte
-        message[idx++] = (byte)(                                //Packet Type
+        message.Span[idx++] = (byte)(pakId >> 16 & 0xFF);              //Pak MSB   
+        message.Span[idx++] = (byte)(pakId >> 8 & 0xFF);               //              
+        message.Span[idx++] = (byte)(pakId >> 0 & 0xFF);               //Pak LSB   
+        message.Span[idx++] = (byte)(segmentIndex & 0xff);                //Segment LSB    
+        message.Span[idx++] = 0x01;                                  //Owner         
+        message.Span[idx++] = 0x7F;                                  //Tier MSB      
+        message.Span[idx++] = 0xFF;
+        message.Span[idx++] = 0xFF;
+        message.Span[idx++] = 0xFF;                                  //Tier LSB
+        message.Span[idx++] = 0x7F;                                  //Mystery Byte
+        message.Span[idx++] = 0x80;                                  //Mystery Byte
+        message.Span[idx++] = (byte)(                                //Packet Type
                             (lastPacket ? 0x10 : 0x00) |        //bit 4 (0x10) marks End of Segment
                             (segmentIndex == 0 ? 0xA1 : 0x20)
                          );
-        message[idx++] = (byte)(segmentIndex >> 0 & 0xFF);           //Segment # LSB
-        message[idx++] = (byte)(segmentIndex >> 8 & 0xFF);           //Segment # MSB
-        message[idx++] = (byte)(offset >> 8 & 0xFF);            //Offset MSB
-        message[idx++] = (byte)(offset >> 0 & 0xFF);            //Offset LSB
+        message.Span[idx++] = (byte)(segmentIndex >> 0 & 0xFF);           //Segment # LSB
+        message.Span[idx++] = (byte)(segmentIndex >> 8 & 0xFF);           //Segment # MSB
+        message.Span[idx++] = (byte)(offset >> 8 & 0xFF);            //Offset MSB
+        message.Span[idx++] = (byte)(offset >> 0 & 0xFF);            //Offset LSB
 
-        slice.CopyTo(message, idx);         //DATA
+        slice.CopyTo(message.Slice(idx));         //DATA
         idx += slice.Length;
 
         //CRC Footer
         var crc = GenerateCRC(message[0..idx]);
-        message[idx++] = crc[0];                                //CRC MSB
-        message[idx++] = crc[1];                                //CRC LSB
+        message.Span[idx++] = crc[0];                                //CRC MSB
+        message.Span[idx++] = crc[1];                                //CRC LSB
 
         return (lastPacket, message);
     }
@@ -135,7 +135,7 @@ public static partial class NabuLib
     /// <param name="segment"></param>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static (bool, byte[]) SliceFromPak(IConsole logger, short segment, Memory<byte> buffer)
+    public static (bool, Memory<byte>) SliceFromPak(IConsole logger, short segment, Memory<byte> buffer)
     {
         /*
          *  [  Pak   ]
@@ -163,8 +163,8 @@ public static partial class NabuLib
         
         logger.WriteVerbose("Slicing Packet from PAK");
         var crc = GenerateCRC(message[0..^2]);
-        message[^2] = crc[0];    //CRC MSB
-        message[^1] = crc[1];    //CRC LSB
+        message.Span[^2] = crc[0];    //CRC MSB
+        message.Span[^1] = crc[1];    //CRC LSB
         return (next is 0, message);
     }
 }

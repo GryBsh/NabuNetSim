@@ -15,7 +15,7 @@ namespace Nabu;
 public class Simulation : BackgroundService, ISimulation
 {
     readonly IConsole Logger;
-    readonly AdaptorSettings[] DefinedAdaptors;
+    readonly List<AdaptorSettings> DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
     Settings Settings { get; }
     readonly IEnumerable<IJob> Jobs;
@@ -29,10 +29,13 @@ public class Simulation : BackgroundService, ISimulation
     {
         Logger = logger;
         Settings = settings;
-        DefinedAdaptors = NabuLib.Concat<AdaptorSettings>(
-            settings.Adaptors.Serial,
-            settings.Adaptors.TCP
-        ).ToArray();
+
+        DefinedAdaptors = new();
+        foreach (var adapter in settings.Adaptors.Serial)
+            DefinedAdaptors.Add(adapter);
+        foreach (var adapter in settings.Adaptors.TCP)
+            DefinedAdaptors.Add(adapter);
+
         ServiceProvider = serviceProvider;
         Jobs = jobs;
     }
@@ -62,7 +65,7 @@ public class Simulation : BackgroundService, ISimulation
             job.Start();
 
         Cancel = NabuLib.SetLength(
-            DefinedAdaptors.Length,
+            DefinedAdaptors.Count,
             Array.Empty<CancellationTokenSource>(),
             () => CancellationTokenSource.CreateLinkedTokenSource(stopping)
         ).ToArray();
@@ -75,19 +78,19 @@ public class Simulation : BackgroundService, ISimulation
             // We are going to keep track of the services that were defined
             // so if they stop, we can restart them
             Span<Task> services =  NabuLib.SetLength(
-                DefinedAdaptors.Length,
+                DefinedAdaptors.Count,
                 Array.Empty<Task>(),
                 Task.CompletedTask
             ).ToArray();
 
             //int[] fails = new int[DefinedAdaptors.Length];
             //bool started = false;
-            Logger.Write($"Defined Adaptors: {DefinedAdaptors.Length}");
+            Logger.Write($"Defined Adaptors: {DefinedAdaptors.Count}");
 
             // Until the host tells us to stop
             while (stopping.IsCancellationRequested is false)
             {
-                for (int index = 0; index < DefinedAdaptors.Length; index++)
+                for (int index = 0; index < DefinedAdaptors.Count; index++)
                 {
                     var settings = DefinedAdaptors[index];
                     

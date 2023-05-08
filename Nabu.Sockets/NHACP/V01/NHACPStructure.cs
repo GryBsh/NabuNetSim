@@ -15,14 +15,14 @@ public static class NHACPStructure
 {
     public static Span<byte> DateTime(DateTime dateTime)
     {
-        return NabuLib.Concat(
+        return NabuLib.Concat<byte>(
             NabuLib.FromASCII(dateTime.ToString("yyyyMMdd")).ToArray(),
             NabuLib.FromASCII(dateTime.ToString("HHmmss")).ToArray()
         ).ToArray()
         .AsSpan();
     }
 
-    public static Span<byte> FileInfo(string path)
+    public static Memory<byte> FileInfo(string path)
     {
         var flags = AttrFlags.None;
         
@@ -46,14 +46,13 @@ public static class NHACPStructure
             lastWrite = info.LastWriteTime;
             flags |= AttrFlags.Directory;
         }
-            
 
-        return NabuLib.Concat(
+
+        return NabuLib.Concat<byte>(
             DateTime(lastWrite).ToArray(),
             NabuLib.FromShort((short)flags),
             NabuLib.FromInt(length)
-        ).ToArray()
-        .AsSpan();
+        );
     }
 
     public static string String(Memory<byte> buffer)

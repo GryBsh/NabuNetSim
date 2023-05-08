@@ -27,7 +27,7 @@ public class JavaScriptProtocol : Protocol
         string source = await File.ReadAllTextAsync(Protocol.Path, cancel);
         try
         {
-            var engine = new V8ScriptEngine();
+            using var engine = new V8ScriptEngine();
             engine.AddHostObject("incoming", unhandled);
             engine.AddHostObject("adaptor", proxy);
             engine.AddHostObject("logger", Logger);

@@ -9,7 +9,7 @@ public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
     {
     }
 
-    public async Task<byte[]> Get(string filename, CancellationToken cancel)
+    public async Task<Memory<byte>> Get(string filename, CancellationToken cancel)
     {
         filename = NabuLib.FilePath(Settings,filename);
         if (File.Exists(filename))
