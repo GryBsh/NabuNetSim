@@ -16,8 +16,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Nabu.NetSim\JavaScriptProtocol.cs" Link="JavaScriptProtocol.cs" />
-    <Compile Include="..\Nabu.NetSim\MicrosoftExtensionsLoggingConsole.cs" Link="MicrosoftExtensionsLoggingConsole.cs" />
     <Compile Include="..\Nabu.NetSim\PythonProtocol.cs" Link="PythonProtocol.cs" />
     <Compile Include="..\Nabu.NetSim\Simulation.cs" Link="Simulation.cs" />
   </ItemGroup>
@@ -28,15 +26,18 @@
     </None>
   </ItemGroup>
 
+	<ItemGroup>
+		<DotNetCliToolReference Include="dotnet-ef" Version="7.0.5" />
+	</ItemGroup>
+
   <ItemGroup>
-    <PackageReference Include="Blazorise" Version="1.2.1" />
-    <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.1" />
-    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.1" />
-    <PackageReference Include="Jint" Version="3.0.0-beta-2047" />
-    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.17.2" />
-    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.2" />
+    <PackageReference Include="Blazorise" Version="1.2.3" />
+    <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.3" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.3" />
+    <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
     <PackageReference Include="Python.Included" Version="3.11.2" />
-    <PackageReference Include="ReactiveUI.Blazor" Version="18.4.25" />
+    <PackageReference Include="ReactiveUI.Blazor" Version="18.4.44" />
     <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="14.6.8" />
   </ItemGroup>
 

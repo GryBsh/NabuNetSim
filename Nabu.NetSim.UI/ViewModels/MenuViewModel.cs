@@ -1,5 +1,6 @@
 ﻿using Blazorise;
 using DynamicData;
+using Nabu.NetSim.UI.Models;
 using Nabu.Network;
 using ReactiveUI;
 using System;
@@ -9,46 +10,61 @@ using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Splat;
+using Nabu.Adaptor;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
 public record AvailableImage(string DisplayName, string Name);
 
-public class AdaptorViewModel : ReactiveObject
-{
-    HomeViewModel Home;
-    INabuNetwork Sources;
-    Settings Settings;
-    public AdaptorViewModel(HomeViewModel home, INabuNetwork sources, Settings settings)
-    {
-        Home = home;
-        Sources = sources;
-        Settings = settings;
-    }
-
-    public ObservableCollection<AvailableImage> AvailableImages { get; } = new();
-
-}
-
 public class MenuViewModel : ReactiveObject
 {
-    public MenuViewModel(HomeViewModel home, INabuNetwork sources)
+    public MenuViewModel(
+        Settings settings,
+        HomeViewModel home, 
+        INabuNetwork sources, 
+        //SettingsViewModel settingsModel,
+        //StatusViewModel status,
+        LogViewModel log
+    )
     {
+        Settings = settings;
         Home = home;
         Sources = sources;
-        Settings = new (home.Settings);
-        Observable.Interval(TimeSpan.FromMinutes(1))
+        //Settings = settingsModel;
+        //Status = status;
+        Log = log;
+        Observable
+            .Interval(TimeSpan.FromMinutes(1))
             .Subscribe(_ => UpdateImages());
-        UpdateImages();
-    }
 
-    public SettingsViewModel Settings { get; }
+        Task.Run(UpdateImages);
+    }
+    public Settings Settings { get; }
+    //public SettingsViewModel Settings { get; }
     public HomeViewModel Home { get;  }
     public INabuNetwork Sources { get; }
+    public LogViewModel Log { get; }
+    //public StatusViewModel Status { get; } 
+
+    public ICollection<SerialAdaptorSettings> Serial
+    {
+        get => Settings.Adaptors.Serial;
+    }
+
+    public ICollection<TCPAdaptorSettings> TCP
+    {
+        get => Settings.Adaptors.TCP;
+    }
+
+    public ICollection<TCPAdaptorSettings> Connections
+    {
+        get => TCPAdaptor.Connections.Values.ToList();
+    }
 
     void NotifyChange()
     {
-        Home.RaisePropertyChanged(nameof(Home.Menu));
+        //Home.RaisePropertyChanged(nameof(Home.Menu));
     }
     
     public AdaptorSettings Selected { get; set; } = new NullAdaptorSettings();
@@ -60,8 +76,11 @@ public class MenuViewModel : ReactiveObject
         SetVisible(MenuPage.AdaptorSettings);
         this.RaisePropertyChanged(nameof(AdaptorSelected));
         this.RaisePropertyChanged(nameof(Selected));
-        NotifyChange();
+        this.RaisePropertyChanged(nameof(IsClient));
+        //NotifyChange();
     }
+
+    public bool IsClient => Selected is TCPAdaptorSettings t && t.IsClient;
 
     public void SetSource(string value)
     {
@@ -77,7 +96,7 @@ public class MenuViewModel : ReactiveObject
         };
             
         this.RaisePropertyChanged(nameof(Selected));
-        NotifyChange();
+        //NotifyChange();
     }
 
     public void SetImage(string image)
@@ -89,7 +108,7 @@ public class MenuViewModel : ReactiveObject
             _ => image
         };
         this.RaisePropertyChanged(nameof(Selected));
-        NotifyChange();
+        //NotifyChange();
     }
 
     public string AdaptorButtonText(AdaptorSettings settings)
@@ -100,6 +119,19 @@ public class MenuViewModel : ReactiveObject
             _ => "Start Adaptor"
         };
     }
+
+    public IconName AdaptorButtonIcon(AdaptorSettings settings)
+    {
+        return settings.State switch
+        {
+            ServiceShould.Run => IconName.Stop,
+            ServiceShould.Restart => IconName.Stop,
+            ServiceShould.Stop => IconName.Play,
+            _ => IconName.Play
+        };
+    }
+
+    public string[] SourceNames => Settings.Sources.Select(f => f.Name).ToArray();
 
     public ObservableCollection<AvailableImage> Images { get; } = new ObservableCollection<AvailableImage>();
 
@@ -115,6 +147,19 @@ public class MenuViewModel : ReactiveObject
         this.RaisePropertyChanged(nameof(Images));
     }
 
+    public bool HasMultipleImages
+    {
+        get
+        {
+            if (Selected is null or NullAdaptorSettings) return false;
+            var programs = Sources.Programs(Selected);
+            var hasMultipleImages = programs.Count() > 1;
+            var exploitEnabled = Sources.Source(Selected)?.EnableExploitLoader is true;
+            var isNotPakCycle = !programs.Any(p => p.Name == Constants.CycleMenuPak);
+            return hasMultipleImages && (exploitEnabled || isNotPakCycle);
+        }
+    }
+
     public MenuPage Current { get; set; } = MenuPage.MainMenu;
     public Visibility IsVisible(MenuPage page)
     { 
@@ -127,6 +172,6 @@ public class MenuViewModel : ReactiveObject
         {
             Selected = new NullAdaptorSettings();
         }
-        NotifyChange();
+        //NotifyChange();
     }
 }

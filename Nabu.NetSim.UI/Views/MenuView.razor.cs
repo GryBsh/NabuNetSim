@@ -15,18 +15,18 @@ using ReactiveUI.Blazor;
 using Blazorise;
 using CodeHollow.FeedReader;
 using ReactiveUI;
-using Nabu.Adaptor;
 using Nabu.NetSim.UI.Models;
 using Nabu.NetSim.UI.Views;
+using Nabu.Adaptor;
 using Splat;
 
 namespace Nabu.NetSim.UI.Views
 {
-    public partial class HomeView
+    public partial class MenuView
     {
-        public HomeView()
+        public MenuView()
         {
-            ViewModel = Locator.Current.GetService<HomeViewModel>();
+            ViewModel = Locator.Current.GetService<MenuViewModel>();
         }
     }
 }

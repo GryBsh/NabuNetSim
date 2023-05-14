@@ -6,11 +6,35 @@ using Blazorise;
 using Microsoft.Extensions.Logging;
 using System;
 using Nabu.Services;
+using Nabu.NetSim.UI.Services;
+using Nabu.NetSim.UI.Models;
+using Nabu.Messages;
+//using Microsoft.EntityFrameworkCore;
+//using Microsoft.EntityFrameworkCore.Design;
 
 namespace Nabu.NetSim.UI;
+/*
+public class AppDataFactory : IDesignTimeDbContextFactory<AppData>
+{
+    public AppData CreateDbContext(string[] args)
+    {
+        var optionsBuilder = new DbContextOptionsBuilder<AppData>();
+        optionsBuilder.UseSqlite("Data Source=data.db");
 
+        return new AppData(optionsBuilder.Options);
+    }
+}
 
+public class AppData : DbContext
+{
+    public DbSet<LogEntry> LogEntries { get; set; }
 
+    public AppData(DbContextOptions<AppData> options) : base(options)
+    {
+        
+    }
+}
+*/
 public class AppLogger : ILogger
 {
     private readonly string FullName;
@@ -22,18 +46,20 @@ public class AppLogger : ILogger
         string name,
         AppLogProvider provider,
         AppLogConfiguration settings,
-        IRepository<LogEntry> repository
+        LogService log
+        //IRepository<LogEntry> repository
     )
     {
         FullName = name;
         Name = name.Split('.')[^1];
         Provider = provider;
         Settings = settings;
-        LogEntries = repository;
+        Logs = log;
+        //LogEntries = repository;
     }
 
-    IRepository<LogEntry> LogEntries { get; }
-
+    //IRepository<LogEntry> LogEntries { get; }
+    LogService Logs { get; }
     public IDisposable BeginScope<TState>(TState state)
         where TState : notnull
         => default!;
@@ -54,23 +80,17 @@ public class AppLogger : ILogger
 
         if (eventId.Name is not null) 
             return;
-        
-        //if (eventId.Name?.StartsWith("Microsoft.AspNetCore") is false) 
-        //    return;
 
-        Task.Run(() =>
-            LogEntries.Insert(
+        Logs.Insert(
                 new LogEntry(
                     Guid.NewGuid(),
                     DateTime.Now,
-                    logLevel,
-                    eventId,
+                    LogLevel.Information,
                     Name,
-                    formatter(state, exception),
-                    exception
+                    formatter(state, exception)
                 )
-            )
-        );
+            );
+
     }
 }
 

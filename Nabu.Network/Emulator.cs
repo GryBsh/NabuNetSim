@@ -12,6 +12,6 @@ public static class Emulator
 {
     public const int Major = 0;
     public const int Minor = 9;
-    public const int Build = 6;
+    public const int Build = 7;
     public static readonly string Id = $"NABU NetSim v{Major}.{Minor}.{Build}";
 }

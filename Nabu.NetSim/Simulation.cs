@@ -118,9 +118,9 @@ public class Simulation : BackgroundService, ISimulation
                             AdaptorType.Serial 
                                 => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
                             AdaptorType.TCP when settings is TCPAdaptorSettings tcp && tcp.Client 
-                                => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, settings, token)),
+                                => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
                             AdaptorType.TCP 
-                                => Task.Run(() => TCPAdaptor.Start(ServiceProvider, settings, token)),
+                                => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
                             _ => throw new NotImplementedException()
                         };
                         settings.Running = true;
@@ -137,8 +137,15 @@ public class Simulation : BackgroundService, ISimulation
     {
         services.AddSingleton<INabuNetwork, NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
-                .AddTransient(typeof(IConsole<>), typeof(MicrosoftExtensionsLoggingConsole<>))
-                .AddSingleton<FileCache>();
+                .AddSingleton<FileCache>()
+                .AddSingleton<StorageService>()
+                .AddTransient<IProtocol, NHACPProtocol>()
+                .AddTransient<IProtocol, NHACPV01Protocol>()
+                .AddTransient<IProtocol, RetroNetTelnetProtocol>()
+                .AddTransient<IProtocol, RetroNetProtocol>()
+                .AddSingleton<ISimulation, Simulation>()
+                .AddSingleton<IJob, RefreshSourcesJob>()
+                .AddHostedService<Simulation>();
 
         if (settings.EnablePython)
         {
@@ -193,14 +200,6 @@ public class Simulation : BackgroundService, ISimulation
                 );
             }
         }
-
-        services.AddTransient<IProtocol, NHACPProtocol>()
-                .AddTransient<IProtocol, NHACPV01Protocol>()
-                .AddTransient<IProtocol, RetroNetTelnetProtocol>()
-                .AddTransient<IProtocol, RetroNetProtocol>()
-                .AddSingleton<ISimulation, Simulation>()
-                .AddSingleton<IJob, RefreshSourcesJob>()
-                .AddHostedService<Simulation>();
 
         return services;
     }

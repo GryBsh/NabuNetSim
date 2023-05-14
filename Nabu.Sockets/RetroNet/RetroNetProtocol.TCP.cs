@@ -126,8 +126,8 @@ namespace Nabu.Network.RetroNet
         }
 
 
-        Socket? Server;
-        List<Socket> Connected = new();
+        Socket? Server { get; set; }
+        List<Socket> Connected { get; } = new();
 
         void UpdateConnected()
         {

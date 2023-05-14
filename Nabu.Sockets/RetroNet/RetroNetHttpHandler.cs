@@ -15,7 +15,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
         FileCache cache
     ) : base(logger, settings)
     {
-        Client = new CachingHttpClient(client, Logger, cache);
+        Client = new CachingHttpClient(client, Logger, cache, settings);
     }
     public CachingHttpClient Client { get; }
 

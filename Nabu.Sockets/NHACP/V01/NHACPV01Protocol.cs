@@ -127,7 +127,6 @@ public class NHACPV01Protocol : Protocol
 
             Log($"{sessionId} Open: {index}, Flags: {flags}, Uri: {uri} ({length} bytes)");
                       
-
             Sessions[sessionId][index] = uri switch
             {
                 var path when path.StartsWith("http") || path.StartsWith("https")
@@ -191,11 +190,11 @@ public class NHACPV01Protocol : Protocol
             (i, var data) = NabuLib.Slice(buffer, i, length);
 
             Log($"{sessionId} PUT: {index}, Offset: {offset}, Length: {length}");
-            if (!Sessions[sessionId].ContainsKey(index))
+            if (!Sessions[sessionId].TryGetValue(index, out var session))
             {
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
             }
-            var (success, error, code) = await Sessions[sessionId][index].Put(offset, data);
+            var (success, error, code) = await session.Put(offset, data);
 
             if (success) return NHACPMessage.OK().ToArray();
 
@@ -220,10 +219,10 @@ public class NHACPV01Protocol : Protocol
         try
         {
             var (_, index) = NabuLib.Pop(buffer, 1);
-            if (Sessions[sessionId].ContainsKey(index))
+            if (Sessions[sessionId].TryGetValue(index,out var session))
             {
                 Log($"{sessionId} CLOSE: {index}");
-                Sessions[sessionId][index].Close();
+                session.Close();
             }
             else
             {

@@ -1,5 +1,4 @@
-﻿
-@inherits ReactiveComponentBase<HomeViewModel>
+﻿@inherits ReactiveComponentBase<HomeViewModel>
 
 @if (ViewModel!.Loaded)
 {
@@ -25,128 +24,23 @@
 
                         </div>
                         <div class="col top">
-                            <div><small>Adaptors</small></div>
-                            <ul class="news list-group list-group-flush">
-                                <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
-                                    <li class="list-group-item">
-                                        <large><Icon Name="IconName.Plug"/></large>
-                                        <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br/>
-                                        <large><Icon Name="IconName.Folder"/></large>
-                                        @context.Source/@(
-                                            !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-                                        )                                
-                                    </li>
-                                </Virtualize>
-                                <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
-                                    <li class="list-group-item">
-                                        <large><Icon Name="IconName.Wifi"/></large>
-                                        <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br/>
-                                        <large><Icon Name="IconName.Folder"/></large>
-                                        @context.Source/@(
-                                            !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-                                        )                                
-                                    </li>
-                                </Virtualize>
-                            </ul>
-                            <div><small>Connections</small></div>
-                            <ul class="news list-group list-group-flush">
-                                <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel.Connections">
-                                    <li class="list-group-item">
-                                        <large><Icon Name="IconName.Wifi"/></large>
-                                        <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br/>
-                                        <large><Icon Name="IconName.Folder"/></large>
-                                        @context.Source/@(
-                                            !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-                                        )                                
-                                    </li>
-                                </Virtualize>
-                                
-                            </ul>
+                            <StatusView />
                         </div>
                         
-                        <MenuView ViewModel="@ViewModel.Menu" />
+                        <MenuView />
                         
                     </div>
                 </div>
             </div>
         </div>
         <div class="row row-divider" />
-        
-        <Div Class="row" Visibility="@(ViewModel!.LogVisibility)">
-            <br/>
-            <div class="log-frame col flex-lg-column">
-                <div class="flex-grow-0">
-                    <br/>
-                    <div class="container">
-                        <div class="row center"> 
-                            <div class="col-3 center">Page</div>
-                            <div class="col-2 center">Per Page</div>
-                            <div class="col-4 center">Search</div>
-                            <!--<div class="col-2">Per Page</div>-->
-                        </div>
-                        <div class="row center">
-                            <div class="col-3">
-                                <div class="container">
-                                    <div class="row">
-                                        <div class="col-1 center">
-                                            <Button Class="btn-secondary" Disabled=ViewModel.IsActiveLogPage(1) @onclick="@ViewModel.LogPageBack">@("<")</Button>
-                                        </div>
-                                        <div Class="col-9 center">
-                                            <Select TValue="int" @bind-SelectedValue="@ViewModel.LogPage">
-                                                @{
-                                                    @for(int i = 1; i > 0 && i <= ViewModel.LogPages; i++)
-                                                    {
-                                                        var page = i;
-                                                        <SelectItem Value="page">@(page)</SelectItem>
-                                                    }
-                                                }
-                                            </Select>
-                                        </div>
-                                        <div class="col-1 center">
-                                            <Button Class="btn-secondary" Disabled=ViewModel.IsActiveLogPage(ViewModel.LogPages) @onclick="@ViewModel.LogPageForward">@(">")</Button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="col-2 center">
-                                 
-                                 <Select TValue="int" @bind-SelectedValue="@ViewModel.LogPageSize">
-                                    <SelectItem Value="500">500</SelectItem>
-                                    <SelectItem Value="1000">1000</SelectItem>
-                                    <SelectItem Value="1500">1500</SelectItem>
-                                    <SelectItem Value="2000">2000</SelectItem>
-                                </Select>
-                                
-                            </div>
-                            <div class="col-4">
-                                <div class="container">
-                                    <div class="row">
-                                        <div class="col-8 center no-padding"><TextEdit @bind-Text="@ViewModel.LogSearch"/></div>
-                                        <div class="col-1"><Button Disabled=@(ViewModel.LogSearch == string.Empty) Class="btn-primary" @onclick=@ViewModel.LogSearchClear>Clear</Button></div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                        </div>
-                    </div>
-                    <br/>
-                    <Div Class="row row-divider"/>
-                    <br/>
-                    <Virtualize TItem="LogEntry" Items="@ViewModel!.CurrentLogPage">
-                        <div class="@(context.Highlight ? "log-highlight" : string.Empty)">
-                            <small>@context.Timestamp.ToString(ViewModel.LogDateTimeFormat) @context.Name @context.Message</small>
-                        </div>
-                    </Virtualize>
-                </div>
-            </div>
-            <br />
-        </Div>
-        <Div Class="row row-divider" Visibility="@(ViewModel!.LogVisible ? Visibility.Visible : Visibility.Invisible)"/>
+        <LogView />
     </Div>
-} else
+} 
+else
 {
     <div class="loading-phrase">
         <center>@(ViewModel.Phrase)</center>
     </div>
 }
+

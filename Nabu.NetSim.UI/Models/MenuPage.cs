@@ -1,4 +1,4 @@
-﻿namespace Nabu.NetSim.UI.ViewModels;
+﻿namespace Nabu.NetSim.UI.Models;
 
 public enum MenuPage
 {
@@ -7,7 +7,7 @@ public enum MenuPage
     Settings,
     Connections,
     AdaptorSettings,
-    Storage,
+    MoreAdaptorSettings,
     Features,
     MAME,
     CLI

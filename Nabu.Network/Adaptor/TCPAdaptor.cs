@@ -36,14 +36,15 @@ public class TCPAdaptor
     
     public static async Task Start(
         IServiceProvider serviceProvider, 
-        AdaptorSettings settings, 
+        TCPAdaptorSettings settings, 
         CancellationToken stopping
     ){
-        var tcpSettings = (TCPAdaptorSettings)settings;
+        //var tcpSettings = (TCPAdaptorSettings)settings;
         var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
-        var socket = NabuLib.Socket(true, tcpSettings.SendBufferSize, tcpSettings.ReceiveBufferSize);
+        var storage = serviceProvider.GetRequiredService<StorageService>();
+        var socket = NabuLib.Socket(true, settings.SendBufferSize, settings.ReceiveBufferSize);
 
-        if (!int.TryParse(tcpSettings.Port, out int port))
+        if (!int.TryParse(settings.Port, out int port))
         {
             port = Constants.DefaultTCPPort;
         };
@@ -65,10 +66,16 @@ public class TCPAdaptor
             {
                 Socket incoming = await socket.AcceptAsync(stopping);
                 var name = $"{incoming.RemoteEndPoint}";
-                var newSettings = (TCPAdaptorSettings)settings with { Port = name, IsConnection = true }; // CLONE
-                var stream  = new NetworkStream(incoming);
+                var clientIP = name.Split(':')[0];
+                var clientSettings = settings with { Port = name, Client = true };
+
+                storage.InitializeStorage(clientSettings, clientIP);
+                
+                // CLONE
+
+                var stream = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
-                     newSettings,
+                     clientSettings,
                      serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
@@ -76,9 +83,9 @@ public class TCPAdaptor
                      name
                 );
 
-                Connections[name] = newSettings;
+                Connections[name] = clientSettings;
                 ServerListen(logger, adaptor, incoming, stream, stopping);
-                
+
             }
             catch (Exception ex)
             {
@@ -89,4 +96,6 @@ public class TCPAdaptor
         socket.Close();
         socket.Dispose();
     }
+
+    
 }

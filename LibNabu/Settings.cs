@@ -10,7 +10,6 @@ public class Settings {
     public AdaptorCollection Adaptors { get; set; } = new();
     public List<ProtocolSettings> Protocols { get; set; } = new();
     public List<ProgramSource> Sources { get; set; } = new();
-
     public List<PackageSource> PackageSources { get; set; } = new();
 
     public bool EnablePython { get; set; } = false;

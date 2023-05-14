@@ -1,16 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
-using Nabu.Network.RetroNet;
 using Nabu.Services;
 using System.Collections.Immutable;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
-namespace Nabu.Network.RetroNetHandle;
+namespace Nabu.Network.RetroNet;
 
 public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
 {
     public RetroNetMemoryHandle(IConsole logger, AdaptorSettings settings, Memory<byte>? buffer = null) : base(logger, settings)
     {
-        if (buffer is not null) 
+        if (buffer is not null)
             Buffer = buffer.Value;
     }
 

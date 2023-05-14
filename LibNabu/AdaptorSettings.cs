@@ -12,6 +12,7 @@ public abstract record AdaptorSettings
     public string StoragePath { get; set; } = "./Files";
     public short AdapterChannel { get; set; } = 0x0001;
     public bool Running { get; set; }
+    public bool EnableStorageIsolation { get; set; } = true;
     public Dictionary<string, string> StorageRedirects { get; set; } = new();
     public ServiceShould State { get; set; }
     
@@ -26,9 +27,9 @@ public record TCPAdaptorSettings : AdaptorSettings
 {
     public override AdaptorType Type => AdaptorType.TCP;
     public bool Client { get; set; } = false;
-    public int ReceiveBufferSize { get; set; } = 64;
-    public int SendBufferSize { get; set; } = 64;
-    public bool IsConnection { get; set; } = false;
+    public int ReceiveBufferSize { get; set; } = 8;
+    public int SendBufferSize { get; set; } = 8;
+    public bool IsClient { get; set; } = false;
 }
 
 public record SerialAdaptorSettings : AdaptorSettings

@@ -1,5 +1,5 @@
 ﻿using Nabu.Adaptor;
-using Nabu.Network.RetroNetHandle;
+//using Nabu.Network.RetroNetHandle;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -44,7 +44,7 @@ public partial class RetroNetProtocol : Protocol
     {
         var handle = Recv();
         await Slots[handle].Close(cancel);
-        Log($"Close: {handle}");
+        Log($"Close:{handle}");
         Slots.Remove(handle);
     }
 
@@ -54,7 +54,7 @@ public partial class RetroNetProtocol : Protocol
         var offset = RecvInt();
         var length = RecvShort();
         var bytes = await Slots[handle].Read(offset, length, cancel);
-        Log($"Read: {handle}: O:{offset} L:{length}");
+        Log($"Read:{handle}: O:{offset} L:{length}");
         WriteBuffer(bytes);
     }
 
@@ -62,7 +62,7 @@ public partial class RetroNetProtocol : Protocol
     {
         var handle = Recv();
         var size = await Slots[handle].Size(cancel);
-        Log($"Size: {handle} {size}");
+        Log($"Size:{handle} {size}");
         Writer.Write(size);
     }
 
@@ -84,7 +84,7 @@ public partial class RetroNetProtocol : Protocol
         var handle = Recv();
         var length = RecvShort();
         var bytes = await Slots[handle].ReadSequence(length, cancel);
-        Log($"SeqRead: {handle}: O:{Slots[handle].Position} L:{length}");
+        Log($"SeqRead:{handle}: O:{Slots[handle].Position} L:{length}");
         WriteBuffer(bytes);
         return;
 
@@ -94,7 +94,7 @@ public partial class RetroNetProtocol : Protocol
     {
         var handle = Recv();
         var file = await Slots[handle].Details(cancel);
-        Log($"Details: {handle}");
+        Log($"Details:{handle}");
 
         var filename = file.Filename;
 
@@ -107,7 +107,7 @@ public partial class RetroNetProtocol : Protocol
     {
         var handle = Recv();
         await Slots[handle].Empty(cancel);
-        Log($"Truncated: {handle}");
+        Log($"Truncated:{handle}");
     }
 
     private async Task FileHandleDelete(CancellationToken cancel)
@@ -115,7 +115,7 @@ public partial class RetroNetProtocol : Protocol
         var handle = Recv();
         var offset = RecvInt();
         var length = RecvShort();
-        Log($"Delete: {handle}: O:{offset}  L:{length}");
+        Log($"Delete:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Delete(offset, length, cancel);
     }
 
@@ -125,7 +125,7 @@ public partial class RetroNetProtocol : Protocol
         var offset = RecvInt();
         var length = RecvShort();
         var data = Reader.ReadBytes(length);
-        Log($"Insert: {handle}: O:{offset}  L:{length}");
+        Log($"Insert:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Insert(offset, data, cancel);
     }
 
@@ -134,7 +134,7 @@ public partial class RetroNetProtocol : Protocol
         var handle = Recv();
         var length = RecvShort();
         var bytes = Reader.ReadBytes(length);
-        Log($"Append: {handle}: L:{length}");
+        Log($"Append:{handle}: L:{length}");
         await Slots[handle].Append(bytes, cancel);
     }
 
@@ -144,7 +144,7 @@ public partial class RetroNetProtocol : Protocol
         var offset = RecvInt();
         var length = RecvShort();
         var data = Reader.ReadBytes(length);
-        Log($"Replace: {handle}: O:{offset}  L:{length}");
+        Log($"Replace:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Replace(offset, data, cancel);
     }
 

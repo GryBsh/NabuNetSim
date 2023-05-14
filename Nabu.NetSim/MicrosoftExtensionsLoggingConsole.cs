@@ -3,9 +3,10 @@ using Nabu.Services;
 
 namespace Nabu;
 
+
 public class MicrosoftExtensionsLoggingConsole<T> : IConsole<T>
 {
-    readonly ILogger Logger;
+    ILogger Logger { get; }
 
     public MicrosoftExtensionsLoggingConsole(ILogger<T> logger)
     {

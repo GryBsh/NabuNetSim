@@ -2,6 +2,7 @@
 using Nabu.Adaptor;
 using Nabu.Messages;
 using Nabu.Services;
+using System.Reactive.Linq;
 
 namespace Nabu.Network;
 
@@ -260,6 +261,7 @@ public class ClassicNabuProtocol : Protocol
             NabuLib.EndSafeNoGC();
             TransferRate(Started.Value, finished, totalLength);
             Started = null;
+            
         }
     }
     #endregion

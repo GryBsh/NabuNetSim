@@ -1,8 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
-using Nabu.Network.RetroNet;
 using Nabu.Services;
 
-namespace Nabu.Network.RetroNetHandle;
+namespace Nabu.Network.RetroNet;
 
 public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
 {
@@ -31,13 +30,15 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
 
     public Task<FileDetails> Details(CancellationToken cancel)
     {
-        return Task.FromResult(new FileDetails
-        {
-            Created = File.GetCreationTime(Filename),
-            Modified = File.GetLastWriteTime(Filename),
-            Filename = Path.GetFileName(Filename),
-            FileSize = NabuLib.FileSize(Filename),
-        });
+        return Task.FromResult(
+            new FileDetails
+            {
+                Created = File.GetCreationTime(Filename),
+                Modified = File.GetLastWriteTime(Filename),
+                Filename = Path.GetFileName(Filename),
+                FileSize = NabuLib.FileSize(Filename),
+            }
+        );
     }
 
     public Task Empty(CancellationToken cancel)
@@ -57,7 +58,7 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
     {
         using var stream = Stream();
         using var reader = new BinaryReader(stream);
-        
+
         return reader.ReadBytes((int)new FileInfo(Filename)!.Length);
     }
 

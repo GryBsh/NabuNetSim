@@ -8,15 +8,20 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
 {
     private bool disposedValue;
     protected static LiteDatabase? Database { get; set; }
+    static ILiteCollection<T> Collection => Database!.GetCollection<T>();
 
     public LiteDBRepository(Settings settings)
     {
         LiteDatabase init()
         {
-            var cs = new ConnectionString();
-            cs.Upgrade = true;
-            cs.Filename = settings.DatabasePath;
+            var cs = new ConnectionString
+            {
+                Upgrade = true,
+                Filename = settings.DatabasePath,
+                Connection = ConnectionType.Shared
+            };
             var database = new LiteDatabase(cs);
+            database.Rebuild();
             database.Mapper.Entity<IEntity>().Id(e => e.Id);
             return database;
         }
@@ -26,12 +31,12 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
 
     public void Delete(Expression<Func<T, bool>> predicate)
     {
-        Database!.GetCollection<T>().DeleteMany(predicate);
+        LiteDBRepository<T>.Collection.DeleteMany(predicate);
     }
 
     public void DeleteAll()
     {
-        Database!.GetCollection<T>().DeleteAll();
+        LiteDBRepository<T>.Collection.DeleteAll();
     }
 
     public IEnumerable<T> Query<TQueryable>(Func<TQueryable, IEnumerable<T>> query)
@@ -43,7 +48,7 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
         }
         try
         {
-            return query.Invoke((TQueryable)Database!.GetCollection<T>().Query());
+            return query.Invoke((TQueryable)LiteDBRepository<T>.Collection.Query());
         } catch (InvalidCastException)
         {
             throw fail;
@@ -52,42 +57,52 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
 
     public IEnumerable<T> Select(Expression<Func<T, bool>> predicate, int skip = 0, int limit = int.MaxValue)
     {
-        return Database!.GetCollection<T>().Find(predicate, skip, limit);
+        return LiteDBRepository<T>.Collection.Find(predicate, skip, limit);
     }
 
     public IEnumerable<T> SelectAll(int skip = 0, int limit = int.MaxValue)
     {
-        var collection = Database!.GetCollection<T>();
-        if (skip is 0 && limit is int.MaxValue) return collection.FindAll();
+        //var collection = Database!.GetCollection<T>();
+        if (skip is 0 && limit is int.MaxValue) return LiteDBRepository<T>.Collection.FindAll();
         //var count = collection.Count();
         //if (count is 0) return Array.Empty<T>();    
 
         //var remains = (count -  skip); 
-        return collection.FindAll().Skip(skip).Take(limit);
+        return LiteDBRepository<T>.Collection.FindAll().Skip(skip).Take(limit);
+    }
+
+    public IEnumerable<T> SelectAllDescending<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
+    {
+        return LiteDBRepository<T>.Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
+    }
+
+    public IEnumerable<T> SelectAll<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
+    {
+        return LiteDBRepository<T>.Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
     }
 
     public int Count()
     {
-        return Database!.GetCollection<T>().Count();
+        return LiteDBRepository<T>.Collection.Count();
     }
 
     public int Count(Expression<Func<T, bool>> predicate)
     {
-        return Database!.GetCollection<T>().Count(predicate);
+        return LiteDBRepository<T>.Collection.Count(predicate);
     }
 
     public IEnumerable<T> Page(int page, int size)
     {
-        var collection = Database!.GetCollection<T>();
-        var count = collection.Count();
+        //var collection = Database!.GetCollection<T>();
+        var count = LiteDBRepository<T>.Collection.Count();
         if (count is 0) return Array.Empty<T>();
 
         var skip = (page - 1) * size;
         return SelectAll(skip, size);
     }
 
-    public void Insert(params T[] items) => Database!.GetCollection<T>().Insert(items);
-    public void BulkInsert(params T[] items) => Database!.GetCollection<T>().InsertBulk(items);
+    public void Insert(params T[] items) => LiteDBRepository<T>.Collection.Insert(items);
+    public void BulkInsert(params T[] items) => LiteDBRepository<T>.Collection.InsertBulk(items);
     protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)
@@ -95,6 +110,7 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
             if (disposing)
             {
                 Database!.Dispose();
+                Database = null;
             }
             disposedValue = true;
         }

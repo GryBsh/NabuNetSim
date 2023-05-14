@@ -19,4 +19,8 @@
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="RetroNetHandle\" />
+  </ItemGroup>
+
 </Project>

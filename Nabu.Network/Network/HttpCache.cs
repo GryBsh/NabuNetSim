@@ -11,17 +11,20 @@ public class CachingHttpClient : IHttpCache
 {
     HttpClient Http { get; }
     IConsole Logger { get; }
-    
-    protected static string CacheFolder => Path.Join(AppContext.BaseDirectory, "cache");
+    AdaptorSettings Settings { get; }
+    protected string CacheFolder { get; }
     protected FileCache MemoryCache { get; }
     //readonly Settings Settings;
 
-    public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache)
+    public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache, AdaptorSettings? settings = null)
     {
         Http = http;
         Logger = logger;
         MemoryCache = cache;
-        //Settings = settings;
+        Settings = settings ?? new NullAdaptorSettings();
+        CacheFolder = Settings is TCPAdaptorSettings ?
+                Path.Join(AppContext.BaseDirectory, "cache", $"{Settings.Port.Split(":")[0]}") :
+                Path.Combine(AppContext.BaseDirectory, "cache");
         Task.Run(() => NabuLib.EnsureFolder(CacheFolder));
     }
 

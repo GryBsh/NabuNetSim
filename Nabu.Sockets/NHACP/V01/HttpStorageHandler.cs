@@ -8,7 +8,7 @@ public class HttpStorageHandler : RAMStorageHandler
     readonly CachingHttpClient Http;
     public HttpStorageHandler(IConsole logger, AdaptorSettings settings, HttpClient http, FileCache cache) : base(logger, settings)
     {
-        Http = new CachingHttpClient(http, logger, cache);
+        Http = new CachingHttpClient(http, logger, cache, settings);
     }
 
     public override async Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)

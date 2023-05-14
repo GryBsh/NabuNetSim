@@ -22,11 +22,12 @@ using Splat;
 
 namespace Nabu.NetSim.UI.Views
 {
-    public partial class HomeView
+    public partial class LogView
     {
-        public HomeView()
+        public LogView()
         {
-            ViewModel = Locator.Current.GetService<HomeViewModel>();
+            ViewModel = Locator.Current.GetService<LogViewModel>();
+            Task.Run(() => ViewModel!.Refresh());
         }
     }
 }

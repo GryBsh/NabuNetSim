@@ -8,52 +8,21 @@ using Splat;
 using Splat.Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using NLog.Extensions.Logging;
-using LiteDb.Extensions.Caching;
+//using LiteDb.Extensions.Caching;
 using Nabu.Network.RetroNet;
 using Nabu.Services;
+using Nabu.NetSim.UI.Services;
+//using NeoSmart.Caching.Sqlite;
+//using Microsoft.EntityFrameworkCore;
+using Nabu.NetSimWeb;
+using LiteDb.Extensions.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-
 var settings = new Settings();
 builder.Configuration.Bind("Settings", settings);
-builder.Services.AddLogging(
-    logging => {
-        logging.ClearProviders()
-               .AddInMemoryLogger()
-               .AddNLog("nlog.config");
-    }
-);
-builder.Services.AddSingleton(settings);
-builder.Services.AddSingleton(settings.Sources);
-builder.Services.AddHttpClient();
-builder.Services.AddScoped<MainLayoutViewModel>();
-builder.Services.AddScoped<HomeViewModel>();
-builder.Services.AddSingleton(typeof(IRepository<>), typeof(LiteDBRepository<>));
-builder.Services.AddLiteDbCache(
-                    options =>
-                    {
-                        options.Connection = LiteDB.ConnectionType.Shared;
-                        options.CachePath = settings.CacheDatabasePath;
-                    }
-                );
-builder.Services.AddSingleton<IJob, LogCleanupJob>();
-Simulation.Register(builder.Services, settings);
 
-builder.Services.AddRazorPages();
-builder.Services.AddServerSideBlazor();
-builder.Services
-    .AddBlazorise(options => {
-        options.Immediate = true;
-    }).AddBootstrap5Components()
-    .AddBootstrap5Providers()
-    .AddFontAwesomeIcons();
-
-builder.Services.UseMicrosoftDependencyResolver();
-var resolver = Locator.CurrentMutable;
-    resolver.InitializeSplat();
-    resolver.InitializeReactiveUI();
+ConfigureServices(builder.Services, settings);
 
 var app = builder.Build();
 
@@ -72,3 +41,61 @@ app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
 
 app.Run();
+
+
+void ConfigureServices(IServiceCollection services, Settings settings)
+{
+    services.UseMicrosoftDependencyResolver();
+    var resolver = Locator.CurrentMutable;
+    resolver.InitializeSplat();
+    resolver.InitializeReactiveUI();
+    services.AddLogging(
+        logging => {
+            logging.ClearProviders()
+                   .AddInMemoryLogger()
+                   .AddNLog("nlog.config");
+        }
+    );
+    services.AddTransient(typeof(IConsole<>), typeof(LoggingConsole<>));
+    services.AddDataProtection();
+    //services.AddSqliteCache(options => {
+     //    options.CleanupInterval = TimeSpan.FromMinutes(15);
+    //     options.CachePath = settings.CacheDatabasePath;
+    //});
+    
+    services.AddSingleton(settings);
+    services.AddSingleton(settings.Sources);
+    
+    services.AddHttpClient();
+    services.AddSingleton(typeof(IRepository<>), typeof(LiteDBRepository<>));
+    services.AddLiteDbCache(
+        options =>
+        {
+            options.Connection = LiteDB.ConnectionType.Shared;
+            options.CachePath = settings.CacheDatabasePath;
+        }
+    );
+
+    services.AddSingleton<IJob, LogCleanupJob>();
+    services.AddSingleton<IJob, GCJob>();
+    //services.AddSqlite<AppData>("Data Source=data.db");
+    services.AddSingleton<LogService>();
+    Simulation.Register(services, settings);
+
+    services.AddRazorPages();
+    services.AddServerSideBlazor();
+    services
+        .AddBlazorise(
+            options => {
+                options.Immediate = true;
+            }
+        ).AddBootstrap5Components()
+        .AddBootstrap5Providers()
+        .AddFontAwesomeIcons();
+
+    services.AddScoped<MainLayoutViewModel>();
+    services.AddScoped<HomeViewModel>();
+    services.AddScoped<MenuViewModel>();
+    services.AddScoped<StatusViewModel>();
+    services.AddScoped<LogViewModel>();
+}

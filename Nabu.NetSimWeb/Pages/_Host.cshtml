@@ -5,4 +5,9 @@
     Layout = "_Layout";
 }
 
-<component type="typeof(App)" render-mode="ServerPrerendered"/>
+<component type="typeof(App)" render-mode="Server" />
+<script type="text/javascript">
+    $(function () {
+        $('[data-toggle="tooltip"]').tooltip()
+    });
+</script>

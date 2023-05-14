@@ -43,6 +43,7 @@ CommandApp CreateApp(IServiceCollection registrations)
     return app;
 }
 
+var app = CreateApp(registrations);
 while (CancelSource.IsCancellationRequested is false) {
     var command = AnsiConsole.Prompt(
         new TextPrompt<string>("NABU>")
@@ -52,7 +53,7 @@ while (CancelSource.IsCancellationRequested is false) {
     if (CancelSource.IsCancellationRequested) 
         break;
 
-    var app = CreateApp(registrations);
+    
     try
     {
         var result = app.Run(command.Split(' '));

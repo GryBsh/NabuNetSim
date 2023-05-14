@@ -15,6 +15,11 @@ using System;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using DynamicData.Binding;
+using Splat;
+using DynamicData.Diagnostics;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
@@ -22,18 +27,23 @@ namespace Nabu.NetSim.UI.ViewModels;
 public class HomeViewModel : ReactiveObject
 {
     public Settings Settings { get; }
-    INabuNetwork Sources { get; }
-    public List<LogEntry> Entries { get; private set; } = new List<LogEntry>();
-    ISimulation? Simulation { get; }
-    IRepository<LogEntry> Repository { get; }
+    public INabuNetwork Sources { get; }
+    public ISimulation Simulation { get; }
+    //IRepository<LogEntry> Repository { get; }
     IMultiLevelCache Cache { get; }
+
+    //public MenuViewModel? Menu { get; set; }
+    //public LogViewModel? Log { get; set; }
+    //public StatusViewModel? Status { get; set; }
 
     const string FeedUrl = "https://www.nabunetwork.com/feed/";
     public HomeViewModel(
         Settings settings,
         INabuNetwork sources,
         ISimulation simulation,
-        IRepository<LogEntry> repository,
+        //MenuViewModel menu,
+        //LogViewModel log,
+        //StatusViewModel status,
         IMultiLevelCache cache
     )
     {
@@ -41,31 +51,25 @@ public class HomeViewModel : ReactiveObject
         Settings = settings;
         Sources = sources;
         Simulation = simulation;
-        Repository = repository;
-        Menu = new(this, Sources);
+        //Repository = repository;
+        //Menu = menu;
+        //Log = log;
+        //Status = status;
 
 
         //SourceNames = SourceFolders.Select(s => s.Name).ToArray();
         Task.Run(async () =>
         {
-            RefreshLog();
+            //Log!.RefreshLog();
             GetHeadlines();
             await Task.Delay(TimeSpan.FromSeconds(5));
             Loaded = true;
-            this.RaisePropertyChanged(nameof(Loaded));
+            
+            //await Task.Delay(TimeSpan.FromSeconds(5));
+            
         });
 
-        Observable.Interval(TimeSpan.FromSeconds(15))
-                 .Subscribe(_ => {
-                     this.RaisePropertyChanged(nameof(Connections));
-                     //GC.Collect();
-                 });
 
-        Observable.Interval(TimeSpan.FromMinutes(15))
-                 .Subscribe(_ => {
-                     RefreshLog();
-                     //GC.Collect();
-                 });
 
         Observable.Interval(TimeSpan.FromMinutes(10))
                   .Subscribe(_ => {
@@ -76,8 +80,19 @@ public class HomeViewModel : ReactiveObject
 
     }
 
-    public bool Loaded { get; set; } = false;
+    
 
+    bool loaded = false;
+    public bool Loaded
+    {
+        get => loaded;
+        set
+        {
+            loaded = value;
+            this.RaisePropertyChanged();
+        }
+    }
+    /*
     void RefreshLog()
     {
         var now = DateTime.Now;
@@ -95,7 +110,7 @@ public class HomeViewModel : ReactiveObject
         //this.RaisePropertyChanged(nameof(CurrentLogPage));
         //GC.Collect();
 
-    }
+    }*/
 
     static string[] Phrases = new[] {
         "👁️🚢👿",
@@ -117,147 +132,40 @@ public class HomeViewModel : ReactiveObject
         "🎵 Never gonna give you up. Never gonna let you down 🎵",
         "Excuse me human, can I interest you in this pamphlet on the kingdom of NABU?"
     };
+
     public string Phrase => Phrases[Random.Shared.Next(0, Phrases.Length)];
-    public string LogButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
 
-    public bool LogVisible { get; set; } = false;
-    public Visibility LogVisibility => LogVisible ? Visibility.Visible : Visibility.Invisible;
-    public string LogDateTimeFormat { get; } = "yyyy-MM-dd HH:mm:ss.ffff";
-    public int LogPage { get; set; } = 1;
-    public int LogPageSize { get; set; } = 100;
-
-    string logSearch = string.Empty;
-
-    public string LogSearch
-    {
-        get {
-            return logSearch;
-        }
-        set
-        {
-            logSearch = value ?? string.Empty;
-            
-            this.RaisePropertyChanged(nameof(LogSearch));
-            this.RaisePropertyChanged(nameof(LogPages));
-            this.RaisePropertyChanged(nameof(CurrentLogPage));
-        }
-    }
-
-    public int LogPages {
-        get {
-            var total = Entries.Count;
-            if (total is 0) return 0;
-            var count = (int)Math.Ceiling((double)(total / LogPageSize));
-            return count < 1 ? 1 : count;
-        }
-    }
-
-    public ICollection<LogEntry> CurrentLogPage {
-        get
-        {
-            return Entries
-                    .Skip((LogPage - 1) * LogPageSize)
-                    .Take(LogPageSize)
-                    .Select(
-                        e =>
-                        {
-                            var term = LogSearch.ToLowerInvariant();
-                            if (
-                                LogSearch != string.Empty && (
-                                    e.Timestamp.ToString(LogDateTimeFormat).ToLowerInvariant().Contains(term) ||
-                                    e.Name.ToLowerInvariant().Contains(term) ||
-                                    e.Message.ToLowerInvariant().Contains(term)
-                                )
-                            ) e.Highlight = true;
-                            else e.Highlight = false;
-
-                            return e;
-                        }
-                    ).ToList();                     
-        }
-    }
-
-    public void SetLogPage(string page) => LogPage = int.Parse(page);
-    public void LogPageBack()
-    {
-        if (LogPage is 1) return;
-        LogPage -= 1;
-        this.RaisePropertyChanged(nameof(LogPage));
-        this.RaisePropertyChanged(nameof(CurrentLogPage));
-    }
-
-    public void LogPageForward()
-    {
-        if (LogPage == LogPages || LogPages is 0) return;
-        LogPage += 1;
-        this.RaisePropertyChanged(nameof(LogPage));
-        this.RaisePropertyChanged(nameof(CurrentLogPage));
-    }
-
-    public bool IsActiveLogPage(int page) 
-        => LogPage == page || page is 0;
-
-    public void LogSearchClear()
-    {
-        LogSearch = string.Empty;
-        this.RaisePropertyChanged(nameof(LogSearch));
-    }
-
-    public void ToggleLog()
-    {
-        LogVisible = !LogVisible;
-        this.RaisePropertyChanged(nameof(LogSearch));
-        this.RaisePropertyChanged(nameof(LogPages));
-        this.RaisePropertyChanged(nameof(Entries));
-        this.RaisePropertyChanged(nameof(CurrentLogPage));
-        this.RaisePropertyChanged(nameof(LogVisible));
-    }
-
-    public ICollection<TickerItem> Headlines { get; set; } = Array.Empty<TickerItem>();
+    public ICollection<TickerItem> Headlines { get; set; } = new List<TickerItem>();
 
     public async void GetHeadlines()
     {
-        var headlines = await Cache.GetOrSetAsync(
-            FeedUrl,
-            async cancel =>
+        
+        async Task<IEnumerable<TickerItem>> Get()
+        {
+            try
             {
-                try
-                {
-                    var feed = await FeedReader.ReadAsync(FeedUrl);
-                    var items = feed.Items.Take(4).Select(i => new TickerItem(i.Title, i.Link));
-                    return items;
-                }
-                catch
-                {
-                    return Array.Empty<TickerItem>();
-                }
-            },
+                var feed = await FeedReader.ReadAsync(FeedUrl);
+                var items = feed.Items.Take(4).Select(i => new TickerItem(i.Title, i.Link));
+                return items;
+            }
+            catch
+            {
+                return Array.Empty<TickerItem>();
+            }
+        }
+        var headlines = await Cache.GetOrSetAsync(
+            "headlines",
+            c => Get(),
             new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5) },
-            new() { }
-        ) ?? Array.Empty<TickerItem>();
-
-        Headlines = headlines.ToList();
-
+            new() { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) }
+        );
+        Headlines = headlines is not null && headlines.Any() ? headlines.ToList() : Array.Empty<TickerItem>().ToList();
+            
+        
         this.RaisePropertyChanged(nameof(Headlines));
 
     }
 
-    public MenuViewModel Menu { get; set; } 
-
-    public ICollection<SerialAdaptorSettings> Serial
-    {
-        get => Settings.Adaptors.Serial;
-    }
-
-    public ICollection<TCPAdaptorSettings> TCP
-    {
-        get => Settings.Adaptors.TCP;
-    }
-
-    public ICollection<TCPAdaptorSettings> Connections
-    {
-        get => TCPAdaptor.Connections.Values.ToList();
-    }
 
     public string AdaptorStatus(AdaptorSettings settings)
     {
@@ -270,51 +178,10 @@ public class HomeViewModel : ReactiveObject
         };
     }
 
-    public IconName AdaptorButtonIcon(AdaptorSettings settings)
-    {
-        return settings.State switch
-        {
-            ServiceShould.Run => IconName.Stop,
-            ServiceShould.Restart => IconName.Stop,
-            ServiceShould.Stop => IconName.Play,
-            _ => IconName.Play
-        };
-    }
-
     public void ToggleAdaptor(AdaptorSettings settings)
     {
         Simulation?.ToggleAdaptor(settings);
     }
-
-    public bool AllAdaptorsCanStop
-    {
-        get => Serial.Any(s => s.State is ServiceShould.Run) ||
-               TCP.Any(t => t.State is ServiceShould.Run);
-    }
-
-    public bool HasMultipleImages(AdaptorSettings? settings)
-    {
-        if (settings is null or NullAdaptorSettings) return false;
-        var programs = Sources.Programs(settings);
-        var hasMultipleImages = programs.Count() > 1;
-        var exploitEnabled = Sources.Source(settings)?.EnableExploitLoader is true;
-        var isNotPakCycle = !programs.Any(p => p.Name == Constants.CycleMenuPak);
-        return hasMultipleImages && (exploitEnabled || isNotPakCycle);
-    }
-
-    public ICollection<ProgramSource> SourceFolders
-    {
-        get => Settings.Sources;
-        set => Settings.Sources = value.ToList();
-    }
-
-    public string[] SourceNames => SourceFolders.Select(f => f.Name).ToArray();
-      
-    
-
-    public bool SelectorVisible { get; set; } = false;
-    public AdaptorSettings[] SelectorAdaptor { get; set; } = Array.Empty<AdaptorSettings>();
-    
 
 }
 

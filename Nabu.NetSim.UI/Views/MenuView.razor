@@ -1,8 +1,6 @@
-﻿@using Nabu.Adaptor;
-@inherits ReactiveComponentBase<MenuViewModel>
+﻿@inherits ReactiveComponentBase<MenuViewModel>
 
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.MainMenu)>
-    <div><small>Menu</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
             <Icon Name="IconName.SliderHorizontal" />
@@ -17,28 +15,23 @@
             <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Settings))">Settings</a>
         </li>
         <li class="list-group-item"><Icon Name="IconName.BookReader" />
-            <a href="#" onclick="@(() => ViewModel!.Home.ToggleLog())">@ViewModel.Home.LogButtonText</a>
+            <a href="#" onclick="@(() => ViewModel!.Log.ToggleVisible())">@ViewModel.Log.ButtonText</a>
         </li>
-        <!--<li class="list-group-item">
-            <Icon Name="IconName.UserFriends" />
-            <a href="#" onclick="@(() => ViewModel!.Home.ToggleChat())">@ViewModel.Home.ChatButtonText</a>
-        </li>-->
-        <!--<li class="list-group-item">
-            <Icon Name="IconName.Code" />
-            <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.CLI))">CLI</a>
-        </li>-->
     </ul>
 </Div>
 
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Settings)>
-    <div><small>Settings</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
-            <Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
+            <div class="hstack">
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))"><Icon IconSize=@IconSize.Large Name="IconName.Home" /></a>
+                <div class="vr"></div>
+                <Icon IconSize=@IconSize.Large Name="IconName.Adjust" />
+                <div><small>Settings</small></div>
+            </div>
         </li>
         <li class="list-group-item">
-            <Icon Name="IconName.Adjust" />
+            <Icon Name="IconName.BalanceScale" />
             <a href="#" onclick="@(() => ViewModel!.SetVisible(MenuPage.Features))">Features</a>
         </li>
         
@@ -46,15 +39,15 @@
 </Div>
 
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Features)>
-    <div><small>Features</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
-            <Icon Name="IconName.Home" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Home</a>
-        </li>
-        <li class="list-group-item">
-            <Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Settings))">Back</a>
+            <div class="hstack gap-1">
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))"><Icon IconSize=@IconSize.Large Name="IconName.Home" /></a>
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Settings))"><Icon IconSize=@IconSize.Large Name="IconName.Backward" /></a>
+                <div class="vr"></div>
+                <Icon IconSize=@IconSize.Large Name="IconName.BalanceScale" />
+                <div><small>Features</small></div>
+            </div>
         </li>
         <li class="list-group-item">
             <div class="row">
@@ -70,82 +63,94 @@
     </ul>
 </Div>
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Adaptors)>
-    <div><small>Adaptors</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
-        <li class="list-group-item"><Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
+        <li class="list-group-item">
+            <div class="hstack gap-1">
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))"><Icon IconSize=@IconSize.Large Name="IconName.Home" /></a>
+                <div class="vr"></div>
+                <Icon IconSize=@IconSize.Large Name="IconName.SliderHorizontal" />
+                <div><small>Adaptors</small></div>
+            </div>
         </li>
-        @foreach (var serial in ViewModel!.Home.Serial)
-        {
-            <li @key=serial class="list-group-item">
-                <Icon Name="IconName.Plug" />
-                <a href="#" onclick="@(() => { ViewModel.SetSelected(serial); })">@serial.Port</a>
-            </li>
-        }
-        @foreach (var tcp in ViewModel!.Home.TCP)
-        {
-            <li @key=tcp class="list-group-item">
-                <Icon Name="IconName.Wifi" />
-                <a href="#" onclick="@(() => { ViewModel.SetSelected(tcp); })">TCP:@tcp.Port</a>
-            </li>
-        }
+    @foreach (var serial in ViewModel!.Serial)
+    {
+        <li @key=serial class="list-group-item">
+            <Icon Name="IconName.Plug" />
+            <a href="#" onclick="@(() => { ViewModel.SetSelected(serial); })">@serial.Port</a>
+        </li>
+    }
+    @foreach (var tcp in ViewModel!.TCP)
+    {
+        <li @key=tcp class="list-group-item">
+            <Icon Name="IconName.Wifi" />
+            <a href="#" onclick="@(() => { ViewModel.SetSelected(tcp); })">TCP:@tcp.Port</a>
+        </li>
+    }
         
     </ul>
 </Div>
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Connections)>
-    <div><small>Connections</small></div>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
-            <Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
+            <div class="hstack gap-1">
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))"><Icon IconSize=@IconSize.Large Name="IconName.Home" /></a>
+                <div class="vr"></div>
+                <Icon IconSize=@IconSize.Large Name="IconName.List" />
+                <div><small>Connections</small></div>
+            </div>
         </li>
-        @foreach (var conn in TCPAdaptor.Connections.Values.ToArray())
-        {
-            <li @key=conn class="list-group-item">
-                <Icon Name="IconName.Wifi" />
-                <a href="#" onclick="@(() => { ViewModel.SetSelected(conn); })">TCP:@conn.Port</a>
-            </li>
-        }
+    @foreach (var conn in ViewModel.Connections)
+    {
+        <li @key=conn class="list-group-item">
+            <Icon Name="IconName.Wifi" />
+            <a href="#" onclick="@(() => { ViewModel.SetSelected(conn); })">TCP:@conn.Port</a>
+        </li>
+    }
     </ul>
 </Div>
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.AdaptorSettings)>
     <ul class="menu list-group list-group-flush list-group-sm">
+        
         <li class="list-group-item">
-            <Icon Name="IconName.Home" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Home</a>
-        </li>
-        @if (ViewModel.Selected is TCPAdaptorSettings t && t.IsConnection is true) {
-            <li class="list-group-item">
-                <Icon Name="IconName.Backward" />
-                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Connections))">Back</a>
-            </li>
-           
-        }else {
-            <li class="list-group-item">
-                <Icon Name="IconName.Backward" />
-                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Adaptors))">Back</a>
-            </li>
-            <li class="list-group-item">
-                <Icon Name="@ViewModel!.Home.AdaptorButtonIcon(ViewModel.Selected)" />
-                <a href="#" onclick="@(() => ViewModel!.Home.ToggleAdaptor(ViewModel.Selected))">@ViewModel!.AdaptorButtonText(ViewModel.Selected)</a>
-            </li>
+            <div class="hstack gap-1">
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))"><Icon IconSize=@IconSize.Large Name="IconName.Home" /></a
+        @if (ViewModel.IsClient) {
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Connections))"><Icon IconSize=@IconSize.Large Name="IconName.Backward" /></a>
+        } else {
+                <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Adaptors))"><Icon IconSize=@IconSize.Large Name="IconName.Backward" /></a>
         }
+
+                <div class="vr"></div>
+        @if (ViewModel.IsClient || ViewModel.Selected is TCPAdaptorSettings) {
+                <Icon IconSize=@IconSize.Large Name="IconName.Wifi" />
+        } 
+        else 
+        {
+                <Icon IconSize=@IconSize.Large Name="IconName.Plug" />
+        }
+                <div><small>@ViewModel.Selected.Port</small></div>
+                <i/>
+        @if (!ViewModel.IsClient) {
+                <div class="vr"></div>
+                <a href="#" onclick="@(() => ViewModel!.Home.ToggleAdaptor(ViewModel.Selected))"><Icon IconSize=@IconSize.Large Name="@ViewModel!.AdaptorButtonIcon(ViewModel.Selected)" /></a>
+        }
+            </div>
+        </li>
         <li class="list-group-item">
             <Icon Name="IconName.Server" />
             Source
             <Select TValue="string" SelectedValue="@ViewModel.Selected.Source"
                     SelectedValueChanged="@(v => ViewModel.SetSource(v))">
-                @foreach (var source in ViewModel!.Home.SourceNames)
+                @foreach (var source in ViewModel!.SourceNames)
                 {
                     <SelectItem @key=@source value="@source">@source</SelectItem>
                 }
             </Select>
         </li>
-        <li class="list-group-item @(ViewModel!.Home.HasMultipleImages(ViewModel.Selected) ? "" : "invisible")">
+        <li class="list-group-item @(ViewModel!.HasMultipleImages ? "" : "invisible")">
             <Icon Name="IconName.FolderOpen" />
             Program
-            <Select TValue="string" SelectedValue=@ViewModel.Selected.Image
-                SelectedValueChanged="@(v => ViewModel.SetImage(v))">
+            <Select TValue="string" SelectedValue=@ViewModel.Selected.Image SelectedValueChanged="@(v => ViewModel.SetImage(v))">
                 <!--<option value=""></option>-->
                 @foreach (var available in ViewModel.Images)
                 {
@@ -154,38 +159,23 @@
             </Select>
         </li>
         <li class="list-group-item">
-            <Icon Name="IconName.Forward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.Storage))">Storage</a>
-        </li>
-    </ul>
-</Div>
-<Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.Storage)>
-    <ul class="menu list-group list-group-flush list-group-sm">
-        <li class="list-group-item">
-            <Icon Name="IconName.Home" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Home</a>
-        </li>
-        <li class="list-group-item">
-            <Icon Name="IconName.Backward" />
-            <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.AdaptorSettings))">Back</a>
-        </li>
-        
-        <li class="list-group-item">
             <Icon Name="IconName.Save" />
-            Storage
+            Storage Path
             <TextEdit @bind-Text="@ViewModel.Selected.StoragePath"></TextEdit>
         </li>
-
     </ul>
 </Div>
+
 <Div Class="col col-4 top" Visibility=@ViewModel!.IsVisible(MenuPage.CLI)>
     <ul class="menu list-group list-group-flush list-group-sm">
         <li class="list-group-item">
-            <Icon Name="IconName.Backward" />
+            <Icon IconSize=@IconSize.Large Name="IconName.Backward" />
             <a href="#" onclick="@(() => ViewModel.SetVisible(MenuPage.MainMenu))">Back</a>
         </li>
 
     </ul>
 </Div>
+
+
 
 

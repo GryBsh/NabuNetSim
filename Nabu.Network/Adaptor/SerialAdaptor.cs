@@ -15,6 +15,7 @@ public class SerialAdaptor
         CancellationToken stopping
     ) {
         var logger = serviceProvider.GetRequiredService<IConsole<SerialAdaptor>>();
+        var storage = serviceProvider.GetRequiredService<StorageService>();
 
         var serial = new SerialPort(
             settings.Port,
@@ -41,6 +42,9 @@ public class SerialAdaptor
             $"Port: {settings.Port}, BaudRate: {settings.BaudRate}, ReadTimeout: {settings.ReadTimeout}"
         );
 
+        var name = settings.Port.Split(Path.DirectorySeparatorChar).Last();
+        storage.InitializeStorage(settings, name);
+
         while (serial.IsOpen is false)
             try
             {
@@ -55,7 +59,7 @@ public class SerialAdaptor
             catch (Exception ex)
             {
                 logger.WriteWarning($"Serial Adaptor: {ex.Message}");
-                await Task.Delay(5000);
+                await Task.Delay(5000, stopping);
             }
 
         if (serial.IsOpen is false)

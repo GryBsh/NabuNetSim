@@ -32,12 +32,15 @@ public class EmulatedAdaptor : NabuBase
         Protocols = protocols;
         Stream = stream;
         Reader = new BinaryReader(stream);
+
         NabuNet.Attach(Settings, Stream);
         foreach (var protocol in Protocols)
             protocol.Attach(Settings, Stream);
     }
 
     public bool IsRunning { get; protected set; }
+
+
 
     #region Adaptor Loop   
     

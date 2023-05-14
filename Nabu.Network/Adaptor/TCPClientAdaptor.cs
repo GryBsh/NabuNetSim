@@ -2,6 +2,7 @@
 using Nabu.Network;
 using Nabu.Services;
 using System.Net.Sockets;
+using System.Text;
 
 namespace Nabu.Adaptor;
 
@@ -25,12 +26,12 @@ public class TCPClientAdaptor
     
     public static async Task Start(
         IServiceProvider serviceProvider, 
-        AdaptorSettings settings, 
+        TCPAdaptorSettings settings, 
         CancellationToken stopping
     ){
-        var tcpSettings = (TCPAdaptorSettings)settings;
+        //var tcpSettings = (TCPAdaptorSettings)settings;
         var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
-        
+        var storage = serviceProvider.GetRequiredService<StorageService>();
         //socket.LingerState = new LingerOption(false, 0);
 
         var parts = settings.Port.Split(':');
@@ -41,18 +42,23 @@ public class TCPClientAdaptor
         {
             port = Constants.DefaultTCPPort;
         };
-        
+
+        storage.InitializeStorage(settings, settings.Port);
+
         while (stopping.IsCancellationRequested is false) {
-            var socket = NabuLib.Socket(true, tcpSettings.SendBufferSize, tcpSettings.ReceiveBufferSize);
+            var socket = NabuLib.Socket(true, settings.SendBufferSize, settings.ReceiveBufferSize);
             try {
                 socket.Connect(hostname, port);
             } catch (Exception ex)
             {
                 logger.WriteWarning(ex.Message);
-                await Task.Delay(5000);
+                await Task.Delay(5000, stopping);
                 continue;
             }
             logger.Write($"TCP Client Connected to {hostname}:{port}");
+            var name = $"{socket.RemoteEndPoint}";
+            var clientIP = socket.RemoteEndPoint!.ToString()!.Split(':')[0];
+            storage.InitializeStorage(settings, clientIP);
             try
             {
                 var stream  = new NetworkStream(socket);
@@ -62,7 +68,7 @@ public class TCPClientAdaptor
                      serviceProvider.GetServices<IProtocol>(),
                      logger,
                      stream,
-                     $"{socket.RemoteEndPoint}"
+                     name
                 );
                 
                 await ClientListen(logger, adaptor, socket, stream, stopping);
