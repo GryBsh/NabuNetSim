@@ -75,7 +75,7 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
     public Task<bool> Open(string filename, FileOpenFlags flags, CancellationToken cancel)
     {
         Flags = flags;
-        //Filename = NabuLib.FilePath(Settings, filename);
+        Filename = filename;
         return Task.FromResult(true);
     }
 
