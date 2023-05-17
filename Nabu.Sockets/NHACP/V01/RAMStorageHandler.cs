@@ -39,8 +39,7 @@ public class RAMStorageHandler : INHACPStorageHandler
             if (realLength is false && buffer.Length != length) {
                 var read = buffer;
                 buffer = new Memory<byte>(new byte[length]);
-                read.CopyTo(buffer[..(read.Length - 1)]);
-                buffer[read.Length..].Span.Clear();
+                read.CopyTo(buffer[..read.Length]);
             }
             return Task.FromResult((true, string.Empty, buffer, NHACPError.Undefined));
         }

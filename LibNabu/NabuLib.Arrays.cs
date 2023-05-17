@@ -30,7 +30,7 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Slices the provided byffer
+    ///     Slices the provided buffer
     /// </summary>
     /// <param name="buffer"></param>
     /// <param name="offset"></param>

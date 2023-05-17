@@ -68,7 +68,8 @@ public class FileStorageHandler : INHACPStorageHandler
         Logger.WriteVerbose($"Reading {length} bytes from {offset}, File Length: {_stream.Length}");
         _stream.Seek(offset, SeekOrigin.Begin);
         var read = await _stream.ReadAsync(buffer);
-        if (read != length) buffer = buffer[0..length];
+        if (read != length && realLength) 
+            buffer = buffer[0..read];
 
         return (true, string.Empty, buffer.ToArray(), 0);
         
