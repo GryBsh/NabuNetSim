@@ -1,6 +1,4 @@
-﻿using System;
-using System.Security;
-using Microsoft.Extensions.FileSystemGlobbing;
+﻿using Microsoft.Extensions.FileSystemGlobbing;
 using Nabu.Services;
 
 namespace Nabu.Network.NHACP.V01;
@@ -30,7 +28,7 @@ public class FileStorageHandler : INHACPStorageHandler
     public Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
     {
         Flags = flags;
-        Path = NabuLib.FilePath(Settings, uri);
+        Path = uri;
 
         var create = Flags.HasFlag(OpenFlags.Create);
         var readWrite = (
@@ -56,20 +54,21 @@ public class FileStorageHandler : INHACPStorageHandler
         return Task.FromResult((false, "Not found", Length, NHACPError.NotFound));
     }
 
-    public async Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length)
+    public async Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length, bool realLength = false)
     {
         if (_stream is null)
             return (false, string.Empty, Array.Empty<byte>(), NHACPError.InvalidRequest);
-
+        
+        if (offset > _stream.Length)  
+            return (true, string.Empty, Array.Empty<byte>(), 0);
+        
+        
         var buffer = new Memory<byte>(new byte[length]);
-            
-        var end = offset + length;
-            
-        if (end > _stream.Length) length = (short)(_stream.Length - offset);
 
         Logger.WriteVerbose($"Reading {length} bytes from {offset}, File Length: {_stream.Length}");
         _stream.Seek(offset, SeekOrigin.Begin);
-        await _stream.ReadAsync(buffer);
+        var read = await _stream.ReadAsync(buffer);
+        if (read != length) buffer = buffer[0..length];
 
         return (true, string.Empty, buffer.ToArray(), 0);
         
@@ -119,7 +118,7 @@ public class FileStorageHandler : INHACPStorageHandler
         if (Position > Length) return (true, string.Empty, Array.Empty<byte>(), NHACPError.Undefined);
         if ((Position + length) > Length) length = Length - Position;
 
-        var result = await Get(Position, length);
+        var result = await Get(Position, length, true);
         Position += length;
         return result;
     }

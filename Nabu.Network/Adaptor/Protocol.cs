@@ -1,11 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Text;
-using System;
+﻿using System.Text;
 using Nabu.Services;
+using System.Reactive.Linq;
 
 namespace Nabu.Adaptor;
 
-public abstract class Protocol : NabuService, IProtocol
+public abstract class Protocol : NabuService, IProtocol, IDisposable
 {
     //public AdaptorSettings Settings { get; private set; }
     public Stream Stream { get; private set; } = Stream.Null;
@@ -16,6 +15,8 @@ public abstract class Protocol : NabuService, IProtocol
     public bool Attached => Stream != Stream.Null;
     
     int SendDelay = 0;
+    private bool disposedValue;
+
     public Protocol(
         IConsole logger,
         AdaptorSettings? settings = null
@@ -24,6 +25,8 @@ public abstract class Protocol : NabuService, IProtocol
         
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
+
+        
         
     }
 
@@ -224,15 +227,16 @@ public abstract class Protocol : NabuService, IProtocol
         return true;
     }
     protected abstract Task Handle(byte unhandled, CancellationToken cancel);
-
+    
     public async Task<bool> HandleMessage(byte incoming, CancellationToken cancel)
-    { 
+    {
         try
         {
-            await Handle(incoming, cancel);
+            await Handle(incoming, cancel);   
             return true;
         }
         catch (TimeoutException) {
+            
             return true;
         }
         catch (Exception ex)
@@ -240,6 +244,7 @@ public abstract class Protocol : NabuService, IProtocol
             Error($"FAIL: {ex.Message}");
             return false;
         }
+        
     }
 
     public virtual void Detach()
@@ -250,13 +255,43 @@ public abstract class Protocol : NabuService, IProtocol
         Writer = new BinaryWriter(Stream);
     }
 
-    #endregion
-
     public virtual void Reset() { }
 
     public virtual bool ShouldAccept(byte unhandled)
     {
         return Commands.Contains(unhandled);    
     }
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                Reset();
+                Detach();
+            }
+
+            // TODO: free unmanaged resources (unmanaged objects) and override finalizer
+            // TODO: set large fields to null
+            disposedValue = true;
+        }
+    }
+
+    // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
+    // ~Protocol()
+    // {
+    //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+    //     Dispose(disposing: false);
+    // }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
+    #endregion
+
 }
 

@@ -1,0 +1,10 @@
+﻿@inherits ReactiveComponentBase<LogButtonViewModel>
+
+<button type="button" class="btn btn-primary" onclick="@(() => { ViewModel!.LogViewer.ToggleVisible(); })">
+    <div class="hstack gap-1">
+        <Icon Name="IconName.BookReader" />
+        <Small>Show Logs</Small>
+    </div>
+</button>
+
+

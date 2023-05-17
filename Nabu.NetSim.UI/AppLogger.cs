@@ -1,14 +1,6 @@
-﻿using DynamicData.Binding;
-using Microsoft.Extensions.Logging.Abstractions;
-using System.Collections.ObjectModel;
-using System.Linq;
-using Blazorise;
-using Microsoft.Extensions.Logging;
-using System;
-using Nabu.Services;
+﻿using Microsoft.Extensions.Logging;
 using Nabu.NetSim.UI.Services;
-using Nabu.NetSim.UI.Models;
-using Nabu.Messages;
+using Nabu.Models;
 //using Microsoft.EntityFrameworkCore;
 //using Microsoft.EntityFrameworkCore.Design;
 
@@ -39,12 +31,10 @@ public class AppLogger : ILogger
 {
     private readonly string FullName;
     private readonly string Name;
-    private readonly AppLogProvider Provider;
     private readonly AppLogConfiguration Settings;
 
     public AppLogger(
         string name,
-        AppLogProvider provider,
         AppLogConfiguration settings,
         LogService log
         //IRepository<LogEntry> repository
@@ -52,7 +42,6 @@ public class AppLogger : ILogger
     {
         FullName = name;
         Name = name.Split('.')[^1];
-        Provider = provider;
         Settings = settings;
         Logs = log;
         //LogEntries = repository;
@@ -85,7 +74,7 @@ public class AppLogger : ILogger
                 new LogEntry(
                     Guid.NewGuid(),
                     DateTime.Now,
-                    LogLevel.Information,
+                    logLevel.ToString(),
                     Name,
                     formatter(state, exception)
                 )

@@ -5,9 +5,9 @@
 > NOTE: `NNS` is used to abbreviate `NABU NetSim` in this document.
 
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (Marduk, MAME),
-and can host multiple instances of either. Making it possible to host a NABU Network from one
-Computer. The adaptor emulator is complete in that it handles all known messages from the NABU.
-But it's not guaranteed for any purpose, blah, blah, blah.
+and can host multiple instances of either. Making it possible to host a whole NABU Network from one
+adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, and can be extended to support 
+your own custom protocols via JavaScript and Python.
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
@@ -16,7 +16,7 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 - > Supports multiple NABU adaptors, serial and TCP. You can use multiple serial adaptors and listen for clients on multiple ports at the same time if you so choose.
 - > Supports local file system NABU files and cycles, with the classic cycles included
 - > Supports feeds from NABUNetwork.com and Nabu.ca.
-- > Supports NHACP and Retronet.
+- > Supports NHACP and Retronet, so it can run IshkurCPM and Cloud CPM.
 - > Deeply integrated offline caching of remote files/programs.
 - > Optional Web UI for configuration, with news from NabuNetwork.com.
 - > Extensible protocol support, you can add your own protocol handlers in Python or Javascript.
@@ -43,7 +43,7 @@ But it's not guaranteed for any purpose, blah, blah, blah.
 - > Only one client way open and use the RetroNet TCP Server at a time, because the RetroNet was designed that way.
 - > NHACP support is experimental.
 - > Python support is experimental, and probably doesn't work on non-Windows platforms.
-- > Javascript support is experimental.
+- > JavaScript support is experimental.
 - > I'm 100% sure there are more.
 
 ## Systen Requirements

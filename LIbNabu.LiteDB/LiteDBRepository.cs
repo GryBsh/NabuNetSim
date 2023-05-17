@@ -4,51 +4,57 @@ using System.Linq.Expressions;
 
 namespace Nabu;
 
-public class LiteDBRepository<T> : IRepository<T>, IDisposable
+public class LiteDbRepository<T> : IRepository<T>, IDisposable
 {
     private bool disposedValue;
-    protected static LiteDatabase? Database { get; set; }
+    static LiteDatabase? Database { get; set; }
     static ILiteCollection<T> Collection => Database!.GetCollection<T>();
+    protected Settings Settings { get; }
 
-    public LiteDBRepository(Settings settings)
+    LiteDatabase GetConnection()
     {
-        LiteDatabase init()
+        var cs = new ConnectionString
         {
-            var cs = new ConnectionString
-            {
-                Upgrade = true,
-                Filename = settings.DatabasePath,
-                Connection = ConnectionType.Shared
-            };
-            var database = new LiteDatabase(cs);
-            database.Rebuild();
-            database.Mapper.Entity<IEntity>().Id(e => e.Id);
-            return database;
-        }
+            Upgrade = true,
+            Filename = Settings.DatabasePath,
+            Connection = ConnectionType.Shared
+        };
+        var database = new LiteDatabase(cs);
+        database.Rebuild();
+        return database;
+    }
 
-        Database ??= init();
+    public LiteDbRepository(Settings settings, LiteDbModel<T> model)
+    {
+        Settings = settings;
+        Database ??= GetConnection();
+       
+        model?.Configure(Database.Mapper.Entity<T>(), Collection);
     }
 
     public void Delete(Expression<Func<T, bool>> predicate)
     {
-        LiteDBRepository<T>.Collection.DeleteMany(predicate);
+        Collection.DeleteMany(predicate);
     }
 
     public void DeleteAll()
     {
-        LiteDBRepository<T>.Collection.DeleteAll();
+        Collection.DeleteAll();
     }
 
     public IEnumerable<T> Query<TQueryable>(Func<TQueryable, IEnumerable<T>> query)
     {
-        var fail = new ArgumentException($"{typeof(TQueryable).Name} is not valid for repository of type {typeof(LiteDBRepository<T>).Name}", nameof(TQueryable));
+        var fail = new ArgumentException(
+            $"{typeof(TQueryable).Name} is not valid for repository of type {typeof(LiteDbRepository<T>).Name}", 
+            nameof(TQueryable)
+        );
         if (typeof(TQueryable).IsAssignableFrom(typeof(ILiteQueryable<T>)) is false)
         {
             throw fail;
         }
         try
         {
-            return query.Invoke((TQueryable)LiteDBRepository<T>.Collection.Query());
+            return query.Invoke((TQueryable)Collection.Query());
         } catch (InvalidCastException)
         {
             throw fail;
@@ -57,52 +63,47 @@ public class LiteDBRepository<T> : IRepository<T>, IDisposable
 
     public IEnumerable<T> Select(Expression<Func<T, bool>> predicate, int skip = 0, int limit = int.MaxValue)
     {
-        return LiteDBRepository<T>.Collection.Find(predicate, skip, limit);
+        return Collection.Find(predicate, skip, limit);
     }
 
     public IEnumerable<T> SelectAll(int skip = 0, int limit = int.MaxValue)
     {
         //var collection = Database!.GetCollection<T>();
-        if (skip is 0 && limit is int.MaxValue) return LiteDBRepository<T>.Collection.FindAll();
+        if (skip is 0 && limit is int.MaxValue) return Collection.FindAll();
         //var count = collection.Count();
         //if (count is 0) return Array.Empty<T>();    
 
         //var remains = (count -  skip); 
-        return LiteDBRepository<T>.Collection.FindAll().Skip(skip).Take(limit);
+        return Collection.FindAll().Skip(skip).Take(limit);
+    }
+
+    public IEnumerable<T> SelectAllAscending<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
+    {
+        return Collection.Query().OrderBy(order).Skip(skip).Limit(limit).ToEnumerable();
     }
 
     public IEnumerable<T> SelectAllDescending<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
     {
-        return LiteDBRepository<T>.Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
+        return Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
     }
 
     public IEnumerable<T> SelectAll<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
     {
-        return LiteDBRepository<T>.Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
+        return Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
     }
 
     public int Count()
     {
-        return LiteDBRepository<T>.Collection.Count();
+        return Collection.Count();
     }
 
     public int Count(Expression<Func<T, bool>> predicate)
     {
-        return LiteDBRepository<T>.Collection.Count(predicate);
+        return Collection.Count(predicate);
     }
 
-    public IEnumerable<T> Page(int page, int size)
-    {
-        //var collection = Database!.GetCollection<T>();
-        var count = LiteDBRepository<T>.Collection.Count();
-        if (count is 0) return Array.Empty<T>();
-
-        var skip = (page - 1) * size;
-        return SelectAll(skip, size);
-    }
-
-    public void Insert(params T[] items) => LiteDBRepository<T>.Collection.Insert(items);
-    public void BulkInsert(params T[] items) => LiteDBRepository<T>.Collection.InsertBulk(items);
+    public void Insert(params T[] items) => Collection.Insert(items);
+    public void BulkInsert(params T[] items) => Collection.InsertBulk(items);
     protected virtual void Dispose(bool disposing)
     {
         if (!disposedValue)

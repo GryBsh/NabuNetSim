@@ -1,46 +1,41 @@
 ﻿@inherits ReactiveComponentBase<HomeViewModel>
 
-@if (ViewModel!.Loaded)
-{
-    <Div Class="main-menu container-fluid">
-        <div Class="row row-divider" />
-        <div class="row">
-            <ul class="news list-group list-group-flush list-group-horizontal-sm">
-                <li class="list-group-item center"><small>NABUNetwork.com News</small></li>
-                <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
-                    <li class="list-group-item center"><small><a target="_blank" href="@context?.Link">@context?.Title</a></small></li>
-                </Virtualize>
-                <li class="list-group-item center"><small><a target="_blank" href="https://www.nabunetwork.com">More...</a></small></li>
-            </ul>
-        </div>
-        <div Class="row row-divider" /> 
-        <div class="row" style="height: 400px">
-            <div class="col flex-fill title-col">
-                <div class="container-fluid title-box">
-                    <div class="row">
+<Div Visibility=@(ViewModel!.Loaded ? Visibility.Visible : Visibility.Invisible) Class="main-menu container-fluid" Style="min-height: 500px">
+    <div Class="row row-divider" />
+    <div class="row">
+        <ul class="news list-group list-group-flush list-group-horizontal-sm">
+            <li class="list-group-item center"><small>NABUNetwork.com News</small></li>
+            <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
+                <li class="list-group-item center"><small><a target="_blank" href="@context?.Link">@context?.Title</a></small></li>
+            </Virtualize>
+            <li class="list-group-item center"><small><a target="_blank" href="https://www.nabunetwork.com">More...</a></small></li>
+        </ul>
+    </div>
+    <div Class="row row-divider" /> 
+    <Div Class="row" Visibility="@(ViewModel.Visible ? Visibility.Visible : Visibility.Invisible)">
+        <div class="col flex-fill title-col">
+            <div class="container-fluid title-box">
+                <div class="row">
                        
-                        <div class="col">
-                            <Image class="logo" Source="_content/Nabu.NetSim.UI/images/nabu.png" />
-
-                        </div>
-                        <div class="col top">
-                            <StatusView />
-                        </div>
-                        
-                        <MenuView />
-                        
+                    <div class="col col-4">
+                        <Image class="logo" Source="_content/Nabu.NetSim.UI/images/nabu.png" />
+                        <Div Class="center"><LogButtonView /></Div>
                     </div>
+                    <div class="col top col-4">
+                        <StatusView />
+                    </div>
+                    <Div Class="col col-4 top" Style="min-height: 50%">
+                        <MenuView />
+                    </Div>
                 </div>
             </div>
         </div>
-        <div class="row row-divider" />
-        <LogView />
     </Div>
-} 
-else
-{
-    <div class="loading-phrase">
-        <center>@(ViewModel.Phrase)</center>
-    </div>
-}
+    <LogView />
+</Div>
+
+<Div Visibility=@(ViewModel!.Loaded ? Visibility.Invisible : Visibility.Visible) Class="loading-phrase">
+    <center>@(ViewModel.Phrase)</center>
+</Div>
+
 

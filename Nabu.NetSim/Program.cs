@@ -3,8 +3,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu;
-using Nabu.Adaptor;
-using Nabu.Network;
 using NLog.Extensions.Logging;
 
 await   Host

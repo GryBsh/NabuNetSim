@@ -1,8 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Nabu.Adaptor;
-using Nabu.Network;
-
-namespace Nabu;
+﻿namespace Nabu;
 
 /// <summary>
 ///     Version Numbers and adaptor Id

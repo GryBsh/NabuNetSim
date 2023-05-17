@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace Nabu;
+﻿namespace Nabu;
 
 public static partial class NabuLib
 {
-    public static void StartSafeNoGC(long requires)
+    public static bool StartSafeNoGC(long requires)
     {
-        try { GC.TryStartNoGCRegion(requires); } catch { }
+        try { 
+            return GC.TryStartNoGCRegion(requires); 
+        } catch {
+            return false;
+        }
     }
 
     public static void EndSafeNoGC()

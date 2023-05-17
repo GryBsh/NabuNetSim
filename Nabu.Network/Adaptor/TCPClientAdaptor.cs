@@ -2,7 +2,6 @@
 using Nabu.Network;
 using Nabu.Services;
 using System.Net.Sockets;
-using System.Text;
 
 namespace Nabu.Adaptor;
 

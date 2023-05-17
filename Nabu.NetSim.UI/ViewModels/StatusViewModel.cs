@@ -1,21 +1,22 @@
 ﻿using Nabu.Adaptor;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
 public class StatusViewModel : ReactiveObject
 {
-    public StatusViewModel(MenuViewModel menu, Settings settings)
+    public StatusViewModel(
+        HomeViewModel home, 
+        MenuViewModel menu, 
+        LogViewModel logViewer,
+        Settings settings)
     {
-        //Home = home;
+        Home = home;
         Menu = menu;
         Settings = settings;
+        LogViewer = logViewer;
+
         Observable
             .Interval(TimeSpan.FromSeconds(5))
             .Subscribe(_ => {
@@ -27,9 +28,9 @@ public class StatusViewModel : ReactiveObject
         );
     }
 
-    //public HomeViewModel Home { get; }
+    public HomeViewModel Home { get; }
     public MenuViewModel Menu { get; }
-    //public LogViewModel? Log => Home.Log;
+    public LogViewModel LogViewer { get; }
     public Settings Settings { get; }
 
     void NotifyChange()

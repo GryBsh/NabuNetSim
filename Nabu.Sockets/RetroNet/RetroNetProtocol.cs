@@ -1,12 +1,6 @@
-using Microsoft.Extensions.Logging;
 using Nabu.Adaptor;
-using System.Net.Cache;
-using System.Reflection.Metadata;
 using System.Text.RegularExpressions;
-using System.Threading.Channels;
 using Nabu.Services;
-using System.Net.Sockets;
-using System.Net;
 using System.Reactive.Linq;
 
 namespace Nabu.Network.RetroNet;
@@ -79,77 +73,104 @@ public partial class RetroNetProtocol : Protocol
 
     public override byte Version { get; } = 0x01;
 
-    protected override Task Handle(byte unhandled, CancellationToken cancel)
+    protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         try
         {
             switch (unhandled)
             {
                 case RetroNetCommands.FileOpen:
-                    return FileOpen(cancel);
+                    await FileOpen(cancel);
+                    break;
                 case RetroNetCommands.FileHandleSize:
-                    return FileHandleSize(cancel);
+                    await FileHandleSize(cancel);
+                    break;
                 case RetroNetCommands.FileHandleRead:
-                    return FileHandleRead(cancel);
+                    await FileHandleRead(cancel);
+                    break;
                 case RetroNetCommands.FileHandleClose:
-                    return FileHandleClose(cancel);
+                    await FileHandleClose(cancel);
+                    break;
                 case RetroNetCommands.FileSize:
-                    return FileSize(cancel);
+                    await FileSize(cancel);
+                    break;
                 case RetroNetCommands.FileHandleAppend:
-                    return FileHandleAppend(cancel);
+                    await FileHandleAppend(cancel);
+                    break;
                 case RetroNetCommands.FileHandleInsert:
-                    return FileHandleInsert(cancel);
+                    await FileHandleInsert(cancel);
+                    break;
                 case RetroNetCommands.FileHandleDeleteRange:
-                    return FileHandleDelete(cancel);
+                    await FileHandleDelete(cancel);
+                    break;
                 case RetroNetCommands.FileHandleReplaceRange:
-                    return FileHandleReplace(cancel);
+                    await FileHandleReplace(cancel);
+                    break;
                 case RetroNetCommands.FileDelete:
-                    return FileDelete(cancel);
+                    await FileDelete(cancel);
+                    break;
                 case RetroNetCommands.FileCopy:
-                    return FileCopy(cancel);
+                    await FileCopy(cancel);
+                    break;
                 case RetroNetCommands.FileMove:
-                    return FileMove(cancel);
+                    await FileMove(cancel);
+                    break;
                 case RetroNetCommands.FileHandleTruncate:
-                    return FileHandleTruncate(cancel);
+                    await FileHandleTruncate(cancel);
+                    break;
                 case RetroNetCommands.FileList:
-                    return FileList(cancel);
+                    await FileList(cancel);
+                    break;
                 case RetroNetCommands.FileIndexStat:
-                    return FileIndexStat(cancel);
+                    await FileIndexStat(cancel);
+                    break;
                 case RetroNetCommands.FileStat:
-                    return FileStat(cancel);
+                    await FileStat(cancel);
+                    break;
                 case RetroNetCommands.FileHandleDetails:
-                    return FileHandleDetails(cancel);
+                    await FileHandleDetails(cancel);
+                    break;
                 case RetroNetCommands.FileHandleReadSequence:
-                    return FileHandleReadSequence(cancel);
+                    await FileHandleReadSequence(cancel);
+                    break;
                 case RetroNetCommands.FileHandleSeek:
-                    return FileHandleSeek(cancel);
+                    await FileHandleSeek(cancel);
+                    break;
                 case RetroNetCommands.TCPHandleOpen:
-                    return TCPHandleOpen();
+                    await TCPHandleOpen();
+                    break;
                 case RetroNetCommands.TCPHandleClose:
-                    return TCPHandleHandleClose();
+                    await TCPHandleHandleClose();
+                    break;
                 case RetroNetCommands.TCPHandleSize:
-                    return TCPHandleSize();
+                    await TCPHandleSize();
+                    break;
                 case RetroNetCommands.TCPHandleRead:
-                    return TCPHandleRead(cancel);
+                    await TCPHandleRead(cancel);
+                    break;
                 case RetroNetCommands.TCPHandleWrite:
-                    return TCPHandleWrite(cancel);
+                    await TCPHandleWrite(cancel);
+                    break;
                 case RetroNetCommands.TCPServerClientCount:
-                    return TCPServerClientCount();
+                    await TCPServerClientCount();
+                    break;
                 case RetroNetCommands.TCPServerAvailable:
-                    return TCPServerAvailable();
+                    await TCPServerAvailable();
+                    break;
                 case RetroNetCommands.TCPServerRead: 
-                    return TCPServerRead(cancel);
+                    await TCPServerRead(cancel);
+                    break;
                 case RetroNetCommands.TCPServerWrite:
-                    return TCPServerWrite(cancel);
+                    await TCPServerWrite(cancel);
+                    break;
                 default:
                     Warning($"Unsupported message: {Format(unhandled)}");
-                    return Task.CompletedTask;
+                    break;
             }
         }
         catch (Exception ex)
         {
             Error(ex.Message);
-            return Task.CompletedTask;
         }
     }
 
@@ -161,57 +182,15 @@ public partial class RetroNetProtocol : Protocol
 
     public override bool Attach(AdaptorSettings settings, Stream stream)
     {
-        Observable.Interval(TimeSpan.FromSeconds(10)).Subscribe(_ =>
-        {
-            if (settings is NullAdaptorSettings)
-                return;
-
-            var source = NabuNet.Source(Settings);
-            if (source is null)
-                return;
-            
-            if (Server is null && source.EnableRetroNet && source.EnableRetroNetTCPServer)
-            {
-                try
-                {
-                    var started = StartTCPServer(source);
-                    if (!started) return;
-
-                    Task.Run(async () =>
-                    {
-                        while (true)
-                        {
-                            try
-                            {
-                                await TCPServerListen();                            
-                            }
-                            catch (Exception ex) 
-                            {
-                                Logger.WriteWarning($"TCP Server Connection Attempt Failed: {ex.Message}");
-                            }
-                        }
-                    });
-                }
-                catch (Exception ex)
-                {
-                    Logger.WriteError($"Failed to start TCP Server: {ex.Message}");
-                }
-            }
-            else if (Server is not null && (!source.EnableRetroNet || !source.EnableRetroNetTCPServer))
-            {
-                ShutdownTCPServer();
-            }
-        });
+        Listener(settings);
         return base.Attach(settings, stream);
     }
     
 
     public override void Detach()
     {
-        if (Server is not null)
-        {
-            ShutdownTCPServer();
-        }
+        Reset();
+        ShutdownTCPServer();
         base.Detach();
     }
 
@@ -290,20 +269,19 @@ public partial class RetroNetProtocol : Protocol
         
     public override void Reset()
     {
-        Task.Run(() =>
+        
+        if (Slots.Count > 0)
         {
+            var cancel = CancellationToken.None;
             if (Slots.Count > 0)
             {
-                var cancel = CancellationToken.None;
-                if (Slots.Count > 0)
-                {
-                    foreach (var b in Slots.Keys) Slots[b].Close(cancel);
-                    Slots.Clear();
-                }
-                
-                base.Reset();
+                foreach (var b in Slots.Keys) Slots[b].Close(cancel);
+                Slots.Clear();
             }
-        });
+            
+            base.Reset();
+        }
+        
     }
 
     public override bool ShouldAccept(byte unhandled)

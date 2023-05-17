@@ -1,10 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Nabu.NetSim.UI.Models;
 using Nabu.NetSim.UI.Services;
-using Nabu.Services;
 using System.Collections.Concurrent;
-using System.Reactive.Concurrency;
 
 namespace Nabu.NetSim.UI;
 
@@ -32,7 +29,7 @@ public class AppLogProvider : ILoggerProvider
     public ILogger CreateLogger(string categoryName)
         => Loggers.GetOrAdd(
             categoryName,
-            name => new AppLogger(name, this, Config.CurrentValue, Logs)
+            name => new AppLogger(name, Config.CurrentValue, Logs)
         );
 
     public void Dispose()

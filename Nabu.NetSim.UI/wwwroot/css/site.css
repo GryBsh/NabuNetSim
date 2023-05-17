@@ -21,6 +21,13 @@ body {
 /* UTILS */
 .center-all {
     margin: auto;
+    margin-top: 45%;
+}
+
+.top-sm {
+    margin-top: 0px;
+    padding-top: 8px;
+    padding-bottom: 8px;
 }
 
 .top {
@@ -33,8 +40,17 @@ body {
 }
 
 i {
-    width: 25px;
+    /*width: 30px;*/
     text-align: center;
+    vertical-align: middle
+}
+
+button i {
+    width: 30px;
+}
+
+.button-row > .col {
+    padding: 0px;
 }
 
 .no-padding {

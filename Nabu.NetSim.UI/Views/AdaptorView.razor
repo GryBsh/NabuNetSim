@@ -1,0 +1,35 @@
+﻿@inherits ReactiveComponentBase<AdaptorViewModel>
+
+<Virtualize TItem="AdaptorSettings" Items="AdaptorList">
+    <Div Class="row">
+        <div class="col @(ViewModel?.IsClient(context) is true ? "col-10" : "col-6")">         
+            <button type="button" class="btn @(ViewModel?.AdaptorStatus(context) == "Running" ? "btn-success" : "btn-primary")" onclick="@(() => { ViewModel?.Menu.SetSelected(context); })" style="width: 100%">
+                <div class="hstack gap-2">
+                    @if (context is TCPAdaptorSettings)
+                    {
+                        <Icon IconSize=@IconSize.Large Name="IconName.Wifi" />
+                    }
+
+                    else
+                    {
+                        <Icon IconSize=@IconSize.Large Name="IconName.Plug" />
+                    }
+                    <div class="center">@context.Port</div>
+                </div>
+            </button>
+        </div>
+        
+        <Div Class="col col-1">
+            <button type="button" class="btn @(ViewModel?.AdaptorStatus(context) == "Running" ? "btn-danger" : "btn-success")" onclick="@(() => ViewModel?.Home.ToggleAdaptor(context))">
+                <Icon IconSize=@IconSize.Large Name="@(ViewModel?.AdaptorStatus(context) == "Running" ? IconName.Stop : IconName.Play)" />
+            </button>
+        </Div>
+        
+    </Div>
+    <Div Class="row">
+        <Div Class="col top-sm">
+            <Icon IconSize="@IconSize.Large" Name="IconName.Folder" />
+            @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")
+        </Div>
+    </Div>
+</Virtualize>

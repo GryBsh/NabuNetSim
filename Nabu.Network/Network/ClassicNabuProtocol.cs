@@ -1,5 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.Adaptor;
+﻿using Nabu.Adaptor;
 using Nabu.Messages;
 using Nabu.Services;
 using System.Reactive.Linq;
@@ -141,7 +140,7 @@ public class ClassicNabuProtocol : Protocol
         if (pak is not Message.TimePak && Started is null)
         {
             Started = DateTime.Now;
-            NabuLib.StartSafeNoGC(65536);
+            //NabuLib.StartSafeNoGC(65536);
         }
         // RACERS START YOUR ENGINES!
         //if (pak is 0x191) pak = 0x15C;
@@ -258,7 +257,7 @@ public class ClassicNabuProtocol : Protocol
 
             if (Started is null) return; // Time Packet is not timed.
 
-            NabuLib.EndSafeNoGC();
+            //NabuLib.EndSafeNoGC();
             TransferRate(Started.Value, finished, totalLength);
             Started = null;
             

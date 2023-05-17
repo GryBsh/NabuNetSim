@@ -1,16 +1,10 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.NetSim.UI;
-using Nabu.NetSim.UI.Services;
-using Nabu.Services;
-using System.Xml.Linq;
-using System;
-using Nabu.NetSim.UI.Models;
+﻿using Nabu.Services;
 //using Microsoft.EntityFrameworkCore.Design;
 //using Microsoft.EntityFrameworkCore;
 
 namespace Nabu.NetSimWeb
 {
-    
+
 
     public class LoggingConsole<T> : IConsole<T>
     {

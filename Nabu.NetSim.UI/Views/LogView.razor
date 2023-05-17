@@ -1,17 +1,24 @@
 ﻿@inherits ReactiveComponentBase<LogViewModel>
-<Div Class="row" Visibility="@(ViewModel!.Visibility)">
-    <br/>
+<Div Class="row top" Visibility="@(ViewModel!.Visibility)">
     <div class="log-frame col flex-lg-column">
         <div class="flex-grow-0">
-            <br />
             <div class="container">
                 <div class="row center">
+                    <div class="col-2 center"></div>
                     <div class="col-3 center">Page</div>
                     <div class="col-2 center">Per Page</div>
                     <div class="col-4 center">Search</div>
                     <!--<div class="col-2">Per Page</div>-->
                 </div>
                 <div class="row center">
+                    <div class="col-2">
+                        <button type="button" class="btn btn-primary" onclick="@(() => { ViewModel.ToggleVisible(); })">
+                            <div class="hstack gap-1">
+                                <Icon Name="IconName.Times" />
+                                <div>Close</div>
+                            </div>
+                        </button>
+                    </div>
                     <div class="col-3">
                         <div class="container">
                             <div class="row">
@@ -50,7 +57,11 @@
                         <div class="container">
                             <div class="row">
                                 <div class="col-8 center no-padding"><TextEdit @bind-Text="@ViewModel.Search" /></div>
-                                <div class="col-1"><Button Disabled=@(ViewModel.Search == string.Empty) Class="btn-primary" @onclick=@ViewModel.ClearSearch>Clear</Button></div>
+                                <div class="col-1">
+                                    <Button Disabled=@(ViewModel.Search == string.Empty) Class="btn-primary" @onclick=@ViewModel.ClearSearch>
+                                        <Icon IconSize=@IconSize.Large Name="IconName.Clear" />
+                                    </Button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -60,11 +71,11 @@
             <br />
             <Div Class="row row-divider" />
             <br />
-        <Virtualize TItem="LogEntry" Items="ViewModel.CurrentPage">
+        @foreach (var context in ViewModel.CurrentPage) {
             <div @key=context class="@(context.Highlight ? "log-highlight" : string.Empty)">
                 <small>@context.Timestamp.ToString(ViewModel.DateTimeFormat) @context.LogLevel @context.Name @context.Message</small>
             </div>
-        </Virtualize>
+        }
         </div>
     </div>
     <br />

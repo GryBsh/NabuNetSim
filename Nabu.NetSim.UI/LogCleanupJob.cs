@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.DependencyInjection;
-using Nabu.NetSim.UI.Models;
-using Nabu.NetSim.UI.Services;
+﻿using Nabu.NetSim.UI.Services;
 using Nabu.Services;
 using System.Reactive.Linq;
 

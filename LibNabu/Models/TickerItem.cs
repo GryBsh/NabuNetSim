@@ -1,4 +1,4 @@
-﻿namespace Nabu.NetSim.UI.Models;
+﻿namespace Nabu.Models;
 
 public record TickerItem(string Title, string Link);
 

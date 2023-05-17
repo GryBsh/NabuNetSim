@@ -16,7 +16,7 @@ public class Settings {
     public bool EnableJavaScript { get; set; } = false;
 
     public int MaxLogEntries { get; set; } = 1000;
-    public int MaxLogEntryAgeHours { get; set; } = 12;
+    public int MaxLogEntryAgeHours { get; set; } = 4;
     public int LogCleanupIntervalMinutes { get; set; } = 15;
 
     public bool EnableLocalFileCache { get; set; } = true;

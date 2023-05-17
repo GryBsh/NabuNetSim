@@ -1,6 +1,4 @@
-﻿using Nabu.Services;
-
-namespace Nabu.Network.NHACP.V01;
+﻿namespace Nabu.Network.NHACP.V01;
 
 
 

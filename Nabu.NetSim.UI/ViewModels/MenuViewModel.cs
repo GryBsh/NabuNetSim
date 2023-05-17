@@ -3,14 +3,8 @@ using DynamicData;
 using Nabu.NetSim.UI.Models;
 using Nabu.Network;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Splat;
 using Nabu.Adaptor;
 
 namespace Nabu.NetSim.UI.ViewModels;
@@ -33,7 +27,6 @@ public class MenuViewModel : ReactiveObject
         Sources = sources;
         //Settings = settingsModel;
         //Status = status;
-        Log = log;
         Observable
             .Interval(TimeSpan.FromMinutes(1))
             .Subscribe(_ => UpdateImages());
@@ -44,7 +37,6 @@ public class MenuViewModel : ReactiveObject
     //public SettingsViewModel Settings { get; }
     public HomeViewModel Home { get;  }
     public INabuNetwork Sources { get; }
-    public LogViewModel Log { get; }
     //public StatusViewModel Status { get; } 
 
     public ICollection<SerialAdaptorSettings> Serial
@@ -80,7 +72,7 @@ public class MenuViewModel : ReactiveObject
         //NotifyChange();
     }
 
-    public bool IsClient => Selected is TCPAdaptorSettings t && t.IsClient;
+    public bool IsClient => Selected is TCPAdaptorSettings t && t.Connection;
 
     public void SetSource(string value)
     {

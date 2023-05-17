@@ -1,16 +1,9 @@
 ﻿using Blazorise;
-using DynamicData;
-using Nabu.NetSim.UI.Models;
+using LiteDB;
+using Nabu.Models;
 using Nabu.NetSim.UI.Services;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Collections.ObjectModel;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.NetSim.UI.ViewModels
 {
@@ -19,10 +12,11 @@ namespace Nabu.NetSim.UI.ViewModels
     {
         LogService LogService { get; }
         public LogViewModel(
-            LogService logService
+            LogService logService,
+            HomeViewModel home
         )
         {
-            //Home = home;
+            Home = home;
             //Repository = repository;
 
             LogService = logService;
@@ -33,13 +27,14 @@ namespace Nabu.NetSim.UI.ViewModels
                      //GC.Collect();
                  });
         }
-        //HomeViewModel Home { get; set; }
+        HomeViewModel Home { get; set; }
         //IRepository<LogEntry> Repository { get; }
 
         void NotifyChange()
         {
             this.RaisePropertyChanged(nameof(PageCount));
             this.RaisePropertyChanged(nameof(CurrentPage));
+            Home.RaisePropertyChanged(nameof(Home.Visible));
         }
 
         bool logVisible = false;
@@ -47,6 +42,7 @@ namespace Nabu.NetSim.UI.ViewModels
             get { return logVisible; } 
             set {
                 logVisible = value;
+                Home.Visible = !logVisible;
                 LogService.Update = value;
                 NotifyChange();
             }
@@ -82,7 +78,7 @@ namespace Nabu.NetSim.UI.ViewModels
         {
             get
             {
-                var total = LogService.Count;
+                var total = LogService.Entries.Count;
                 if (total is 0) return 0;
                 var count = (int)Math.Ceiling((double)(total / PageSize));
                 return count < 1 ? 1 : count;
@@ -99,7 +95,7 @@ namespace Nabu.NetSim.UI.ViewModels
             //    LogService.Pause();
             //    return;
             //}
-            LogService.Refresh();
+            //LogService.Refresh();
             this.RaisePropertyChanged(nameof(PageCount));
             this.RaisePropertyChanged(nameof(CurrentPage));
         }
@@ -119,17 +115,22 @@ namespace Nabu.NetSim.UI.ViewModels
             return e;
         }
 
-        public ICollection<LogEntry> CurrentPage
+        public IEnumerable<LogEntry> CurrentPage
         {
             get
             {
                 return LogService
                         .Entries
-                        .OrderByDescending(e => e.Timestamp)
                         .Skip((Page - 1) * PageSize)
                         .Take(PageSize)
-                        .Select(Highlight)
-                        .ToList();
+                        /*
+                         LogService.Repository.Query<ILiteQueryable<LogEntry>>(
+                            q => q.OrderByDescending(e => e.Timestamp)
+                                  .Skip((Page - 1) * PageSize)
+                                  .Limit(PageSize)
+                                  .ToEnumerable()
+                        )*/
+                        .Select(Highlight);
             }
         }
 

@@ -1,19 +1,15 @@
 ﻿using Nabu.Adaptor;
 using Nabu.Network.NHACP.V0;
 using Nabu.Services;
-using System;
-using System.ComponentModel.DataAnnotations;
-using System.Reflection;
 using System.Security;
-using System.Security.Cryptography.X509Certificates;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using System.Text.RegularExpressions;
 
 namespace Nabu.Network.NHACP.V01;
 
 
-public class NHACPV01Protocol : Protocol
+public partial class NHACPV01Protocol : Protocol
 {
-    HttpClient Http;
+    HttpClient HttpClient;
     FileCache FileCache;
     Dictionary<byte, NHACPV01Session> Sessions { get; }
 
@@ -41,7 +37,7 @@ public class NHACPV01Protocol : Protocol
     public NHACPV01Protocol(IConsole<NHACPV01Protocol> logger, HttpClient http, FileCache fileCache) : base(logger)
     {
         Sessions = new();
-        Http = http;
+        HttpClient = http;
         FileCache = fileCache;
     }
 
@@ -126,17 +122,24 @@ public class NHACPV01Protocol : Protocol
             if (index is 0xFF) index = NextIndex(sessionId);
 
             Log($"{sessionId} Open: {index}, Flags: {flags}, Uri: {uri} ({length} bytes)");
-                      
-            Sessions[sessionId][index] = uri switch
+
+            var path = uri switch
             {
-                var path when path.StartsWith("http") || path.StartsWith("https")
-                            => new HttpStorageHandler(Logger, Settings, Http, FileCache),
-                var path when path.StartsWith("0x")
+                _ when Http().IsMatch(uri) => NabuLib.Uri(Settings, uri),
+                _ when Memory().IsMatch(uri) => NabuLib.Uri(Settings, uri),
+                _ => NabuLib.FilePath(Settings, uri)
+            };
+
+            Sessions[sessionId][index] = path switch
+            {
+                _ when Http().IsMatch(path)
+                            => new HttpStorageHandler(Logger, Settings, HttpClient, FileCache),
+                _ when path.StartsWith("0x")
                             => new RAMStorageHandler(Logger, Settings),
                 _ => new FileStorageHandler(Logger, Settings)
             };
 
-            var (success, error, size, code) = await Sessions[sessionId][index].Open(flags, uri);
+            var (success, error, size, code) = await Sessions[sessionId][index].Open(flags, path);
 
             if (success) return NHACPMessage.StorageLoaded(index, size).ToArray();
             return ErrorResult(sessionId, code, error);
@@ -165,7 +168,7 @@ public class NHACPV01Protocol : Protocol
             {
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
             }
-            var (success, error, data, code) = await Sessions[sessionId][index].Get(offset, length);
+            var (success, error, data, code) = await Sessions[sessionId][index].Get(offset, length, true);
 
             if (success) return NHACPMessage.Buffer(data).ToArray();
             return ErrorResult(sessionId, code, error);
@@ -328,7 +331,11 @@ public class NHACPV01Protocol : Protocol
             Log($"{sessionId} READ: {index}, Flags: {flags}, Length: {length}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+                return ErrorResult(
+                    sessionId, 
+                    NHACPError.BadDescriptor, 
+                    ErrorMessages[NHACPError.BadDescriptor]
+                );
             }
             var (success, error, data, code) = await Sessions[sessionId][index].Read(length);
             if (success) return NHACPMessage.Buffer(data).ToArray();
@@ -337,7 +344,11 @@ public class NHACPV01Protocol : Protocol
         }
         catch (IndexOutOfRangeException)
         {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+            return ErrorResult(
+                sessionId, 
+                NHACPError.InvalidRequest, 
+                ErrorMessages[NHACPError.InvalidRequest]
+            );
         }
         catch (Exception ex)
         {
@@ -355,7 +366,11 @@ public class NHACPV01Protocol : Protocol
             Log($"{sessionId} WRITE: {index}, Flags: {flags}, Length: {length}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+                return ErrorResult(
+                    sessionId, 
+                    NHACPError.BadDescriptor, 
+                    ErrorMessages[NHACPError.BadDescriptor]
+                );
             }
             var (success, error, code) = await Sessions[sessionId][index].Write(data);
             if (success) return NHACPMessage.OK().ToArray();
@@ -626,10 +641,9 @@ public class NHACPV01Protocol : Protocol
     
 
     public bool SendCRC { get; private set; }
-
+    
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
-        
         var sessionId = Recv();
         var (length, buffer) = ReadFrame();
         var (i, command) = NabuLib.Pop(buffer, 0);
@@ -662,7 +676,10 @@ public class NHACPV01Protocol : Protocol
 
         if (result is null || result.Length == 0) return;
 
-        result = SendCRC ? NabuLib.Concat<byte>(result, new[] { CRC.GenerateCRC8(result) }).ToArray() 
+        result = SendCRC ? NabuLib.Concat<byte>(
+                                result, 
+                                new[] { CRC.GenerateCRC8(result) }
+                           ).ToArray() 
                          : result;
         SendFramed(result!);
     }
@@ -676,6 +693,14 @@ public class NHACPV01Protocol : Protocol
         Sessions.Clear();
     }
 
+    [GeneratedRegex("http[s]?://.*")]
+    private static partial Regex Http();
+
+    [GeneratedRegex("ftp://.*")]
+    private static partial Regex Ftp();
+
+    [GeneratedRegex("0xd*")]
+    private static partial Regex Memory();
 }
 
 

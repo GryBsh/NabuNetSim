@@ -1,8 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-using System.Threading.Channels;
-using System;
-using Nabu.Services;
-using Nabu.Network;
+﻿using Nabu.Services;
 
 namespace Nabu.Network.RetroNet;
 
@@ -21,7 +17,7 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 
     public async Task<Memory<byte>> Get(string filename, CancellationToken cancel)
     {
-        filename = NabuLib.Uri(Settings, filename);
+        //filename = NabuLib.Uri(Settings, filename);
         try
         {
            return await Client.GetBytes(filename);

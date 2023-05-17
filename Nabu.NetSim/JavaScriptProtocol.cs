@@ -1,8 +1,4 @@
-﻿using Nabu.Adaptor;
-using Nabu.Network;
-using Nabu.Services;
-using Jint;
-namespace Nabu;
+﻿namespace Nabu;
 
 /*
 public class JavaScriptProtocol : Protocol

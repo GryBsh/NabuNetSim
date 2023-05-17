@@ -1,5 +1,4 @@
 ﻿using System.Net.Sockets;
-using System;
 
 namespace Nabu.Network.RetroNet;
 

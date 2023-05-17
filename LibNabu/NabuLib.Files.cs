@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Nabu
+﻿namespace Nabu
 {
     public partial class NabuLib
     {
@@ -11,31 +9,31 @@ namespace Nabu
             return name;
         }
 
+        public static string ApplyRedirect(AdaptorSettings settings, string filePath) {
+            var modified = false;
+            do
+            {
+                foreach (var redirect in settings.StorageRedirects)
+                {
+                    if (redirect.Key == filePath)
+                    {
+                        filePath = redirect.Value;
+                        modified = true;
+                    }
+                }
+            } while (modified is true);
+            return filePath;
+        }
+
         public static string FilePath(AdaptorSettings settings, string filePath) {
            
-            foreach (var redirect in settings.StorageRedirects)
-            {
-                if (redirect.Key == filePath)
-                {
-                    filePath = redirect.Value;
-                    break;
-                }
-            }
-
+            filePath = ApplyRedirect(settings, filePath);
             return Path.Combine(settings.StoragePath, filePath);
         }
 
         public static string Uri(AdaptorSettings settings, string uri)
         {
-            foreach (var redirect in settings.StorageRedirects)
-            {
-                if (redirect.Key == uri)
-                {
-                    uri = redirect.Value;
-                    break;
-                }
-            }
-
+            uri = ApplyRedirect(settings, uri);
             return uri;
         }
 

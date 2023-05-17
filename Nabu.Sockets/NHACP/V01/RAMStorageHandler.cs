@@ -30,16 +30,23 @@ public class RAMStorageHandler : INHACPStorageHandler
         }
     }
 
-    public Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length)
+    public Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length, bool realLength = false)
     {
         try
         {
+            if (offset >= Buffer.Length) return Task.FromResult((false, "Offset beyond end of file", (Memory<byte>)Array.Empty<byte>(), NHACPError.InvalidRequest));
             var (_, buffer) = NabuLib.Slice(Buffer, offset, length);
+            if (realLength is false && buffer.Length != length) {
+                var read = buffer;
+                buffer = new Memory<byte>(new byte[length]);
+                read.CopyTo(buffer[..(read.Length - 1)]);
+                buffer[read.Length..].Span.Clear();
+            }
             return Task.FromResult((true, string.Empty, buffer, NHACPError.Undefined));
         }
         catch (Exception ex)
         {
-            return Task.FromResult((false, ex.Message, new Memory<byte>(Array.Empty<byte>()), NHACPError.Undefined));
+            return Task.FromResult((false, ex.Message, (Memory<byte>)Array.Empty<byte>(), NHACPError.Undefined));
         }
     }
 

@@ -32,11 +32,11 @@ public static partial class NabuLib
     {
         IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
         IPEndPoint[] tcpEndPoints = properties.GetActiveTcpListeners();
-        return tcpEndPoints.Select(p => p.Port);
+        return tcpEndPoints.Select(p => p.Port).ToArray();
     }
 
     public static bool IsPortFree(int port) 
-        => GetOpenPorts().Contains(port) is false;
+        => !GetOpenPorts().Contains(port);
 
     public static int GetFreePort(int start, int? count = null)
     {

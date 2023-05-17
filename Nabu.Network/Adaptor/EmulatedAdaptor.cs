@@ -1,6 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.Network;
+﻿using Nabu.Network;
 using Nabu.Services;
+using System.Collections.Concurrent;
+using System.Reactive.Linq;
 
 namespace Nabu.Adaptor;
 
@@ -36,10 +37,10 @@ public class EmulatedAdaptor : NabuBase
         NabuNet.Attach(Settings, Stream);
         foreach (var protocol in Protocols)
             protocol.Attach(Settings, Stream);
+        
     }
 
     public bool IsRunning { get; protected set; }
-
 
 
     #region Adaptor Loop   
@@ -55,20 +56,26 @@ public class EmulatedAdaptor : NabuBase
             {   
                 // Read the command message
                 byte incoming = Reader.ReadByte();
-
+                ///SetActive();
                 // Locate the protocol handler for this command message
                 var handler = Protocols.FirstOrDefault(p => p.ShouldAccept(incoming)) ?? NabuNet;
-                if (handler == NabuNet)
-                    foreach (var protocol in Protocols) protocol.Reset();
-                if (await handler.HandleMessage(incoming, cancel))
-                    continue; // Then continue to the next command message
                 
+                if (handler == NabuNet)
+                    foreach (var protocol in Protocols) 
+                        protocol.Reset();
+
+                if (await handler.HandleMessage(incoming, cancel))
+                {
+                    //SetIdle();
+                    continue; // Then continue to the next command message
+                }
                 Trace("Adaptor Loop Break");
+                //SetIdle();
                 break;
             }
             catch (TimeoutException)
             {
-                continue; // Timeouts are normal over serial connections
+                continue;// Timeouts are normal over serial connections
             }
             catch (IOException ex)
             {
@@ -78,14 +85,16 @@ public class EmulatedAdaptor : NabuBase
                     continue; 
                 
                 Log($"Adaptor Loop Error: {ex.Message}");
+                //SetIdle();
                 break;
-                
             }
             catch (Exception ex)
             {
                 Log($"Adaptor Loop Error: {ex.Message}");
+                //SetIdle();
                 break;
             }
+            //SetIdle();
         }
         IsRunning = false;
         Log("Disconnected");

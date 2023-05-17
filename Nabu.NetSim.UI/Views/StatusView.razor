@@ -1,38 +1,23 @@
 ﻿@inherits ReactiveComponentBase<StatusViewModel>
-<div><small>Adaptors</small></div>
-<ul class="news list-group list-group-flush">
-    <Virtualize TItem="SerialAdaptorSettings" Items="@ViewModel!.Serial">
-        <li class="list-group-item">
-            <large><Icon Name="IconName.Plug" /></large>
-            <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br />
-            <large><Icon Name="IconName.Folder" /></large>
-            @context.Source/@(
-                !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-            )
-        </li>
-    </Virtualize>
-    <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel!.TCP">
-        <li class="list-group-item">
-            <large><Icon Name="IconName.Wifi" /></large>
-            <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br />
-            <large><Icon Name="IconName.Folder" /></large>
-            @context.Source/@(
-                !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-            )
-        </li>
-    </Virtualize>
-</ul>
-<div><small>Connections</small></div>
-<ul class="news list-group list-group-flush">
-    <Virtualize TItem="TCPAdaptorSettings" Items="@ViewModel.Connections">
-        <li class="list-group-item">
-            <large><Icon Name="IconName.Wifi" /></large>
-            <a href="#" onclick="@(() => { ViewModel.Menu.SetSelected(context); })">@context.Port:@ViewModel!.AdaptorStatus(context)</a><br />
-            <large><Icon Name="IconName.Folder" /></large>
-            @context.Source/@(
-                !string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main"
-            )
-        </li>
-    </Virtualize>
+<Div Class="container">
+    <Div Class="row top-sm">
+        <Div Class="col">
+            Adaptors
+        </Div>
+    </Div>
+    
+    <AdaptorView Adaptors="@ViewModel!.Serial" />
+    <AdaptorView Adaptors="@ViewModel!.TCP" />
 
-</ul>
+@if (ViewModel.Connections.Count > 0)
+{
+    <Div Class="row top-sm">
+        <Div Class="col">
+            Connections
+        </Div>
+    </Div>
+    
+    <AdaptorView Adaptors="@ViewModel.Connections" />
+
+}
+</Div>

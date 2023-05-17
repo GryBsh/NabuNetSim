@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Nabu.Network.RetroNet;
+﻿namespace Nabu.Network.RetroNet;
 
 public interface IRetroNetFileHandler
 {

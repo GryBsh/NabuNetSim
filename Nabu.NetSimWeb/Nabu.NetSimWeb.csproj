@@ -26,9 +26,6 @@
     </None>
   </ItemGroup>
 
-	<ItemGroup>
-		<DotNetCliToolReference Include="dotnet-ef" Version="7.0.5" />
-	</ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Blazorise" Version="1.2.3" />

@@ -29,7 +29,8 @@ public record TCPAdaptorSettings : AdaptorSettings
     public bool Client { get; set; } = false;
     public int ReceiveBufferSize { get; set; } = 8;
     public int SendBufferSize { get; set; } = 8;
-    public bool IsClient { get; set; } = false;
+    public bool Connection { get; set; } = false;
+    public CancellationTokenSource? ListenTask { get; set; }
 }
 
 public record SerialAdaptorSettings : AdaptorSettings

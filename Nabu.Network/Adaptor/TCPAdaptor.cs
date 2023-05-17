@@ -1,11 +1,8 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using Nabu.Network;
 using System.Net.Sockets;
 using System.Net;
-using System.Diagnostics;
 using Nabu.Services;
-using System.Text;
 
 namespace Nabu.Adaptor;
 
@@ -67,7 +64,8 @@ public class TCPAdaptor
                 Socket incoming = await socket.AcceptAsync(stopping);
                 var name = $"{incoming.RemoteEndPoint}";
                 var clientIP = name.Split(':')[0];
-                var clientSettings = settings with { Port = name, Client = true };
+                var clientCancel = CancellationTokenSource.CreateLinkedTokenSource(stopping);
+                var clientSettings = settings with { Port = name, Connection = true, ListenTask = clientCancel };
 
                 storage.InitializeStorage(clientSettings, clientIP);
                 
@@ -84,7 +82,7 @@ public class TCPAdaptor
                 );
 
                 Connections[name] = clientSettings;
-                ServerListen(logger, adaptor, incoming, stream, stopping);
+                ServerListen(logger, adaptor, incoming, stream, clientCancel.Token);
 
             }
             catch (Exception ex)

@@ -1,14 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.Network.RetroNet
 {
-    
+
 
     public partial class RetroNetProtocol
     {
@@ -53,16 +48,61 @@ namespace Nabu.Network.RetroNet
             Connected.Add(incoming);
         }
 
+        void Listener(AdaptorSettings settings)
+        {
+            if (settings is NullAdaptorSettings)
+                return;
+
+            var source = NabuNet.Source(settings);
+            if (source is null)
+                return;
+
+            if (Server is null && source.EnableRetroNet && source.EnableRetroNetTCPServer)
+            {
+                try
+                {
+                    var started = StartTCPServer(source);
+                    if (!started) return;
+                    Task.Run(
+                        async () =>
+                        {
+                            while (Server is not null)
+                            {
+                                try
+                                {
+                                    await TCPServerListen();
+                                }
+                                catch (Exception ex)
+                                {
+                                    Logger.WriteWarning($"TCP Server Failed: {ex.Message}");
+                                }
+                                
+                            }
+                        }
+                    );
+                    
+                    
+                }
+                catch (Exception ex)
+                {
+                    Logger.WriteError($"Failed to start TCP Server: {ex.Message}");
+                }
+            }
+            
+        }
+
         void ShutdownTCPServer()
         {
             Logger.WriteWarning($"Shutting down lingering TCP Server");
-            Server?.Disconnect(false);
+            if (Server is null) return;
             foreach (var connected in Connected)
             {
                 connected.Disconnect(false);
                 connected.Dispose();
             }
-            Server?.Dispose();
+
+            //Server.Disconnect(true);
+            Server.Dispose();
             Server = null;
             Connected.Clear();
         }
@@ -126,8 +166,8 @@ namespace Nabu.Network.RetroNet
         }
 
 
-        Socket? Server { get; set; }
-        List<Socket> Connected { get; } = new();
+        static Socket? Server { get; set; }
+        static List<Socket> Connected { get; } = new();
 
         void UpdateConnected()
         {

@@ -1,11 +1,5 @@
 ﻿using Nabu.Adaptor;
 //using Nabu.Network.RetroNetHandle;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Sockets;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.Network.RetroNet;
 
@@ -24,16 +18,25 @@ public partial class RetroNetProtocol : Protocol
     {
         if (handle is 0xFF) handle = NextSlotIndex();
         Log($"Open: {handle} {filename}");
-
-        //var bytes = await FileHandler(filename).Get(filename, cancel);
-
-        Slots[handle] = filename switch
+        var path = filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings, await FileHandler(filename).Get(filename, cancel)),
-            _ when Memory().IsMatch(filename) => new RetroNetMemoryHandle(Logger, Settings),
+            _ when Http().IsMatch(filename) => NabuLib.Uri(Settings, filename),
+            _ when Memory().IsMatch(filename) => NabuLib.Uri(Settings, filename),
+            _ => NabuLib.FilePath(Settings, filename)
+        };
+        if (path != filename)
+        {
+            Log($"Redirect: {handle} {path}");
+        }
+
+        Slots[handle] = path switch
+        {
+            _ when Http().IsMatch(path) => new RetroNetMemoryHandle(Logger, Settings, await FileHandler(path).Get(path, cancel)),
+            _ when Memory().IsMatch(path) => new RetroNetMemoryHandle(Logger, Settings),
             _ => new RetroNetFileHandle(Logger, Settings)
         };
-        var opened = await Slots[handle].Open(filename, flags, cancel);
+        
+        var opened = await Slots[handle].Open(path, flags, cancel);
         if (opened is false) Writer.Write(0xFF);
         else Writer.Write(handle);
     }

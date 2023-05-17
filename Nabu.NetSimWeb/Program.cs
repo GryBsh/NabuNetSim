@@ -9,7 +9,6 @@ using Splat.Microsoft.Extensions.DependencyInjection;
 using ReactiveUI;
 using NLog.Extensions.Logging;
 //using LiteDb.Extensions.Caching;
-using Nabu.Network.RetroNet;
 using Nabu.Services;
 using Nabu.NetSim.UI.Services;
 //using NeoSmart.Caching.Sqlite;
@@ -39,6 +38,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
 app.MapFallbackToPage("/_Host");
+//app.UseSession();
 
 app.Run();
 
@@ -49,6 +49,15 @@ void ConfigureServices(IServiceCollection services, Settings settings)
     var resolver = Locator.CurrentMutable;
     resolver.InitializeSplat();
     resolver.InitializeReactiveUI();
+
+    /*
+    services.AddSession(
+        options => {
+            options.Cookie.IsEssential = true;
+            options.IdleTimeout = TimeSpan.FromDays(1);
+        });
+    */
+
     services.AddLogging(
         logging => {
             logging.ClearProviders()
@@ -56,30 +65,26 @@ void ConfigureServices(IServiceCollection services, Settings settings)
                    .AddNLog("nlog.config");
         }
     );
+    
     services.AddTransient(typeof(IConsole<>), typeof(LoggingConsole<>));
     services.AddDataProtection();
-    //services.AddSqliteCache(options => {
-     //    options.CleanupInterval = TimeSpan.FromMinutes(15);
-    //     options.CachePath = settings.CacheDatabasePath;
-    //});
-    
+
     services.AddSingleton(settings);
     services.AddSingleton(settings.Sources);
-    
+    services.AddLiteDb();
     services.AddHttpClient();
-    services.AddSingleton(typeof(IRepository<>), typeof(LiteDBRepository<>));
-    services.AddLiteDbCache(
-        options =>
-        {
-            options.Connection = LiteDB.ConnectionType.Shared;
-            options.CachePath = settings.CacheDatabasePath;
-        }
-    );
+    //services.AddLiteDbCache(
+    //    options =>
+    //    {
+    //        options.Connection = LiteDB.ConnectionType.Shared;
+    //        options.CachePath = settings.CacheDatabasePath;
+    //    }
+    //);
 
     services.AddSingleton<IJob, LogCleanupJob>();
     services.AddSingleton<IJob, GCJob>();
-    //services.AddSqlite<AppData>("Data Source=data.db");
     services.AddSingleton<LogService>();
+    services.AddSingleton<HeadlineService>();
     Simulation.Register(services, settings);
 
     services.AddRazorPages();
@@ -98,4 +103,6 @@ void ConfigureServices(IServiceCollection services, Settings settings)
     services.AddScoped<MenuViewModel>();
     services.AddScoped<StatusViewModel>();
     services.AddScoped<LogViewModel>();
+    services.AddScoped<AdaptorViewModel>();
+    services.AddScoped<LogButtonViewModel>();
 }

@@ -17,3 +17,4 @@ Assets/Packages
 Assets/**/extracted/
 Nabu.NetSimDesktop/
 **/*.db
+SavedCode/
