@@ -23,6 +23,8 @@ your own custom protocols via JavaScript and Python.
 
 ## Whats New(ish)
 
+- > User Storage Isolation
+  - > This allows users to have their own copy of local storage files, and will avoid clobber issues with RetroNet and NHACP.
 - > Hybrid IskurCPM support, allows physical disk drives
 - > RetroNet TCP Client/Server Support
   - > Telnet/RetroNet Chat/etc are working.
@@ -173,8 +175,6 @@ Preliminary Docker support is available, but is not extensively tested. It #Work
 
 ## What's in the pipe (Coming Soon, in no particular order)
 
-- > User Storage Isolation
-  - > This will allow users to have their own copy of local storage files, and will avoid clobber issues with RetroNet and NHACP.
 - > NabuNetwork.com Headless Support
   - > This will allow you to use the on NABU browser/launcher with NNS
 - > NAPA Package Support
