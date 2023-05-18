@@ -97,7 +97,7 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static Span<byte> FromASCII(string buffer)
+    public static Memory<byte> FromASCII(string buffer)
         => Encoding.ASCII.GetBytes(buffer);
 
     /// <summary>

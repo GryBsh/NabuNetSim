@@ -35,7 +35,7 @@ public class FileStorageHandler : INHACPStorageHandler
             Flags.HasFlag(OpenFlags.ReadWrite) || Flags.HasFlag(OpenFlags.ReadWriteProtect)
         );
         //Logger.Write($"Create: {create}, ReadWrite: {readWrite}");
-        if (File.Exists(Path))
+        if (Flags.HasFlag(OpenFlags.Directory) is false && File.Exists(Path))
         {
             _file = new FileInfo(Path);
             _stream = new FileStream(
@@ -47,7 +47,7 @@ public class FileStorageHandler : INHACPStorageHandler
             Length = _file.Exists ? (int)_file.Length : 0;
             return Task.FromResult((true, string.Empty, Length, NHACPError.Undefined));
         }
-        else if (Directory.Exists(Path)) {
+        else if (Flags.HasFlag(OpenFlags.Directory) && Directory.Exists(Path)) {
             _directory = new DirectoryInfo(Path);
             return Task.FromResult((true, string.Empty, Length, NHACPError.Undefined));
         }
@@ -143,6 +143,11 @@ public class FileStorageHandler : INHACPStorageHandler
         _list.Clear();
         _listPosition = 0;
 
+        if (string.IsNullOrWhiteSpace(pattern))
+        {
+            pattern = "*";
+        }
+
         Matcher matcher = new();
         matcher.AddInclude(pattern);
         var r = matcher.GetResultsInFullPath(_directory.FullName);
@@ -151,8 +156,10 @@ public class FileStorageHandler : INHACPStorageHandler
         return (true, string.Empty, 0);
     }
 
-    public (bool, string, string, NHACPError) GetDirEntry(byte maxNameLength)
+    public (bool, string?, string, NHACPError) GetDirEntry(byte maxNameLength)
     {
+        if (_listPosition == _list.Count)
+            return (true, null, string.Empty, 0);
         var entry = _list[_listPosition++];
         return (true, entry, string.Empty, 0);
     }

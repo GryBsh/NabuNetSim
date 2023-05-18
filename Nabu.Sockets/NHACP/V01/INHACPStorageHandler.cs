@@ -11,7 +11,7 @@ public interface INHACPStorageHandler
     Task<(bool, string, Memory<byte>, NHACPError)> Read(int length);
     Task<(bool, string, NHACPError)> Write(Memory<byte> buffer);
     (bool, string, NHACPError) ListDir(string pattern);
-    (bool, string, string, NHACPError) GetDirEntry(byte maxNameLength);
+    (bool, string?, string, NHACPError) GetDirEntry(byte maxNameLength);
     int Position { get; }
     Task Close();
     void End();

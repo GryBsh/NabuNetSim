@@ -61,12 +61,11 @@ public static class NHACPMessage
         );
     }
 
-    public static Memory<byte> DirectoryEntry(string path)
+    public static Memory<byte> DirectoryEntry(string path, int maxNameLength)
     {
         return Frame(
             0x86,
-            NHACPStructure.FileInfo(path).ToArray(),
-            NabuLib.ToSizedASCII(Path.GetFileName(path)).ToArray()
+            NHACPStructure.FileInfo(path, maxNameLength).ToArray()
         );
     }
 

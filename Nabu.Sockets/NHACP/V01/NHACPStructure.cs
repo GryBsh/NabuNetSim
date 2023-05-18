@@ -11,14 +11,17 @@ public static class NHACPStructure
         .AsSpan();
     }
 
-    public static Memory<byte> FileInfo(string path)
+    public static Memory<byte> FileInfo(string path, int maxNameLength = int.MaxValue)
     {
         var flags = AttrFlags.None;
         
         DateTime lastWrite = System.DateTime.MinValue;
-        int length = 0;
+        string name = string.Empty;
+        var length = 0;
         if (File.Exists(path)) {
             var info = new FileInfo(path);
+            name = info.Name;
+            length = (int)info.Length;
             lastWrite = info.LastWriteTime;
             flags |= AttrFlags.Read;
             if (info.IsReadOnly is false)
@@ -32,15 +35,20 @@ public static class NHACPStructure
         else if (Directory.Exists(path))
         {
             var info = new DirectoryInfo(path);
+            name = info.Name;
+            length = 0;
             lastWrite = info.LastWriteTime;
             flags |= AttrFlags.Directory;
         }
 
+        if (name.Length > maxNameLength) 
+            name = name[..maxNameLength];
 
         return NabuLib.Concat<byte>(
             DateTime(lastWrite).ToArray(),
             NabuLib.FromShort((short)flags),
-            NabuLib.FromInt(length)
+            NabuLib.FromInt(length),
+            NabuLib.ToSizedASCII(name).ToArray()
         );
     }
 

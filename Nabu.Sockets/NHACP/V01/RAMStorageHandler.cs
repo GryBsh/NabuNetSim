@@ -104,7 +104,7 @@ public class RAMStorageHandler : INHACPStorageHandler
         throw new NotImplementedException();
     }
 
-    public (bool, string, string, NHACPError) GetDirEntry(byte maxNameLength)
+    public (bool, string?, string, NHACPError) GetDirEntry(byte maxNameLength)
     {
         throw new NotImplementedException();
     }

@@ -47,15 +47,18 @@ namespace Nabu.Adaptor
             var files = sourceFolder.GetFiles("*", SearchOption.AllDirectories);
             foreach (var file in files)
             {
-                var filename = file.Name;
-                var newPath = Path.Combine(settings.StoragePath, filename);
+                var filePath = Path.GetRelativePath(sourceFolder.FullName, file.FullName);
+                var newPath = Path.Combine(settings.StoragePath, filePath);
                 var newLastModified = Path.Exists(newPath) ?
                                         new FileInfo(newPath).LastWriteTime :
                                         DateTime.MinValue;
 
                 if (newLastModified < file.LastWriteTime)
                 {
-                    Logger.Write($"Updating new or modified file {filename}");
+                    var outDir = Path.GetDirectoryName(newPath);
+                    Logger.Write($"Updating new or modified file {filePath}");
+                    if (outDir is not null && !Path.Exists(outDir))
+                        Directory.CreateDirectory(outDir);
                     File.Copy(file.FullName, newPath, true);
                 }
             }

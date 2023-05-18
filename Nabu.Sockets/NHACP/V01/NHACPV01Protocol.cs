@@ -1,6 +1,7 @@
 ﻿using Nabu.Adaptor;
 using Nabu.Network.NHACP.V0;
 using Nabu.Services;
+using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text.RegularExpressions;
 
@@ -51,19 +52,21 @@ public partial class NHACPV01Protocol : Protocol
         return 0xFF;
     }
 
-    byte[] ErrorResult(byte sessionId, Exception ex)
+    byte[] ErrorResult(byte sessionId, Exception ex, [CallerMemberName]string source = "Unknown", [CallerLineNumber]long line = 0)
     {
+        string errorMessage(NHACPError error)
+            => $"{ErrorMessages[NHACPError.Undefined]} at {source}:{line}";
+
         var (code, error) = ex switch
         {
-            FileNotFoundException       => (NHACPError.NotFound, ErrorMessages[NHACPError.NotFound]),
-            UnauthorizedAccessException => (NHACPError.PermissionDenied, ErrorMessages[NHACPError.PermissionDenied]),
-            SecurityException           => (NHACPError.PermissionDenied, ErrorMessages[NHACPError.PermissionDenied]),
-            IOException                 => (NHACPError.Busy, ErrorMessages[NHACPError.Busy]),
-            _                           => (NHACPError.Undefined, ErrorMessages[NHACPError.Undefined])
+            FileNotFoundException       => (NHACPError.NotFound, errorMessage(NHACPError.NotFound)),
+            UnauthorizedAccessException => (NHACPError.PermissionDenied, errorMessage(NHACPError.PermissionDenied)),
+            SecurityException           => (NHACPError.PermissionDenied, errorMessage(NHACPError.PermissionDenied)),
+            IOException                 => (NHACPError.Busy, errorMessage(NHACPError.Busy)),
+            _                           => (NHACPError.Undefined, errorMessage(NHACPError.Undefined))
         };
         return ErrorResult(sessionId, code, string.IsNullOrWhiteSpace(ex.Message) ? error : ex.Message);
     }
-
     byte[] ErrorResult(byte sessionId, NHACPError code, string error)
     {
         Sessions[sessionId].LastError = code;
@@ -222,7 +225,7 @@ public partial class NHACPV01Protocol : Protocol
         try
         {
             var (_, index) = NabuLib.Pop(buffer, 1);
-            if (Sessions[sessionId].TryGetValue(index,out var session))
+            if (Sessions[sessionId].TryGetValue(index, out var session))
             {
                 Log($"{sessionId} CLOSE: {index}");
                 session.Close();
@@ -400,7 +403,7 @@ public partial class NHACPV01Protocol : Protocol
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
             }
             var (success, pos, error, code) = Sessions[sessionId][index].Seek(offset, origin);
-            if (success) return NabuLib.FromInt(pos);
+            if (success) return NHACPMessage.Int(pos).ToArray();
 
             return ErrorResult(sessionId, code, error);
         }
@@ -419,6 +422,7 @@ public partial class NHACPV01Protocol : Protocol
         try
         {
             var (i, index) = NabuLib.Pop(buffer, 1);
+            Log($"{sessionId} INFO: {index}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
@@ -444,6 +448,7 @@ public partial class NHACPV01Protocol : Protocol
         {
             var (i, index) = NabuLib.Pop(buffer, 1);
             (i, var length) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
+            Log($"{sessionId} SETSIZE: {index}, Length: {length}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
@@ -469,6 +474,7 @@ public partial class NHACPV01Protocol : Protocol
             var (i, index) = NabuLib.Pop(buffer, 1);
             (i, var length) = NabuLib.Pop(buffer, i);
             (i, var pattern) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
+            Log($"{sessionId} LIST: {index}, Pattern: {pattern}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
@@ -502,7 +508,7 @@ public partial class NHACPV01Protocol : Protocol
             if (success)
             {
                 if (entry is null) return NHACPMessage.OK().ToArray();
-                return NHACPStructure.FileInfo(entry!).ToArray();
+                return NHACPMessage.DirectoryEntry(entry, length).ToArray();
             }
 
             return ErrorResult(sessionId, code, error);
