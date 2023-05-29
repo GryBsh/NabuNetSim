@@ -54,7 +54,7 @@ your own custom protocols via JavaScript and Python.
 - > JavaScript support is experimental.
 - > I'm 100% sure there are more.
 
-## Systen Requirements
+## System Requirements
 
 Console:
 
