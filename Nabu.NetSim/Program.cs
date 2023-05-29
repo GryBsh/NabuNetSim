@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Nabu;
+using Nabu.Services;
 using NLog.Extensions.Logging;
 
 await   Host
@@ -12,6 +13,7 @@ await   Host
                 var settings = new Settings();
                 context.Configuration.Bind("Settings", settings);
                 services.AddSingleton(settings);
+                services.AddSingleton(typeof(ILog<>), typeof(MicrosoftExtensionsLoggingConsole<>));
                 //services.AddSingleton(settings.Sources);
                 services.AddLogging(
                     logging =>

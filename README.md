@@ -11,6 +11,8 @@ your own custom protocols via JavaScript and Python.
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
+**IF YOU ARE ON A VERSION BEFORE 0.9.8: BACKUP YOUR CONFIG FILES** and drop in the one from the current version. Then apply your customizations. Many of the sources previously in the config file have been moved to packages.
+
 ## Stand Out Features
 
 - > Supports multiple NABU adaptors, serial and TCP. You can use multiple serial adaptors and listen for clients on multiple ports at the same time if you so choose.
@@ -24,7 +26,6 @@ your own custom protocols via JavaScript and Python.
 
 ## Whats New(ish)
 
-- > **IF YOU ARE ON A VERSION BEFORE 0.9.8: BACKUP YOUR CONFIG FILES** and drop in the one from the current version. Then apply your customizations.
 - > NAPA Package support, content is now provided as NAPA packages, so they can be updated seperately.
 ![Package Storage](./Assets/storage.png)
     Content from packages is symlinked into storage by default, but files users will alter are copied, to avoid clobbering.
