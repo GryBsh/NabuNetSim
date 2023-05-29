@@ -4,11 +4,11 @@ namespace Nabu.Network.NHACP.V0;
 
 public class NHACPProtocolService : INHACPProtocolService
 {
-    IConsole Logger;
+    ILog Logger;
     AdaptorSettings Settings;
     Dictionary<byte, IStorageHandler> StorageSlots { get; } = new();
     Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
-    public NHACPProtocolService(IConsole logger, AdaptorSettings settings)
+    public NHACPProtocolService(ILog logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;

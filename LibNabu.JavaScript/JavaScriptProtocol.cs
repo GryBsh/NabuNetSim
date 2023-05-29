@@ -1,35 +1,46 @@
-﻿using Microsoft.ClearScript.V8;
+﻿using Microsoft.ClearScript;
+using Microsoft.ClearScript.V8;
 using Nabu.Adaptor;
 using Nabu.Network;
 using Nabu.Services;
 
 namespace Nabu.JavaScript;
 
-public class JavaScriptProtocol : Protocol
+public class JavaScriptProtocol : PluginProtocol
 {
-    ProtocolSettings Protocol { get; }
-
-    public JavaScriptProtocol(IConsole<JavaScriptProtocol> logger, ProtocolSettings settings) : base(logger)
+    public JavaScriptProtocol(ILog<JavaScriptProtocol> logger) : base(logger)
     {
-        Protocol = settings;
-        Commands = Protocol.Commands;
+        
     }
+    byte version = 0x01;
+    public override byte Version => version;
 
-    public override byte Version { get; } = 0x01;
+    byte[] commands = Array.Empty<byte>();
+    public override byte[] Commands => commands;
 
-    public override byte[] Commands { get; }
+    public override void Activate(ProtocolSettings settings)
+    {
+        base.Activate(settings);
+        commands = settings.Commands ?? commands;
+    }
 
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
+        if (Protocol is null || !Path.Exists(Protocol.Path)) return;
+
         var proxy = new ProxyProtocol(Logger);
         proxy.Attach(Settings, Stream);
         string source = await File.ReadAllTextAsync(Protocol.Path, cancel);
         try
         {
             using var engine = new V8ScriptEngine();
-            engine.AddHostObject("incoming", unhandled);
-            engine.AddHostObject("adaptor", proxy);
-            engine.AddHostObject("logger", Logger);
+            var global = new
+            {
+                incoming = unhandled,
+                adaptor = proxy,
+                logger = Logger
+            };
+            engine.AddHostObject("global", HostItemFlags.GlobalMembers, global);
             engine.Execute(source);
         }
         catch (Exception ex)

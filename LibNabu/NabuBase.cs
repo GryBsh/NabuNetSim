@@ -4,8 +4,8 @@ namespace Nabu;
 
 public abstract class NabuBase
 {
-    protected IConsole Logger { get; }
-    public NabuBase(IConsole logger, string? label = null)
+    protected ILog Logger { get; }
+    public NabuBase(ILog logger, string? label = null)
     {
         Logger = logger;
         Label = label ?? string.Empty;
@@ -19,7 +19,7 @@ public abstract class NabuBase
 
     protected virtual string LogMessage(string message)
     {
-        var header = string.IsNullOrWhiteSpace(Label) ? string.Empty : $"[{Label}]: ";
+        var header = string.IsNullOrWhiteSpace(Label) ? string.Empty : $"{Label}: ";
         return $"{header}{message}";
     }
 

@@ -2,6 +2,18 @@
 
 namespace Nabu.Network;
 
+public class Options : Dictionary<string, object?>
+{
+    public T? Option<T>(string name)
+    {
+        if (TryGetValue(name, out var value) is true)
+        {
+            return (T?)value;
+        }
+        return default;
+    }
+}
+
 public record NabuProgram
 {
     public NabuProgram()
@@ -17,7 +29,7 @@ public record NabuProgram
         ImageType imageType,
         IProgramPatch[] patches,
         bool isPakMenu = false,
-        bool enableClientIsolation = false
+        IDictionary<string, object?>? options = null
     ) {
         DisplayName = displayName;
         Name = name;
@@ -27,16 +39,16 @@ public record NabuProgram
         ImageType = imageType;
         Patches = patches;
         IsPakMenu = isPakMenu;
-        EnableClientIsolation = enableClientIsolation;
+        Options = options ?? Options;
     }
 
     public string DisplayName { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
     public string Source { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
+    public IDictionary<string, object?> Options { get; set; } = new Dictionary<string, object?>();
     public SourceType SourceType { get; set; }
     public ImageType ImageType { get; set; }
-    public IProgramPatch[] Patches { get; set; } = Array.Empty<IProgramPatch>();
+    public IList<IProgramPatch> Patches { get; set; } = new List<IProgramPatch>();
     public bool IsPakMenu { get; set; }
-    public bool EnableClientIsolation { get; set; }
 }

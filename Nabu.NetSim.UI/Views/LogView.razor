@@ -1,84 +1,72 @@
-﻿@inherits ReactiveComponentBase<LogViewModel>
-<Div Class="row top" Visibility="@(ViewModel!.Visibility)">
-    <div class="log-frame col flex-lg-column">
-        <div class="flex-grow-0">
-            <div class="container">
-                <div class="row center">
-                    <div class="col-2 center"></div>
-                    <div class="col-3 center">Page</div>
-                    <div class="col-2 center">Per Page</div>
-                    <div class="col-4 center">Search</div>
-                    <!--<div class="col-2">Per Page</div>-->
-                </div>
-                <div class="row center">
-                    <div class="col-2">
-                        <button type="button" class="btn btn-primary" onclick="@(() => { ViewModel.ToggleVisible(); })">
-                            <div class="hstack gap-1">
-                                <Icon Name="IconName.Times" />
-                                <div>Close</div>
-                            </div>
-                        </button>
-                    </div>
-                    <div class="col-3">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-1 center">
-                                    <Button Class="btn-secondary" Disabled=ViewModel!.IsActivePage(1) @onclick="@ViewModel.PageBack">@("<")</Button>
-                                </div>
-                                <div Class="col-9 center">
-                                    <Select TValue="int" @bind-SelectedValue="@ViewModel.Page">
-                                    @{
-                                        @for (int i = 1; i > 0 && i <= ViewModel.PageCount; i++)
-                                        {
-                                            var page = i;
-                                            <SelectItem @key=page Value="page">@(page)</SelectItem>
-                                        }
-                                    }
-                                    </Select>
-                                </div>
-                                <div class="col-1 center">
-                                    <Button Class="btn-secondary" Disabled=ViewModel.IsActivePage(ViewModel.PageCount) @onclick="@ViewModel.PageForward">@(">")</Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+﻿@inherits ReactiveInjectableComponentBase<LogViewModel>
 
-                    <div class="col-2 center">
+<HeaderView IconName="@IconName.Plug"
+            Heading="Log"/>
 
-                        <Select TValue="int" @bind-SelectedValue="@ViewModel.PageSize">
-                            <SelectItem Value="500">500</SelectItem>
-                            <SelectItem Value="1000">1000</SelectItem>
-                            <SelectItem Value="1500">1500</SelectItem>
-                            <SelectItem Value="2000">2000</SelectItem>
-                        </Select>
+<ListGroup Flush>
+    <ListGroupItem>
+        <Div Flex="Flex.JustifyContent.Around" Width="Width.Is100">
+            <Div Width="Width.Is25">
+                <Div TextAlignment="TextAlignment.Center" Width="Width.Is100">Page</Div>
+                <Div Class="input-group">
+                    <Button Class="btn btn-primary" Disabled=ViewModel!.IsActivePage(1) @onclick="@ViewModel.PageBack">
+                        <Icon Name="IconName.ArrowLeft" />
+                    </Button>
+                    <Select TValue="int" @bind-SelectedValue="@ViewModel.Page">
+                        <Repeater TItem="int" Items="@(Enumerable.Range(1, ViewModel.PageCount))">
+                            <SelectItem @key=context Value="context">@(context)</SelectItem>
+                        </Repeater>
+                    </Select>
+                    <Button Class="btn btn-primary" Disabled=ViewModel.IsActivePage(ViewModel.PageCount) @onclick="@ViewModel.PageForward">
+                        <Icon Name="IconName.ArrowRight" />
+                    </Button>
+                </Div>
+            </Div>
+            <Div>
+                <Div TextAlignment="TextAlignment.Center" Width="Width.Is100">Per Page</Div>
+                <Select TValue="int" @bind-SelectedValue="@ViewModel.PageSize">
+                    <SelectItem Value="100">100</SelectItem>
+                    <SelectItem Value="200">200</SelectItem>
+                    <SelectItem Value="500">500</SelectItem>
+                    <SelectItem Value="1000">1000</SelectItem>
+                </Select>
+            </Div>
+            <Div>
+                <Div TextAlignment="TextAlignment.Center" Width="Width.Is100">Search</Div>
+                <Div Class="input-group">
+                    <TextEdit @bind-Text="@ViewModel.Search" />
+                    <Button Disabled=@(ViewModel.Search == string.Empty) Class="btn-primary" @onclick=@ViewModel.ClearSearch>
+                        <Icon IconSize=@IconSize.Large Name="IconName.Clear" />
+                    </Button>
+                </Div>
+            </Div>
+        </Div>
+    </ListGroupItem>
+</ListGroup>
+<Divider />
+<ListGroup Flush>
+    <Virtualize TItem="IGrouping<LogKey, LogEntry>" Items="ViewModel.CurrentPage" OverscanCount="50">
+        <ListGroupItem>
+            <Div Flex="Flex.JustifyContent.Between" Border=@(Border.OnBottom.White) TextAlignment=@TextAlignment.Start Width="Width.Is100">
+                <Small Width="Width.Is50">
+                    <Highlighter Text="@context.Key.Name" HighlightedText="@ViewModel.Search" />
+                </Small>
+                <Small><Highlighter Text="@context.Key.Timestamp.ToString()" HighlightedText="@ViewModel.Search" /></Small>
+            </Div>
+            <Repeater TItem="LogEntry" Items="@context.Reverse()" Context="entry">
+                
+                <Div Width="Width.Is100" TextOverflow="TextOverflow.Wrap" Flex="Flex.JustifyContent.Between">
+                    <Div><Small><Highlighter Text="@entry.LogLevel" HighlightedText="@ViewModel.Search" /></Small></Div>
+                    <Div Width="Width.Is75" Style="word-break:break-all"><Small><Highlighter Text="@entry.Message" HighlightedText="@ViewModel.Search" /></Small></Div>
+                </Div>
+            </Repeater>
+        </ListGroupItem>
+    </Virtualize>
+    
+</ListGroup>
 
-                    </div>
-                    <div class="col-4">
-                        <div class="container">
-                            <div class="row">
-                                <div class="col-8 center no-padding"><TextEdit @bind-Text="@ViewModel.Search" /></div>
-                                <div class="col-1">
-                                    <Button Disabled=@(ViewModel.Search == string.Empty) Class="btn-primary" @onclick=@ViewModel.ClearSearch>
-                                        <Icon IconSize=@IconSize.Large Name="IconName.Clear" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
-                </div>
-            </div>
-            <br />
-            <Div Class="row row-divider" />
-            <br />
-        @foreach (var context in ViewModel.CurrentPage) {
-            <div @key=context class="@(context.Highlight ? "log-highlight" : string.Empty)">
-                <small>@context.Timestamp.ToString(ViewModel.DateTimeFormat) @context.LogLevel @context.Name @context.Message</small>
-            </div>
-        }
-        </div>
-    </div>
-    <br />
-</Div>
-<Div Class="row row-divider" Visibility="@(ViewModel!.Visibility)" />
+
+
+
         

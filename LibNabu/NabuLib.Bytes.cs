@@ -72,15 +72,28 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="str"></param>
     /// <returns></returns>
-    public static IEnumerable<byte> ToSizedASCII(string str, int length = 0)
-    {
+    public static Memory<byte> ToSizedASCII(string str, int length = 0)
+    {        
         var bytes = Encoding.ASCII.GetBytes(str);
-        if (length is 0) length = bytes.Length;
+        
+        if (length is 0) 
+            length = bytes.Length;
+
+        var r = new Memory<byte>(new byte[length+1]);
+        r.Span[0] = (byte)length;
+        if (bytes.Length > length)
+            bytes[..length].CopyTo(r[1..]);
+        else
+            bytes.CopyTo(r[1..]);
+
+        return r;
+        
+        /*
         yield return (byte)str.Length;
         foreach (int index in Enumerable.Range(0, length))
             if (index >= bytes.Length) yield return 0x00;
             else yield return bytes[index];
-        
+        */
             
     }
 

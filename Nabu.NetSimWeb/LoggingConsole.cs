@@ -6,7 +6,7 @@ namespace Nabu.NetSimWeb
 {
 
 
-    public class LoggingConsole<T> : IConsole<T>
+    public class LoggingConsole<T> : ILog<T>
     {
         ILogger Logger { get; }
         //public IServiceScopeFactory ScopeFactory { get; }

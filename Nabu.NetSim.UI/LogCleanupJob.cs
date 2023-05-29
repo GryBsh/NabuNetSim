@@ -9,7 +9,7 @@ public class LogCleanupJob : Job
     
     public LogService LogService { get; set; }
 
-    public LogCleanupJob(IConsole<LogCleanupJob> logger, Settings settings, LogService logService) : base(logger, settings)
+    public LogCleanupJob(ILog<LogCleanupJob> logger, Settings settings, LogService logService) : base(logger, settings)
     {
         LogService = logService;
     }
@@ -18,29 +18,38 @@ public class LogCleanupJob : Job
     {
         //using var scope = Scope.CreateScope();
         var repository = LogService.Repository;
-        var cutoff = DateTime.Now.AddHours(-Settings.MaxLogEntryAgeHours);
+
+        var cutoff = DateTime.Now.AddDays(-Settings.MaxLogEntryDatabaseAgeDays);
         //Repository.Collection<LogEntry>().EnsureIndex(e => e.Timestamp);
         var pendingDelete = repository.Count(e => e.Timestamp < cutoff);
-        if (pendingDelete > 0)
+        var hasPending = pendingDelete > 0;
+
+        Logger.Write((hasPending ? "Removing" : "No") + $" entries before {cutoff}" + (hasPending ? $": {pendingDelete}" : string.Empty));
+        if (hasPending)
         {
-            Logger.Write($"Log Sweep: < {cutoff}: {pendingDelete}");
             repository.Delete(e => e.Timestamp < cutoff);
         }
-        else
-        {
-            Logger.Write($"Log Sweep: < {cutoff}: 0");
-        }
+        
         //GC.Collect();
     }
 
+    void Maintenance()
+    {
+        Logger.Write("Database Maintenance");
+        LogService.Repository.RunMaintenance();
+    }
+    
     public override void Start()
     {
         Cleanup();
-        Observable.Interval(
-            TimeSpan.FromMinutes(Settings.LogCleanupIntervalMinutes)
-        ).Subscribe(_ =>
-        {
-            Cleanup();
-        });
+
+        Disposables.AddInterval(
+            TimeSpan.FromMinutes(Settings.LogCleanupIntervalMinutes),
+            _ => Cleanup()
+        );
+        Disposables.AddInterval(
+            TimeSpan.FromMinutes(15),
+            _ => Maintenance()
+        );
     }
 }

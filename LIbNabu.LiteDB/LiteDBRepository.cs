@@ -1,14 +1,16 @@
 ﻿using LiteDB;
 using Nabu.Services;
 using System.Linq.Expressions;
+using System.Reactive.Disposables;
+using System.Reflection;
 
 namespace Nabu;
 
-public class LiteDbRepository<T> : IRepository<T>, IDisposable
+public class LiteDbRepository<T> : DisposableBase, IRepository<T>
 {
     private bool disposedValue;
-    static LiteDatabase? Database { get; set; }
-    static ILiteCollection<T> Collection => Database!.GetCollection<T>();
+    LiteDatabase? Database { get; set; }
+    ILiteCollection<T> Collection => Database.GetCollection<T>();
     protected Settings Settings { get; }
 
     LiteDatabase GetConnection()
@@ -20,16 +22,20 @@ public class LiteDbRepository<T> : IRepository<T>, IDisposable
             Connection = ConnectionType.Shared
         };
         var database = new LiteDatabase(cs);
-        database.Rebuild();
+       
+
         return database;
     }
 
+    LiteDbModel<T> Model { get; }
     public LiteDbRepository(Settings settings, LiteDbModel<T> model)
     {
         Settings = settings;
-        Database ??= GetConnection();
-       
-        model?.Configure(Database.Mapper.Entity<T>(), Collection);
+        Model = model;
+
+        Database = GetConnection();
+        Disposables.Add(Database);
+        Model.Configure(Database.Mapper.Entity<T>(), Collection);
     }
 
     public void Delete(Expression<Func<T, bool>> predicate)
@@ -82,7 +88,7 @@ public class LiteDbRepository<T> : IRepository<T>, IDisposable
         return Collection.Query().OrderBy(order).Skip(skip).Limit(limit).ToEnumerable();
     }
 
-    public IEnumerable<T> SelectAllDescending<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
+    public IEnumerable<T> SelectDescending<V>(Expression<Func<T, V>> order, int skip = 0, int limit = int.MaxValue)
     {
         return Collection.Query().OrderByDescending(order).Skip(skip).Limit(limit).ToEnumerable();
     }
@@ -104,24 +110,12 @@ public class LiteDbRepository<T> : IRepository<T>, IDisposable
 
     public void Insert(params T[] items) => Collection.Insert(items);
     public void BulkInsert(params T[] items) => Collection.InsertBulk(items);
-    protected virtual void Dispose(bool disposing)
-    {
-        if (!disposedValue)
-        {
-            if (disposing)
-            {
-                Database!.Dispose();
-                Database = null;
-            }
-            disposedValue = true;
-        }
-    }
+  
 
-    public void Dispose()
+    public void RunMaintenance()
     {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
+        Database?.Rebuild();
+        Database?.Checkpoint();
     }
 }
 

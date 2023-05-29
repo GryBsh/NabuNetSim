@@ -1,23 +1,28 @@
 using Nabu.Services;
 using System.Text;
-using System.Collections.Concurrent;
+using System.Reactive;
 
 namespace Nabu.Network;
 
-public class FileCache 
+
+
+public class FileCache : IFileCache
 {
     public static TimeSpan TTL { get; set; } = TimeSpan.FromMinutes(30);
-    IConsole<FileCache> Logger { get; }
-    
-    readonly ConcurrentDictionary<string, DateTime> _cacheTime = new();
-    readonly ConcurrentDictionary<string, Memory<byte>> _cache = new();
-    
+    ILog<FileCache> Logger { get; }
+
+    //readonly ConcurrentDictionary<string, DateTime> _cacheTime = new();
+    //readonly ConcurrentDictionary<string, Memory<byte>> _cache = new();
+
+    MemoryCache<Memory<byte>> Cache { get; } = new();
+
     readonly Settings Settings;
 
     public FileCache(
-        IConsole<FileCache> logger,
+        ILog<FileCache> logger,
         Settings settings
-    ) {
+    )
+    {
         Settings = settings;
         Logger = logger;
     }
@@ -28,9 +33,8 @@ public class FileCache
             return;
         Task.Run(async () =>
         {
+            Cache.Cache(path, content);
             if (write) await File.WriteAllBytesAsync(path, content.ToArray());
-            _cache[path] = content;
-            _cacheTime[path] = DateTime.Now;
         });
     }
 
@@ -38,13 +42,13 @@ public class FileCache
     {
         if (Settings.EnableLocalFileCache is false)
             return;
-        
-        if (!_cache.ContainsKey(path)) return;
+
+        //if (!_cache.ContainsKey(path)) 
+        //    return;
 
         Task.Run(() =>
         {
-            _cache.Remove(path, out _);
-            _cacheTime.Remove(path, out _);
+            Cache.UnCache(path);
         });
     }
 
@@ -53,35 +57,32 @@ public class FileCache
         if (Settings.EnableLocalFileCache is false)
             return await File.ReadAllBytesAsync(path);
 
-        Memory<byte> content = Array.Empty<byte>();
-        if (File.Exists(path) is false) return content;
+        if (File.Exists(path) is false)
+            return Array.Empty<byte>(); ;
 
-        if (_cacheTime.TryGetValue(path, out var cacheTime) &&
-            File.GetLastWriteTime(path) > cacheTime
-        ) {
-            content = await File.ReadAllBytesAsync(path);
-            CacheFile(path, content, false);
-            return content;
-        }
-
-        if (_cache.TryGetValue(path, out content))
-            return content;
-        
-        content = await File.ReadAllBytesAsync(path);
-        CacheFile(path, content, false);
-        return content;
+        return await Cache.CacheOrUpdate(
+            path,
+            async (timestamp, old) =>
+            {
+                if (File.GetLastWriteTime(path) > timestamp)
+                {
+                    return await File.ReadAllBytesAsync(path);
+                }
+                return old;
+            }
+        );
     }
 
     public void CacheString(string path, string content, bool write = true, Encoding? encoding = null)
     {
         if (Settings.EnableLocalFileCache is false)
             return;
+
         encoding ??= Encoding.UTF8;
         Task.Run(async () =>
         {
+            Cache.Cache(path, encoding.GetBytes(content));
             if (write) await File.WriteAllTextAsync(path, content);
-            _cache[path] = encoding.GetBytes(content);
-            _cacheTime[path] = DateTime.Now;
         });
     }
 
@@ -90,34 +91,22 @@ public class FileCache
         if (Settings.EnableLocalFileCache is false)
             return await File.ReadAllTextAsync(path);
 
-        var content = string.Empty;
+        if (File.Exists(path) is false)
+            return string.Empty;
 
-        if (File.Exists(path) is false) return string.Empty;
-
-        if (_cacheTime.TryGetValue(path, out var cacheTime) &&
-            File.GetLastWriteTime(path) > cacheTime
-        ){
-            content = await File.ReadAllTextAsync(path);
-            CacheString(path, content, false);
-            return content;
-        }
-
-        if (_cache.TryGetValue(path, out var bytes))
-            return Encoding.UTF8.GetString(bytes.ToArray());
-            
-        content = await File.ReadAllTextAsync(path);
-        CacheString(path, content, false);
-        return content;
+        return Encoding.UTF8.GetString(
+            (await GetFile(path)).ToArray()
+        );
     }
 
     public DateTime LastChange(string path)
     {
-        
         var lastWrite = File.Exists(path) ? File.GetLastWriteTime(path) : DateTime.MinValue;
         if (Settings.EnableLocalFileCache is false)
             return lastWrite;
 
-        var cached = _cacheTime.TryGetValue(path, out var cacheTime);
+        var cacheTime = Cache.LastCached(path);
+        var cached = cacheTime > DateTime.MinValue;
         return cached switch
         {
             true when cacheTime > lastWrite => cacheTime,

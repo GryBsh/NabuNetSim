@@ -4,7 +4,8 @@ public enum SourceType
 {
     Unknown = 0,
     Local,
-    Remote
+    Remote,
+    Package
 }
 
 [Flags]

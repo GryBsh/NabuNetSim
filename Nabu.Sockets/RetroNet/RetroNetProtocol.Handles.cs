@@ -1,4 +1,4 @@
-﻿using Nabu.Adaptor;
+﻿using System;
 //using Nabu.Network.RetroNetHandle;
 
 namespace Nabu.Network.RetroNet;
@@ -20,7 +20,7 @@ public partial class RetroNetProtocol : Protocol
         Log($"Open: {handle} {filename}");
         var path = filename switch
         {
-            _ when Http().IsMatch(filename) => NabuLib.Uri(Settings, filename),
+            _ when NabuLib.IsHttp(filename) => NabuLib.Uri(Settings, filename),
             _ when Memory().IsMatch(filename) => NabuLib.Uri(Settings, filename),
             _ => NabuLib.FilePath(Settings, filename)
         };
@@ -31,7 +31,7 @@ public partial class RetroNetProtocol : Protocol
 
         Slots[handle] = path switch
         {
-            _ when Http().IsMatch(path) => new RetroNetMemoryHandle(Logger, Settings, await FileHandler(path).Get(path, cancel)),
+            _ when NabuLib.IsHttp(path) => new RetroNetMemoryHandle(Logger, Settings, Http?.CachePath(path), await FileHandler(path).Get(path, cancel)),
             _ when Memory().IsMatch(path) => new RetroNetMemoryHandle(Logger, Settings),
             _ => new RetroNetFileHandle(Logger, Settings)
         };
@@ -99,10 +99,10 @@ public partial class RetroNetProtocol : Protocol
         var file = await Slots[handle].Details(cancel);
         Log($"Details:{handle}");
 
-        var filename = file.Filename;
+        //var filename = file.Filename;
 
-        var fnLength = filename.Length > 64 ? 64 : filename.Length;
-        filename = filename[..fnLength].ToUpper();
+        //var fnLength = filename.Length > 64 ? 64 : filename.Length;
+        //file.Filename = filename[..fnLength].ToUpper();
         Writer.Write(file);
     }
 

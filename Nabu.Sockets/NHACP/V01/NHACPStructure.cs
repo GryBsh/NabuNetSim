@@ -2,13 +2,12 @@
 
 public static class NHACPStructure
 {
-    public static Span<byte> DateTime(DateTime dateTime)
+    public static Memory<byte> DateTime(DateTime dateTime)
     {
         return NabuLib.Concat<byte>(
             NabuLib.FromASCII(dateTime.ToString("yyyyMMdd")).ToArray(),
             NabuLib.FromASCII(dateTime.ToString("HHmmss")).ToArray()
-        ).ToArray()
-        .AsSpan();
+        );
     }
 
     public static Memory<byte> FileInfo(string path, int maxNameLength = int.MaxValue)

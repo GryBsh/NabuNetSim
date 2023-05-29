@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Nabu.Network;
 using Nabu.Services;
+using Napa;
 using System.IO.Ports;
 
 namespace Nabu.Adaptor;
@@ -13,8 +14,9 @@ public class SerialAdaptor
         SerialAdaptorSettings settings, 
         CancellationToken stopping
     ) {
-        var logger = serviceProvider.GetRequiredService<IConsole<SerialAdaptor>>();
+        var logger = serviceProvider.GetRequiredService<ILog<SerialAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
+        var packages = serviceProvider.GetRequiredService<IPackageManager>();
 
         var serial = new SerialPort(
             settings.Port,
@@ -41,12 +43,18 @@ public class SerialAdaptor
             $"Port: {settings.Port}, BaudRate: {settings.BaudRate}, ReadTimeout: {settings.ReadTimeout}"
         );
 
-        var name = settings.Port.Split(Path.DirectorySeparatorChar).Last();
-        storage.InitializeStorage(settings, name);
+        var name = settings.Port.Split(Path.DirectorySeparatorChar)[^1];
+        
+        var originalSettings = settings with { };
+
+        
 
         while (serial.IsOpen is false)
             try
             {
+                await packages.UpdateInstalled();
+                storage.UpdateStorageFromPackages(packages, settings);
+                storage.UpdateStorage(settings, name);
                 serial.Open();
             }
             catch (UnauthorizedAccessException)
@@ -87,6 +95,7 @@ public class SerialAdaptor
             logger.WriteError(ex.Message, ex);
         }
 
+        settings.StoragePath = originalSettings.StoragePath;
         serial.Close();
         serial.Dispose();
 

@@ -8,20 +8,22 @@ using Nabu.Services;
 using Nabu.Network.NHACP.V01;
 using Nabu.Network.NHACP.V0;
 using Nabu.JavaScript;
+using Nabu.Packages;
+using Napa;
 //using LiteDb.Extensions.Caching;
 
 namespace Nabu;
 
 public class Simulation : BackgroundService, ISimulation
 {
-    readonly IConsole Logger;
+    readonly ILog Logger;
     readonly List<AdaptorSettings> DefinedAdaptors;
     private readonly IServiceProvider ServiceProvider;
     Settings Settings { get; }
     readonly IEnumerable<IJob> Jobs;
 
     public Simulation(
-        IConsole<Simulation> logger,
+        ILog<Simulation> logger,
         Settings settings,
         IServiceProvider serviceProvider,
         IEnumerable<IJob> jobs
@@ -116,11 +118,11 @@ public class Simulation : BackgroundService, ISimulation
                         services[index] = settings.Type switch
                         {
                             AdaptorType.Serial 
-                                => Task.Run(() => SerialAdaptor.Start(ServiceProvider, (SerialAdaptorSettings)settings, token)),
+                                => Task.Run(() => SerialAdaptor.Start(ServiceProvider.CreateScope().ServiceProvider, (SerialAdaptorSettings)settings, token)),
                             AdaptorType.TCP when settings is TCPAdaptorSettings tcp && tcp.Client 
-                                => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
+                                => Task.Run(() => TCPClientAdaptor.Start(ServiceProvider.CreateScope().ServiceProvider, (TCPAdaptorSettings)settings, token)),
                             AdaptorType.TCP 
-                                => Task.Run(() => TCPAdaptor.Start(ServiceProvider, (TCPAdaptorSettings)settings, token)),
+                                => Task.Run(() => TCPAdaptor.Start(ServiceProvider.CreateScope().ServiceProvider, (TCPAdaptorSettings)settings, token)),
                             _ => throw new NotImplementedException()
                         };
                         settings.Running = true;
@@ -137,14 +139,18 @@ public class Simulation : BackgroundService, ISimulation
     {
         services.AddSingleton<INabuNetwork, NabuNetwork>()
                 .AddTransient<ClassicNabuProtocol>()
-                .AddSingleton<FileCache>()
-                .AddSingleton<StorageService>()
+                .AddSingleton<IFileCache, FileCache>()
+                .AddSingleton<IHttpCache, CachingHttpClient>()
+                .AddTransient<StorageService>()
                 .AddTransient<IProtocol, NHACPProtocol>()
                 .AddTransient<IProtocol, NHACPV01Protocol>()
                 .AddTransient<IProtocol, RetroNetTelnetProtocol>()
                 .AddTransient<IProtocol, RetroNetProtocol>()
                 .AddSingleton<ISimulation, Simulation>()
                 .AddSingleton<IJob, RefreshSourcesJob>()
+                .AddSingleton<IJob, RefreshPackagesJob>()
+                .AddSingleton<SourceService>()
+                .AddSingleton<IPackageManager, PackageManager>()
                 .AddHostedService<Simulation>();
 
         if (settings.EnablePython)
@@ -175,7 +181,7 @@ public class Simulation : BackgroundService, ISimulation
                         foreach (var proto in pluginProtocols)
                         {
                             services.AddTransient<IProtocol>(
-                                sp => new PythonProtocol(sp.GetService<IConsole<PythonProtocol>>()!, proto)
+                                sp => new PythonProtocol(sp.GetService<ILog<PythonProtocol>>()!, proto)
                             );
                         }
                     }
@@ -196,7 +202,12 @@ public class Simulation : BackgroundService, ISimulation
             foreach (var proto in pluginProtocols)
             {
                 services.AddTransient<IProtocol>(
-                    sp => new JavaScriptProtocol(sp.GetService<IConsole<JavaScriptProtocol>>()!, proto)
+                    sp =>
+                    {
+                        var js = new JavaScriptProtocol(sp.GetService<ILog<JavaScriptProtocol>>()!);
+                        js.Activate(proto);
+                        return js;
+                    }
                 );
             }
         }

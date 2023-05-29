@@ -57,7 +57,7 @@ public static partial class NabuLib
     /// <param name="buffer">The RAW program image data to slice the packet from</param>
     /// <returns></returns>
     public static (bool, Memory<byte>) SliceFromRaw(
-        IConsole logger,
+        ILog logger,
         short segmentIndex,
         int pakId,
         Memory<byte> buffer
@@ -135,7 +135,7 @@ public static partial class NabuLib
     /// <param name="segment"></param>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static (bool, Memory<byte>) SliceFromPak(IConsole logger, short segment, Memory<byte> buffer)
+    public static (bool, Memory<byte>) SliceFromPak(ILog logger, short segment, Memory<byte> buffer)
     {
         /*
          *  [  Pak   ]

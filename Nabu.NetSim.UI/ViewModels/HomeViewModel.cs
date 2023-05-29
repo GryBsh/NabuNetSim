@@ -2,21 +2,26 @@
 using System.Reactive.Linq;
 using Nabu.Network;
 using LiteDB;
-using LiteDb.Extensions.Caching;
 using Nabu.Models;
 using Nabu.NetSim.UI.Services;
+using Nabu.NetSim.UI.Models;
+using Blazorise;
+using System.Reactive.Disposables;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
 
 
-public class HomeViewModel : ReactiveObject
+public class HomeViewModel : ReactiveObject, IActivatableViewModel
 {
     public Settings Settings { get; }
     public INabuNetwork Sources { get; }
     public ISimulation Simulation { get; }
     HeadlineService News { get; }
     public bool Visible { get; set; } = true;
+
+    public ViewModelActivator Activator { get; }
+
 
     public HomeViewModel(
         Settings settings,
@@ -29,6 +34,16 @@ public class HomeViewModel : ReactiveObject
         Sources = sources;
         Simulation = simulation;
         News = news;
+        Activator = new();
+
+        this.WhenActivated(
+            disposables =>
+            {
+                Observable.Interval(TimeSpan.FromMinutes(10), RxApp.TaskpoolScheduler)
+                    .Subscribe(_ => GetHeadlines())
+                    .DisposeWith(disposables);
+            }
+        );
 
         Task.Run(async () =>
         {
@@ -38,10 +53,7 @@ public class HomeViewModel : ReactiveObject
             Loaded = true;
         });
 
-        Observable.Interval(TimeSpan.FromMinutes(10))
-                  .Subscribe(_ => {
-                      GetHeadlines();
-                  });
+        
     }
 
     bool loaded = false;
@@ -93,6 +105,30 @@ public class HomeViewModel : ReactiveObject
         else 
             Simulation?.ToggleAdaptor(settings);
     }
+
+    public VisiblePage VisiblePage { get; set; } = VisiblePage.Adaptors;
+    VisiblePage LastPage { get; set; } = VisiblePage.Adaptors;
+
+    
+
+    public Visibility IsVisible(VisiblePage page) => VisiblePage == page ? Visibility.Visible : Visibility.Invisible;
+
+    public void SetVisible(VisiblePage visible, bool setLastPage = true)
+    {
+        if (setLastPage) LastPage = VisiblePage;
+        VisiblePage = visible;
+        this.RaisePropertyChanged(nameof(VisiblePage));
+    }
+
+    public void ToggleVisible(VisiblePage page)
+    {
+        if (VisiblePage == page)
+            SetVisible(LastPage, false);
+        else
+            SetVisible(page);
+    }
+    
+
 
 }
 

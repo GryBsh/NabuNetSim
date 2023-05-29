@@ -1,6 +1,7 @@
-﻿using Nabu.Adaptor;
-using Nabu.Network.NHACP.V0;
+﻿using Nabu.Network.NHACP.V0;
 using Nabu.Services;
+using System.Reactive.Joins;
+using System;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text.RegularExpressions;
@@ -11,7 +12,7 @@ namespace Nabu.Network.NHACP.V01;
 public partial class NHACPV01Protocol : Protocol
 {
     HttpClient HttpClient;
-    FileCache FileCache;
+    IFileCache FileCache;
     Dictionary<byte, NHACPV01Session> Sessions { get; }
 
     Dictionary<NHACPError, string> ErrorMessages { get; } = new()
@@ -23,7 +24,7 @@ public partial class NHACPV01Protocol : Protocol
         [NHACPError.IOError]            = "IO Error",
         [NHACPError.BadDescriptor]      = "Bad Descriptor",
         [NHACPError.OutOfMemory]        = "Out of Memory",
-        [NHACPError.PermissionDenied]   = "Permission Denied",
+        [NHACPError.AccessDenied]   = "Permission Denied",
         [NHACPError.Busy]               = "Busy",
         [NHACPError.Exists]             = "Exists",
         [NHACPError.IsDirectory]        = "Is Directory",
@@ -35,7 +36,7 @@ public partial class NHACPV01Protocol : Protocol
         [NHACPError.NotADirectory]      = "Not a Directory"
     };
 
-    public NHACPV01Protocol(IConsole<NHACPV01Protocol> logger, HttpClient http, FileCache fileCache) : base(logger)
+    public NHACPV01Protocol(ILog<NHACPV01Protocol> logger, HttpClient http, IFileCache fileCache) : base(logger)
     {
         Sessions = new();
         HttpClient = http;
@@ -46,7 +47,7 @@ public partial class NHACPV01Protocol : Protocol
     {
         for (int i = 0x00; i < 0xFF; i++)
         {
-            if (Sessions[sessionId].ContainsKey((byte)i)) continue;
+            if (Sessions[sessionId].TryGetValue((byte)i, out _)) continue;
             return (byte)i;
         }
         return 0xFF;
@@ -55,14 +56,14 @@ public partial class NHACPV01Protocol : Protocol
     byte[] ErrorResult(byte sessionId, Exception ex, [CallerMemberName]string source = "Unknown", [CallerLineNumber]long line = 0)
     {
         string errorMessage(NHACPError error)
-            => $"{ErrorMessages[NHACPError.Undefined]} at {source}:{line}";
+            => $"{ErrorMessages[error]} at {source}:{line}";
 
         var (code, error) = ex switch
         {
             FileNotFoundException       => (NHACPError.NotFound, errorMessage(NHACPError.NotFound)),
-            UnauthorizedAccessException => (NHACPError.PermissionDenied, errorMessage(NHACPError.PermissionDenied)),
-            SecurityException           => (NHACPError.PermissionDenied, errorMessage(NHACPError.PermissionDenied)),
-            IOException                 => (NHACPError.Busy, errorMessage(NHACPError.Busy)),
+            UnauthorizedAccessException => (NHACPError.AccessDenied, errorMessage(NHACPError.AccessDenied)),
+            SecurityException           => (NHACPError.AccessDenied, errorMessage(NHACPError.AccessDenied)),
+            IOException                 => (NHACPError.IOError, errorMessage(NHACPError.IOError)),
             _                           => (NHACPError.Undefined, errorMessage(NHACPError.Undefined))
         };
         return ErrorResult(sessionId, code, string.IsNullOrWhiteSpace(ex.Message) ? error : ex.Message);
@@ -114,6 +115,7 @@ public partial class NHACPV01Protocol : Protocol
         return NHACPMessage.NHACPStarted(sessionId, CurrentVersion, Emulator.Id).ToArray();
     }
 
+
     public async Task<byte[]> StorageOpen(byte sessionId, Memory<byte> buffer)
     {
         try
@@ -126,20 +128,20 @@ public partial class NHACPV01Protocol : Protocol
 
             Log($"{sessionId} Open: {index}, Flags: {flags}, Uri: {uri} ({length} bytes)");
 
-            var path = uri switch
+            var (isSymLink, path) = uri switch
             {
-                _ when Http().IsMatch(uri) => NabuLib.Uri(Settings, uri),
-                _ when Memory().IsMatch(uri) => NabuLib.Uri(Settings, uri),
-                _ => NabuLib.FilePath(Settings, uri)
+                _ when NabuLib.IsHttp(uri) => (false, NabuLib.Uri(Settings, uri)),
+                _ when Memory().IsMatch(uri) => (false, NabuLib.Uri(Settings, uri)),
+                _ => NabuLib.PathInfo(Settings, uri)
             };
 
             Sessions[sessionId][index] = path switch
             {
-                _ when Http().IsMatch(path)
+                _ when NabuLib.IsHttp(path)
                             => new HttpStorageHandler(Logger, Settings, HttpClient, FileCache),
                 _ when path.StartsWith("0x")
                             => new RAMStorageHandler(Logger, Settings),
-                _ => new FileStorageHandler(Logger, Settings)
+                _ => new FileStorageHandler(Logger, Settings, isSymLink, uri)
             };
 
             var (success, error, size, code) = await Sessions[sessionId][index].Open(flags, path);
@@ -217,7 +219,7 @@ public partial class NHACPV01Protocol : Protocol
 
     }
 
-    public static Span<byte> StorageDateTime(byte[]? none) 
+    public static Memory<byte> StorageDateTime(byte[]? none) 
         => NHACPStructure.DateTime(DateTime.Now);
 
     public byte[] StorageClose(byte sessionId, Memory<byte> buffer)
@@ -528,9 +530,12 @@ public partial class NHACPV01Protocol : Protocol
         try
         {
             var (i, flags) = NabuLib.Slice(buffer, 1, 2, f => (RemoveFlags)NabuLib.ToShort(f));
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
+            (i, var length) = NabuLib.Pop(buffer, i);
             (i, var url) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
 
+            Log($"{sessionId} REMOVE: {url}, Flags: {flags}");
+            
+            url = NabuLib.FilePath(Settings, url);
             var removeFile = flags.HasFlag(RemoveFlags.RemoveFile);
             var removeDir = flags.HasFlag(RemoveFlags.RemoveDir);
             var isFile = File.Exists(url);
@@ -540,13 +545,13 @@ public partial class NHACPV01Protocol : Protocol
             {
                 if (isFile) File.Delete(url);
                 else if (isDir) return ErrorResult(sessionId, NHACPError.IsDirectory, "Is Directory");
-                else return ErrorResult(sessionId, NHACPError.NotFound, "Not Found"); ;
+                else return ErrorResult(sessionId, NHACPError.NotFound, "Not Found");
             }
             else if (removeDir)
             {
                 if (isDir) Directory.Delete(url);
                 else if (isFile) return ErrorResult(sessionId, NHACPError.InvalidRequest, "Is not a Directory");
-                else return ErrorResult(sessionId, NHACPError.NotFound, "Not Found");
+                else return ErrorResult(sessionId, NHACPError.NotFound, $"Not Found {url}");
             }
 
             return NHACPMessage.OK().ToArray();
@@ -651,17 +656,17 @@ public partial class NHACPV01Protocol : Protocol
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
         var sessionId = Recv();
-        var (length, buffer) = ReadFrame();
-        var (i, command) = NabuLib.Pop(buffer, 0);
-        byte[] result = Array.Empty<byte>();
+        var (_, buffer) = ReadFrame();
+        var (_, command) = NabuLib.Pop(buffer, 0);
+        
         Debug($"Session: {sessionId}, Command: {command}");
-        result = command switch
+        Memory<byte> result = command switch
         {
             0x00 => Hello(sessionId, buffer),
             0x01 => await StorageOpen(sessionId, buffer),
             0x02 => await StorageGet(sessionId, buffer),
             0x03 => await StoragePut(sessionId, buffer),
-            0x04 => StorageDateTime(buffer).ToArray(),
+            0x04 => StorageDateTime(buffer),
             0x05 => StorageClose(sessionId, buffer),
             0x06 => ErrorDetails(sessionId, buffer),
             0x07 => await StorageGetBlock(sessionId, buffer),
@@ -680,14 +685,17 @@ public partial class NHACPV01Protocol : Protocol
             _ => Array.Empty<byte>()
         };
 
-        if (result is null || result.Length == 0) return;
+        if (result.Length == 0) return;
 
-        result = SendCRC ? NabuLib.Concat<byte>(
-                                result, 
-                                new[] { CRC.GenerateCRC8(result) }
-                           ).ToArray() 
-                         : result;
-        SendFramed(result!);
+        if (SendCRC)
+        {
+            var newResult = new Memory<byte>(new byte[result.Length + 2]);
+            result.CopyTo(newResult);
+            newResult.Span[^2] = CRC.GenerateCRC8(result);
+            result = newResult;
+        }
+
+        SendFramed(result.ToArray());
     }
 
     public override void Reset()
@@ -698,9 +706,6 @@ public partial class NHACPV01Protocol : Protocol
         }
         Sessions.Clear();
     }
-
-    [GeneratedRegex("http[s]?://.*")]
-    private static partial Regex Http();
 
     [GeneratedRegex("ftp://.*")]
     private static partial Regex Ftp();

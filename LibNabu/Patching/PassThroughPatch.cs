@@ -5,10 +5,10 @@ namespace Nabu.Patching;
 
 public class PassThroughPatch : IProgramPatch
 {
-    private readonly IConsole Logger;
+    private readonly ILog Logger;
     public string Name => nameof(PassThroughPatch);
 
-    public PassThroughPatch(IConsole logger)
+    public PassThroughPatch(ILog logger)
     {
         Logger = logger;
     }

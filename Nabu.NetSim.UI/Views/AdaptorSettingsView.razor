@@ -1,0 +1,71 @@
+﻿@inherits ReactiveInjectableComponentBase<AdaptorSettingsViewModel>
+
+
+@if (ViewModel?.Selected is NullAdaptorSettings)
+{
+    <Div Class="center center-all" >
+        <Icon IconSize="@IconSize.x5" Name="@IconName.Home" Style="color: rgba(204, 204, 204, .2)" />
+    </Div>
+}
+else
+{
+    <HeaderView IconName="@(ViewModel?.Selected is TCPAdaptorSettings ? IconName.Wifi : IconName.Plug)"
+                Heading="@ViewModel?.Selected.Port"
+                ShowClose=true
+                OnClosePressed="@(() => { ViewModel?.SetSelected(new NullAdaptorSettings()); })" />
+    
+    <ListGroup Flush>
+        <ListGroupItem>
+             <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
+                    <Icon Name="IconName.Server" />
+                    Source
+                </Heading>
+            </Div>
+            <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
+                <Select TValue="string" SelectedValue="@ViewModel?.Selected.Source"
+                        SelectedValueChanged="@(v => ViewModel?.SetSource(v))">
+                    @foreach (var source in ViewModel!.SourceNames)
+                    {
+                        <SelectItem @key=@source value="@source">@source</SelectItem>
+                    }
+                </Select>
+            </Paragraph>
+        </ListGroupItem>
+        <ListGroupItem Visibility="@(ViewModel!.HasMultipleImages ? Visibility.Visible : Visibility.Invisible)">
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
+                    <Icon Name="IconName.FolderOpen" />
+                    Program
+                </Heading>
+            </Div>
+            <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
+                <Select TValue="string" SelectedValue=@ViewModel.Selected.Image 
+                        SelectedValueChanged="@(v => ViewModel.SetImage(v))">
+                    <!--<option value=""></option>-->
+                    @foreach (var available in ViewModel.Images)
+                    {
+                        <SelectItem @key=@available Value="@available.Name">@available.DisplayName</SelectItem>
+                    }
+                </Select>
+            </Paragraph>
+        </ListGroupItem>
+        <ListGroupItem>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
+                    <Icon Name="IconName.Save" />
+                    Storage Path
+                </Heading>
+            </Div>
+            <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
+                <TextEdit Disabled=true Text="@(new DirectoryInfo(ViewModel.Selected.StoragePath).FullName)"/>
+            </Paragraph>
+        </ListGroupItem>
+        <ListGroupItem>
+            <button type="button" class="btn btn-primary" onclick="@(() => ViewModel.SetFilesPath(ViewModel.Selected.StoragePath))" title="Browse Storage">
+                <Icon Name="IconName.FolderOpen" />
+            </button>
+        </ListGroupItem>
+    </ListGroup>
+    
+}

@@ -22,7 +22,7 @@ public class EmulatedAdaptor : NabuBase
         AdaptorSettings settings,
         ClassicNabuProtocol nabuNet,
         IEnumerable<IProtocol> protocols,
-        IConsole logger,
+        ILog logger,
         Stream stream,
         string? label = null
        

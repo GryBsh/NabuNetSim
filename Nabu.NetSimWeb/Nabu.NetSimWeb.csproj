@@ -31,6 +31,8 @@
     <PackageReference Include="Blazorise" Version="1.2.3" />
     <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.3" />
     <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.3" />
+    <PackageReference Include="Blazorise.Icons.Material" Version="1.2.3" />
+    <PackageReference Include="LiteDb.Extensions.Caching" Version="2.5.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
     <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
     <PackageReference Include="Python.Included" Version="3.11.2" />

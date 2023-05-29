@@ -1,4 +1,5 @@
-﻿using Spectre.Console;
+﻿using Napa;
+using Spectre.Console;
 using Spectre.Console.Cli;
 using System.Diagnostics.CodeAnalysis;
 using System.IO.Compression;
@@ -9,7 +10,8 @@ namespace Nabu.Cli
     {
         public class Settings : CommandSettings
         {
-
+            [CommandArgument(0, "[path]")]
+            public string Path { get; set; } = Environment.CurrentDirectory;
         }
 
         public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
@@ -22,34 +24,47 @@ namespace Nabu.Cli
 
     public class NewPackageCommand : Command<NewPackageCommand.Settings>
     {
+        public IPackageManager Packages { get; }
+
         public class Settings : CommandSettings
         {
             [CommandArgument(0, "[path]")]
-            public string? Path { get; set; }
+            public string Path { get; set; } = Environment.CurrentDirectory;
 
             [CommandArgument(1, "[destination]")]
             public string Destination { get; set; } = Environment.CurrentDirectory;
         }
 
-        public NewPackageCommand() { }
+        public NewPackageCommand(IPackageManager packages)
+        {
+            Packages = packages;
+        }
 
         public override int Execute([NotNull] CommandContext context, [NotNull] Settings settings)
         {
-            if (settings.Path is null || Path.Exists(settings.Path) is false)
+            if (settings.Path is null)
             {
-                AnsiConsole.Markup(Markup.Error($"Path `{settings.Path}` not found."));
+                AnsiConsole.Markup(Markup.Error(nameof(settings.Path), "argument null"));
                 return -1;
             }
 
-            var napaFile = Path.Combine(settings.Path, "napa.yaml");
-            if (Path.Exists(napaFile) is false)
+            var directories = Directory.Exists(settings.Path) switch
             {
-                AnsiConsole.Markup(Markup.Error($"NAPA file not found."));
+                true => Directory.GetDirectories(settings.Path),
+                false => new[] { settings.Path }
+            };
+
+            foreach (var directory in directories)
+            {
+
+                var (_, manifest) = Packages.Open(directory).GetAwaiter().GetResult();
+
+                if (manifest is null)
+                {
+                    AnsiConsole.WriteLine($"No manifest found in {directory}, or it's invalid");
+                    return -1;
+                }
             }
-
-            var napaArchivePath = Path.Combine(settings.Destination, $"{Path.GetFileName(settings.Path)}.napa");
-
-            ZipFile.CreateFromDirectory(settings.Path, napaArchivePath);
 
             return 0;
         }

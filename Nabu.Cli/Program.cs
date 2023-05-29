@@ -13,58 +13,31 @@ var exitCodeMessages = new Dictionary<int, string>()
 
 var registrations = new ServiceCollection();
 
-void HandleBuiltInCommands(string command)
+var handlers = new BuiltInCommandHandler
 {
-    var cmd = command.ToLowerInvariant();
-    if (BuiltInCommands.List.Contains(cmd) is false) return;
-
-    Action? handler = cmd switch
+    Exit = () =>
     {
-        BuiltInCommands.Exit => () => CancelSource.Cancel(),
-        _ => null
-    };
+        CancelSource.Cancel();
+    }
+};
 
-    handler?.Invoke();
-}
 
-CommandApp CreateApp(IServiceCollection registrations)
+
+var app = NabuCli.CreateApp(registrations);
+if (args.Length > 0)
+    return CommandProcessor.Execute(app, args);
+
+while (CancelSource.IsCancellationRequested is false)
 {
-    var registrar = new TypeRegistrar(registrations);
-    var app = new CommandApp(registrar);
-    app.Configure(
-        c =>
-        {
-            c.AddBranch(
-                "package",
-                package => package.AddCommand<NewPackageCommand>("new")
-            );
-        }
-    );
-    return app;
-}
-
-var app = CreateApp(registrations);
-while (CancelSource.IsCancellationRequested is false) {
     var command = AnsiConsole.Prompt(
         new TextPrompt<string>("NABU>")
     );
 
-    HandleBuiltInCommands(command);
-    if (CancelSource.IsCancellationRequested) 
+    CommandProcessor.HandleBuiltInCommands(command, handlers);
+    if (CancelSource.IsCancellationRequested)
         break;
+    CommandProcessor.RunCommand(app, command);
 
-    
-    try
-    {
-        var result = app.Run(command.Split(' '));
-        if (result != 0 && result > -1)
-        {
-            AnsiConsole.MarkupLine(Nabu.Cli.Markup.Error(result, "Exit Code"));
-        }
-    }
-    catch (Exception ex)
-    {
-        AnsiConsole.MarkupLine(Nabu.Cli.Markup.Error(ex.Message));
-    }
-    
 }
+return 0;
+

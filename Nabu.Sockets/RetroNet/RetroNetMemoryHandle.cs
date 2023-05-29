@@ -4,12 +4,14 @@ namespace Nabu.Network.RetroNet;
 
 public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
 {
-    public RetroNetMemoryHandle(IConsole logger, AdaptorSettings settings, Memory<byte>? buffer = null) : base(logger, settings)
+    public RetroNetMemoryHandle(ILog logger, AdaptorSettings settings, string? cachePath = null, Memory<byte>? buffer = null) : base(logger, settings)
     {
         if (buffer is not null)
             Buffer = buffer.Value;
-    }
 
+        Filename = CachePath = cachePath;
+    }
+    protected string? CachePath { get; }
     protected Memory<byte> Buffer { get; set; } = new(Array.Empty<byte>());
     protected FileOpenFlags Flags { get; set; }
     protected DateTime Created { get; set; } = DateTime.Now;
@@ -23,7 +25,7 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         try
         {
             Created = DateTime.Now;
-            Filename = filename.Split("0x//")[0];
+            Filename ??= filename;
             return Task.FromResult(true);
         }
         catch
@@ -41,8 +43,21 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
     public Task<int> Size(CancellationToken cancel)
         => Task.FromResult(Buffer.Length);
 
-    public Task<FileDetails> Details(CancellationToken cancel)
+    public virtual Task<FileDetails> Details(CancellationToken cancel)
     {
+        if (CachePath is not null)
+        {
+            return Task.FromResult(
+                new FileDetails
+                {
+                    Created = File.GetCreationTime(CachePath),
+                    Modified = File.GetLastWriteTime(CachePath),
+                    Filename = Path.GetFileName(CachePath),
+                    FileSize = NabuLib.FileSize(CachePath),
+                }
+            );
+        }
+
         return Task.FromResult(
             new FileDetails
             {

@@ -4,7 +4,7 @@ using Nabu.Services;
 namespace Nabu;
 
 
-public class MicrosoftExtensionsLoggingConsole<T> : IConsole<T>
+public class MicrosoftExtensionsLoggingConsole<T> : ILog<T>
 {
     ILogger Logger { get; }
 

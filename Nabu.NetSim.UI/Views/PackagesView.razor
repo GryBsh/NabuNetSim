@@ -1,0 +1,29 @@
+﻿@using Nabu.Packages;
+@using Napa;
+@inherits ReactiveInjectableComponentBase<PackagesViewModel>
+<HeaderView IconName=@IconName.StoreAlt
+            Heading="Packages"></HeaderView>
+
+<ListGroup Flush>
+    <Virtualize TItem="SourcePackage" Items="ViewModel.InstalledPackages">
+        <ListGroupItem @key=context>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Div>
+                    <Heading Size="HeadingSize.Is5" Margin="Margin.Is1.FromBottom">
+                        @context.Name
+                    </Heading>
+                </Div>
+                <Small TextAlignment="TextAlignment.End">
+                    <Div>@context.Version</Div>
+                    <Div>by @context.Author</Div>
+                </Small>
+            </Div>
+            <Paragraph Margin="Margin.Is1.FromBottom">
+                @context.Description
+            </Paragraph>
+        </ListGroupItem>
+    </Virtualize>
+</ListGroup>
+
+
+

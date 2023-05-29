@@ -3,6 +3,7 @@ using Nabu.Network;
 using System.Net.Sockets;
 using System.Net;
 using Nabu.Services;
+using Napa;
 
 namespace Nabu.Adaptor;
 
@@ -12,7 +13,7 @@ public class TCPAdaptor
 
     public static Dictionary<string, TCPAdaptorSettings> Connections { get; } = new();
 
-    static void ServerListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
+    static void ServerListen(ILog logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, IEnumerable<IProtocol> protocols, CancellationToken stopping)
     {
         Task.Run(async () =>
         {
@@ -27,6 +28,7 @@ public class TCPAdaptor
             var name = $"{socket.RemoteEndPoint}";
 
             Connections.Remove(name);
+            foreach (var protocol in protocols) { protocol.Detach(); }
 
         }, stopping);
     }
@@ -37,8 +39,9 @@ public class TCPAdaptor
         CancellationToken stopping
     ){
         //var tcpSettings = (TCPAdaptorSettings)settings;
-        var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
+        var logger = serviceProvider.GetRequiredService<ILog<TCPAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
+        var packages = serviceProvider.GetRequiredService<IPackageManager>();
         var socket = NabuLib.Socket(true, settings.SendBufferSize, settings.ReceiveBufferSize);
 
         if (!int.TryParse(settings.Port, out int port))
@@ -66,23 +69,25 @@ public class TCPAdaptor
                 var clientIP = name.Split(':')[0];
                 var clientCancel = CancellationTokenSource.CreateLinkedTokenSource(stopping);
                 var clientSettings = settings with { Port = name, Connection = true, ListenTask = clientCancel };
-
-                storage.InitializeStorage(clientSettings, clientIP);
                 
-                // CLONE
+                await packages.UpdateInstalled();
+                storage.UpdateStorageFromPackages(packages, clientSettings);
+                storage.UpdateStorage(clientSettings, clientIP);
+
+                var protocols = serviceProvider.GetServices<IProtocol>();
 
                 var stream = new NetworkStream(incoming);
                 var adaptor = new EmulatedAdaptor(
                      clientSettings,
                      serviceProvider.GetRequiredService<ClassicNabuProtocol>(),
-                     serviceProvider.GetServices<IProtocol>(),
+                     protocols,
                      logger,
                      stream,
                      name
                 );
 
                 Connections[name] = clientSettings;
-                ServerListen(logger, adaptor, incoming, stream, clientCancel.Token);
+                ServerListen(logger, adaptor, incoming, stream, protocols, clientCancel.Token);
 
             }
             catch (Exception ex)

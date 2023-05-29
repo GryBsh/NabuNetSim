@@ -13,13 +13,13 @@ public enum AttrFlags : short
 [Flags]
 public enum OpenFlags
 {
-    ReadOnly = 0,
-    ReadWrite = 1,
-    ReadWriteProtect = 2,
-    Directory = 8,
-    Create = 10,
-    Nonexistent = 20,
-    Trincate = 40
+    ReadOnly = 0x0000,
+    ReadWrite = 0x0001,
+    ReadWriteProtect = 0x0002,
+    Directory = 0x0008,
+    Create = 0x0010,
+    Exclusive = 0x0020,
+    Truncate = 0x0040
 }
 
 [Flags]

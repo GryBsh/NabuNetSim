@@ -14,40 +14,71 @@ public class FileStorageHandler : INHACPStorageHandler
     readonly List<string> _list = new();
     int _listPosition = 0;
     public int Position { get; private set; }
-    public int Length { get; private set; }
+    public int Length => (int?)_file?.Length ?? 0;
 
-    IConsole Logger { get; }
 
-    public FileStorageHandler(IConsole logger, AdaptorSettings settings)
+    bool IsSymLink { get; set; }
+    string OriginalUri { get; set; }
+
+    ILog Logger { get; }
+
+    public FileStorageHandler(ILog logger, AdaptorSettings settings, bool isSymLink, string originalUri)
     {
         Logger = logger;
         Settings = settings;
         _directory = new DirectoryInfo(settings.StoragePath);
+        IsSymLink = isSymLink;
+        OriginalUri = originalUri;
     }
+
+    bool Exclusive => Flags.HasFlag(OpenFlags.Exclusive);
+    bool Create => Flags.HasFlag(OpenFlags.Create);
+    bool Folder => Flags.HasFlag(OpenFlags.Directory);
+    bool ReadWrite => Flags.HasFlag(OpenFlags.ReadWrite);
+    bool ReadOnly => Flags.HasFlag(OpenFlags.ReadOnly);
+    bool ReadWriteProtect => Flags.HasFlag(OpenFlags.ReadWriteProtect);
+    bool Writable => ReadWrite || ReadWriteProtect;
 
     public Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
     {
         Flags = flags;
         Path = uri;
 
-        var create = Flags.HasFlag(OpenFlags.Create);
-        var readWrite = (
-            Flags.HasFlag(OpenFlags.ReadWrite) || Flags.HasFlag(OpenFlags.ReadWriteProtect)
-        );
+        var exists = File.Exists(Path);
+        if (Exclusive && exists) 
+        {
+            return Task.FromResult((false, "Exists", Length, NHACPError.Exists));
+        }
+        else if (!Folder && (!exists && !Create))
+        {
+            return Task.FromResult((false, "Not found", Length, NHACPError.NotFound));
+        }
+        
+        
         //Logger.Write($"Create: {create}, ReadWrite: {readWrite}");
-        if (Flags.HasFlag(OpenFlags.Directory) is false && File.Exists(Path))
+        if (Folder is false && (exists || Create))
         {
             _file = new FileInfo(Path);
+            if (ReadWrite && _file.IsReadOnly)
+            {
+                return Task.FromResult((false, "Read Only", Length, NHACPError.AccessDenied));
+            }
+
             _stream = new FileStream(
                 _file!.FullName,
-                create ? FileMode.OpenOrCreate : FileMode.Open,
-                readWrite ? FileAccess.ReadWrite : FileAccess.Read, 
+                Create ? FileMode.OpenOrCreate : FileMode.Open,
+                Writable ? FileAccess.ReadWrite : FileAccess.Read, 
                 FileShare.ReadWrite
             );
-            Length = _file.Exists ? (int)_file.Length : 0;
+
+            if (!_file.Exists)
+            {
+                return Task.FromResult((false, "Cant Open", Length, NHACPError.NotPermitted));
+            }
+            //Length = (int)_file.Length;
             return Task.FromResult((true, string.Empty, Length, NHACPError.Undefined));
         }
-        else if (Flags.HasFlag(OpenFlags.Directory) && Directory.Exists(Path)) {
+        else if (Folder && Directory.Exists(Path)) {
             _directory = new DirectoryInfo(Path);
             return Task.FromResult((true, string.Empty, Length, NHACPError.Undefined));
         }
@@ -62,7 +93,6 @@ public class FileStorageHandler : INHACPStorageHandler
         if (offset > _stream.Length)  
             return (true, string.Empty, Array.Empty<byte>(), 0);
         
-        
         var buffer = new Memory<byte>(new byte[length]);
 
         Logger.WriteVerbose($"Reading {length} bytes from {offset}, File Length: {_stream.Length}");
@@ -71,7 +101,7 @@ public class FileStorageHandler : INHACPStorageHandler
         if (read != length && realLength) 
             buffer = buffer[0..read];
 
-        return (true, string.Empty, buffer.ToArray(), 0);
+        return (true, string.Empty, buffer, 0);
         
     }
 
@@ -80,8 +110,40 @@ public class FileStorageHandler : INHACPStorageHandler
         if (_stream is null) 
             return (false, string.Empty, NHACPError.InvalidRequest);
         
-        if (Flags.HasFlag(OpenFlags.ReadWriteProtect))
-            return (false, "Write Protected", NHACPError.NotPermitted);
+        if (ReadWriteProtect && _file?.IsReadOnly is true)
+            return (false, "Write Protected", NHACPError.WriteProtected);
+        else if (ReadOnly && !ReadWriteProtect && _file?.IsReadOnly is true)
+            return (false, "Read Only", NHACPError.NotPermitted);
+
+        if (IsSymLink && Settings.EnableCopyOnSymLinkWrite)
+        {
+            if (Path is null || _stream is null)
+            {
+                return (false, "Not Open", NHACPError.NotPermitted);
+            }
+            _stream.Close();
+            _stream.Dispose();
+            Logger.Write($"Copying SymLink target to `{OriginalUri}`");
+            File.Copy(Path, OriginalUri, true);
+
+            Path = OriginalUri;
+            IsSymLink = false;
+
+            _file = new FileInfo(Path);
+            _stream = new FileStream(
+                _file!.FullName,
+                FileMode.Open,
+                Writable ? FileAccess.ReadWrite : FileAccess.Read,
+                FileShare.ReadWrite
+            );
+            //length = (int)_file.Length;
+        }
+        else if (IsSymLink)
+        {
+            Logger.WriteWarning($"SymLinks are write-protected: `{Path}`");
+            return (false, "SymLink", NHACPError.WriteProtected);
+        }
+
         _stream!.Seek(offset, SeekOrigin.Begin);
         await _stream!.WriteAsync(buffer);
         return (true, string.Empty, 0);
@@ -89,7 +151,6 @@ public class FileStorageHandler : INHACPStorageHandler
 
     public void End()
     {
-        _file = null;
         Close();
     }
 
@@ -139,18 +200,12 @@ public class FileStorageHandler : INHACPStorageHandler
     public (bool, string, NHACPError) ListDir(string pattern)
     {
         if (_directory is null) return (false, string.Empty, NHACPError.InvalidRequest);
-
+        
+        pattern = string.IsNullOrWhiteSpace(pattern) ? "*" : pattern;
         _list.Clear();
         _listPosition = 0;
 
-        if (string.IsNullOrWhiteSpace(pattern))
-        {
-            pattern = "*";
-        }
-
-        Matcher matcher = new();
-        matcher.AddInclude(pattern);
-        var r = matcher.GetResultsInFullPath(_directory.FullName);
+        var r = NabuLibEx.List(_directory.FullName, Settings, pattern);
 
         _list.AddRange(r);
         return (true, string.Empty, 0);
@@ -167,6 +222,7 @@ public class FileStorageHandler : INHACPStorageHandler
 
     public Task Close()
     {
+        _file = null;
         _list.Clear();
         _stream?.Dispose();
         return Task.CompletedTask;

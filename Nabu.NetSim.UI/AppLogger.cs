@@ -1,50 +1,31 @@
 ﻿using Microsoft.Extensions.Logging;
 using Nabu.NetSim.UI.Services;
 using Nabu.Models;
+using Nabu.Services;
+using System.Collections.Concurrent;
+using System.Reactive.Linq;
 //using Microsoft.EntityFrameworkCore;
 //using Microsoft.EntityFrameworkCore.Design;
 
 namespace Nabu.NetSim.UI;
-/*
-public class AppDataFactory : IDesignTimeDbContextFactory<AppData>
-{
-    public AppData CreateDbContext(string[] args)
-    {
-        var optionsBuilder = new DbContextOptionsBuilder<AppData>();
-        optionsBuilder.UseSqlite("Data Source=data.db");
 
-        return new AppData(optionsBuilder.Options);
-    }
-}
-
-public class AppData : DbContext
-{
-    public DbSet<LogEntry> LogEntries { get; set; }
-
-    public AppData(DbContextOptions<AppData> options) : base(options)
-    {
-        
-    }
-}
-*/
-public class AppLogger : ILogger
+public class AppLogger : DisposableBase, ILogger
 {
     private readonly string FullName;
     private readonly string Name;
-    private readonly AppLogConfiguration Settings;
-
+    SemaphoreSlim Lock { get; } = new(1, 1);
     public AppLogger(
         string name,
-        AppLogConfiguration settings,
         LogService log
         //IRepository<LogEntry> repository
     )
     {
         FullName = name;
         Name = name.Split('.')[^1];
-        Settings = settings;
         Logs = log;
         //LogEntries = repository;
+        Disposables.AddInterval(TimeSpan.FromSeconds(10), _ => CommitBatch());
+        Disposables.Add(Lock);
     }
 
     //IRepository<LogEntry> LogEntries { get; }
@@ -54,8 +35,21 @@ public class AppLogger : ILogger
         => default!;
 
     public bool IsEnabled(LogLevel logLevel)
-        => logLevel >= Settings.LogLevel &&
+        => logLevel >= LogLevel.Information &&
            (FullName.StartsWith("Microsoft.AspNetCore") is false);
+
+    
+    ConcurrentQueue<LogEntry> Batch { get; } = new();
+
+    async void CommitBatch()
+    {
+        if (Batch.IsEmpty) return;
+        await Lock.WaitAsync();
+        var batch = Batch.ToArray();
+        Batch.Clear();
+        Lock.Release();
+        Logs.BulkInsert(batch);
+    }
 
     public void Log<TState>(
         LogLevel logLevel,
@@ -65,12 +59,15 @@ public class AppLogger : ILogger
         Func<TState, Exception?, string> formatter
     )
     {
-        if (!IsEnabled(logLevel)) return;
+        if (!IsEnabled(logLevel)) 
+            return;
 
         if (eventId.Name is not null) 
             return;
 
-        Logs.Insert(
+        Task.Run(async () => {
+            await Lock.WaitAsync();
+            Batch.Enqueue(
                 new LogEntry(
                     Guid.NewGuid(),
                     DateTime.Now,
@@ -79,6 +76,8 @@ public class AppLogger : ILogger
                     formatter(state, exception)
                 )
             );
+            Lock.Release();
+        });
 
     }
 }

@@ -28,7 +28,6 @@ public class HeadlineService
         {
             if (Headlines.Any())
                 return;
-
         }
     }
 }

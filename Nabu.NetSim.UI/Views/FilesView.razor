@@ -1,0 +1,142 @@
+﻿@inherits ReactiveInjectableComponentBase<FilesViewModel>
+
+
+@if (ViewModel?.CurrentPath == string.Empty)
+{
+    <Div Class="center center-all">
+        <Icon IconSize="@IconSize.x5" Name="@IconName.SliderHorizontal" Style="color: rgba(204, 204, 204, .2)" />
+    </Div>
+}
+else
+{
+    <HeaderView IconName="@IconName.FolderOpen"
+                Heading="@Path.GetFileName(ViewModel?.CurrentPath)"
+                ShowClose=true
+                OnClosePressed="@(() => { ViewModel?.SetRootDirectory(new NullAdaptorSettings()); })" />
+    <ListGroup Flush>
+        <ListGroupItem Visibility="@(ViewModel.Uploading ? Visibility.Visible : Visibility.Invisible)">
+            Uploading...
+        </ListGroupItem>
+        <ListGroupItem Visibility="@(ViewModel.NewFolderVisible)">
+            <Div Flex="Flex.JustifyContent.Between">
+                <div >
+                    <TextEdit Style="width: 150px !important" />
+                </div>
+                
+                <div>
+                    <button type="button" class="btn btn-success" onclick="@(() => {  })" title="Create">
+                        <Icon Name="IconName.Check" />
+                    </button>
+                    <button type="button" class="btn btn-danger" onclick="@(() => { ViewModel!.NewFolderActive = false; })" title="Cancel">
+                        <Icon Name="IconName.Times" />
+                    </button>
+                </div>
+                
+            </Div>
+        </ListGroupItem>
+        <ListGroupItem Visibility="@(ViewModel.ShowUpload ? Visibility.Visible : Visibility.Invisible)">
+            <Div Flex="Flex.JustifyContent.Between">
+                <Div Class="hstack" Width="@Width.Is75">
+                    <InputFile OnChange="@ViewModel.Upload"/>
+                </Div>
+                <Div Class="hstack">
+                    <button type="button" class="btn btn-danger" onclick="@(() => { ViewModel!.ShowUpload = false; })" title="Cancel">
+                        <Icon Name="IconName.Times" />
+                    </button>
+                </Div>
+            </Div>
+        </ListGroupItem>
+        <ListGroupItem Visibility="@(ViewModel.ShowUpload || ViewModel.Uploading || ViewModel.NewFolderActive ? Visibility.Invisible : Visibility.Visible)">
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Div Class="hstack gap-2" Margin="Margin.Is1.FromBottom">
+                    <button type="button" class="btn btn-primary" onclick="@(() => { ViewModel.ShowUpload = true; })" title="Upload">
+                        <Icon Name="IconName.FileUpload" />
+                    </button>
+                    <!--<button type="button" class="btn btn-primary" onclick="@(() => { ViewModel.NewFolderActive = true; })" title="Add Folder">
+                        <Icon Name="IconName.FolderPlus" />
+                    </button>
+                    <Div Class="vr"/>
+                    <button type="button" class="btn btn-primary" onclick="@(() => { })" title="Download Folder">
+                        <Icon Name="IconName.Download" />
+                    </button>-->
+                </Div>
+                
+            </Div>
+        </ListGroupItem>
+    </ListGroup>
+    <ListGroup Flush Style="height: 220px; overflow-y: scroll">
+        @if (ViewModel?.CurrentPath != ViewModel?.RootPath)
+        {
+            <ListGroupItem Style="cursor: pointer" onclick="@(() => { ViewModel?.UpDirectory(); })" title="Parent Folder">
+                <Icon Name="@IconName.ArrowUp" />
+                ..
+            </ListGroupItem>
+        }
+        <Repeater TItem="DirectoryViewModel" Items="@ViewModel!.Directories">
+            <ListGroupItem @key=context Style="cursor: pointer" onclick="@(() => { ViewModel.SetCurrentDirectory(context.Path); })" title="Parent Folder">
+                <Icon Name="@IconName.Folder" />
+                @context.Name
+            </ListGroupItem>
+        </Repeater>
+        <Repeater TItem="FileViewModel" Items="@ViewModel!.Files">
+            <ListGroupItem @key=context Class="@(context.Path == ViewModel.SelectedFile?.Path ? "highlight" : "")" 
+                           Style="cursor: pointer" 
+                           onclick="@(() => { ViewModel.SetSelectedFile(context); })" 
+                           title="@context.Name">
+                <Icon Name="@IconName.FileAlt" />
+                @context.Name
+            </ListGroupItem>
+        </Repeater>
+    </ListGroup>
+    <ListGroup Flush>
+        <ListGroupItem>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Div Class="hstack gap-2" Visibility="@ViewModel.ActionVisible">
+                    <!--<button type="button" disabled=@(ViewModel.ActionStarted || !ViewModel.Selected) class="btn btn-primary" onclick="@(() => { })" title="Download">
+                        <Icon Name="IconName.FileDownload" />
+                    </button>-->
+                    <Button class="btn btn-danger" disabled=@(ViewModel.ActionStarted || !ViewModel.Selected || !ViewModel.IsActionable) onclick="@(() => { ViewModel.StartAction(FileViewAction.Delete); })" title="Delete">
+                        <Icon Name="IconName.Delete" />
+                    </Button>
+                    <!--<Button class="btn btn-success" disabled=@(ViewModel.ActionStarted || !ViewModel.Selected || !ViewModel.IsActionable) onclick="@(() => { ViewModel.StartAction(FileViewAction.CopyMove); })" title="Move/Copy">
+                        <Icon Name="IconName.Directions" />
+                    </Button>-->
+                    
+                </Div>
+                <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100" Height="Height.Auto" VerticalAlignment="VerticalAlignment.Middle">
+                    <Div Visibility="ViewModel.CopyMoveVisible">
+                        <small>Destination?</small>
+                    </Div>
+                    <Div Visibility="@(ViewModel.DeleteVisible)">
+                        <small>Are you sure?</small>
+                    </Div>
+                    <Div>
+                        <Button class="btn btn-danger" Visibility="@(ViewModel.CopyMoveVisible)" disabled=@(!ViewModel.ActionStarted) onclick="@(() => { ViewModel.CompleteAction(); })" title="Move">
+                            <Icon Name="IconName.CheckCircle" />
+                        </Button>
+                        <Button class="btn btn-success" Visibility="@(ViewModel.CopyMoveVisible)" disabled=@(!ViewModel.ActionStarted) onclick="@(() => { ViewModel.CompleteAction(); })" title="Copy">
+                            <Icon Name="IconName.CheckSquare" />
+                        </Button>
+                        <Button class="btn btn-danger" Visibility="@(ViewModel.CopyMoveVisible)" disabled=@(!ViewModel.ActionStarted) onclick="@(() => { ViewModel.CancelAction(); })" title="Reject">
+                            <Icon Name="IconName.Times" />
+                        </Button>
+                        <Button class="btn btn-success" Visibility="@(ViewModel.ConfirmVisible)" disabled=@(!ViewModel.ActionStarted) onclick="@(() => { ViewModel.CompleteAction(); })" title="Confirm">
+                            <Icon Name="IconName.Check" />
+                        </Button>
+                        <Button class="btn btn-danger" Visibility="@(ViewModel.ConfirmVisible)" disabled=@(!ViewModel.ActionStarted) onclick="@(() => { ViewModel.CancelAction(); })" title="Reject">
+                            <Icon Name="IconName.Times" />
+                        </Button>
+                        
+                    </Div>
+                    <Button class="btn btn-primary" Visibility=@(ViewModel.ActionStarted || !ViewModel.Selected ? Visibility.Invisible : Visibility.Visible) onclick="@(() => { ViewModel?.SetSelectedFile(null); })" title="Deselect">
+                        <Icon Name="IconName.Times" />
+                    </Button>
+                </Div>
+            </Div>
+        </ListGroupItem>
+    </ListGroup>
+    
+    
+}
+
+

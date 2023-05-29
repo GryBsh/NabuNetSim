@@ -12,7 +12,7 @@ public abstract record AdaptorSettings
     public string StoragePath { get; set; } = "./Files";
     public short AdapterChannel { get; set; } = 0x0001;
     public bool Running { get; set; }
-    public bool EnableStorageIsolation { get; set; } = true;
+    public bool EnableCopyOnSymLinkWrite { get; set; } = false;
     public Dictionary<string, string> StorageRedirects { get; set; } = new();
     public ServiceShould State { get; set; }
     

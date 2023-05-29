@@ -16,18 +16,36 @@ body {
     font-family: 'modeseven';
     font-size: 10pt;
     --b-bar-light-background: var(--light-background);
+    overflow-y: scroll
+}
+
+.mark, mark {
+    background-color: #21b03b !important;
+    color: white !important;
 }
 
 /* UTILS */
 .center-all {
     margin: auto;
-    margin-top: 45%;
+    padding: 25%;
+}
+
+.center-vert-25 {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-top: 25%;
+    padding-bottom: 25%;
+}
+.center-vert-10 {
+    margin-top: auto;
+    margin-bottom: auto;
+    padding-top: 10%;
+    padding-bottom: 10%;
 }
 
 .top-sm {
     margin-top: 0px;
-    padding-top: 8px;
-    padding-bottom: 8px;
+    padding-top: 5px;
 }
 
 .top {
@@ -40,14 +58,12 @@ body {
 }
 
 i {
-    /*width: 30px;*/
+    min-width: 20px;
     text-align: center;
     vertical-align: middle
 }
 
-button i {
-    width: 30px;
-}
+
 
 .button-row > .col {
     padding: 0px;
@@ -95,8 +111,8 @@ button i {
     width: 800px;
 }
 
-.log-highlight {
-    background-color: #21b03b;
+.highlight {
+    background-color: #21b03b !important;
 }
 
 .modal-body {
@@ -140,7 +156,7 @@ button i {
 .list-group-flush > .list-group-item {
     background: var(--background);
     border-color: white;
-    
+    border: 0;
     color: white;
 }
 .list-group-flush > .list-group-item  a {
@@ -260,8 +276,11 @@ button i {
 
 
 
-img.logo {
-    margin: 30px;
+.logo {
+    margin-left: auto;
+    margin-right: auto;
+    padding-bottom: 10px;
+    width: 150px;
 }
 
 .border-left {

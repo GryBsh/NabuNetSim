@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Nabu.Network;
 using Nabu.Services;
+using Napa;
 using System.Net.Sockets;
 
 namespace Nabu.Adaptor;
@@ -9,7 +10,7 @@ public class TCPClientAdaptor
 {
     private TCPClientAdaptor() { }
 
-    static async Task ClientListen(IConsole logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
+    static async Task ClientListen(ILog logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, CancellationToken stopping)
     {
         
         logger.Write($"TCP Client to {socket.RemoteEndPoint}");
@@ -29,8 +30,9 @@ public class TCPClientAdaptor
         CancellationToken stopping
     ){
         //var tcpSettings = (TCPAdaptorSettings)settings;
-        var logger = serviceProvider.GetRequiredService<IConsole<TCPAdaptor>>();
+        var logger = serviceProvider.GetRequiredService<ILog<TCPAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
+        var packages = serviceProvider.GetRequiredService<IPackageManager>();
         //socket.LingerState = new LingerOption(false, 0);
 
         var parts = settings.Port.Split(':');
@@ -42,11 +44,13 @@ public class TCPClientAdaptor
             port = Constants.DefaultTCPPort;
         };
 
-        storage.InitializeStorage(settings, settings.Port);
-
         while (stopping.IsCancellationRequested is false) {
             var socket = NabuLib.Socket(true, settings.SendBufferSize, settings.ReceiveBufferSize);
+            var clientIP = socket.RemoteEndPoint!.ToString()!.Split(':')[0];
             try {
+                await packages.UpdateInstalled();
+                storage.UpdateStorageFromPackages(packages, settings);
+                storage.UpdateStorage(settings, clientIP);
                 socket.Connect(hostname, port);
             } catch (Exception ex)
             {
@@ -56,8 +60,7 @@ public class TCPClientAdaptor
             }
             logger.Write($"TCP Client Connected to {hostname}:{port}");
             var name = $"{socket.RemoteEndPoint}";
-            var clientIP = socket.RemoteEndPoint!.ToString()!.Split(':')[0];
-            storage.InitializeStorage(settings, clientIP);
+            
             try
             {
                 var stream  = new NetworkStream(socket);

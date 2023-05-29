@@ -13,7 +13,7 @@ obj/
 # End of https://www.toptal.com/developers/gitignore/api/dotnetcore
 .fake
 Assets/site/
-Assets/Packages
+Assets/Packaging
 Assets/**/extracted/
 Nabu.NetSimDesktop/
 **/*.db

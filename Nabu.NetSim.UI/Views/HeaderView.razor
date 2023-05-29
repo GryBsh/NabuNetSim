@@ -1,0 +1,31 @@
+﻿<Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+    <Div Class="hstack gap-3">
+        <Icon IconSize=@IconSize.Large Name="@IconName" />
+        <h6 class="center-vert-10">@Heading</h6>
+    </Div>
+    <Div Class="Hstack">
+        <Div Class="center-vert-10">
+            <Button Type="ButtonType.Button" Visibility="@CloseVisibility" 
+                    Class="btn btn-primary" onclick="@OnClosePressed" 
+                    title="Close">
+                <Icon Name="IconName.Times" />
+            </Button>
+        </Div>
+    </Div>
+</Div>
+
+@code {
+    [Parameter]
+    public IconName IconName { get; set; }
+
+    [Parameter]
+    public string Heading { get; set; } = string.Empty;
+
+    [Parameter]
+    public bool ShowClose { get; set; } = false;
+
+    Visibility CloseVisibility => ShowClose ? Visibility.Visible : Visibility.Invisible;
+
+    [Parameter]
+    public Action OnClosePressed { get; set; } = () => { };
+}

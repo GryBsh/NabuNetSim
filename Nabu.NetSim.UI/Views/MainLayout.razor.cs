@@ -7,7 +7,7 @@ namespace Nabu.NetSim.UI.Views
     {
         public MainLayout()
         {
-            ViewModel = Locator.Current.GetService<MainLayoutViewModel>();
+            //ViewModel = Locator.Current.GetService<MainLayoutViewModel>();
         }
     }
 }

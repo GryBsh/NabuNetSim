@@ -5,10 +5,10 @@ namespace Nabu.Network.RetroNet;
 public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 {
     public RetroNetHttpHandler(
-        IConsole logger, 
+        ILog logger, 
         HttpClient client, 
         AdaptorSettings settings, 
-        FileCache cache
+        IFileCache cache
     ) : base(logger, settings)
     {
         Client = new CachingHttpClient(client, Logger, cache, settings);

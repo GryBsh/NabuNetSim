@@ -1,5 +1,4 @@
-﻿using Nabu.Adaptor;
-using Nabu.Services;
+﻿using Nabu.Services;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -9,7 +8,7 @@ namespace Nabu.Network.RetroNet;
 
 public class RetroNetTelnetProtocol : Protocol
 {
-    public RetroNetTelnetProtocol(IConsole<RetroNetTelnetProtocol> logger) : base(logger)
+    public RetroNetTelnetProtocol(ILog<RetroNetTelnetProtocol> logger) : base(logger)
     {
     }
 

@@ -1,5 +1,4 @@
-﻿using Nabu.Adaptor;
-using Nabu.Services;
+﻿using Nabu.Services;
 
 namespace Nabu.Network.NHACP.V0;
 
@@ -7,7 +6,7 @@ public class NHACPProtocol : Protocol
 {
     INabuNetwork NabuNet { get; }
     NHACPProtocolService Storage { get; }
-    public NHACPProtocol(IConsole<NHACPProtocol> logger, INabuNetwork nabuNet) : base(logger)
+    public NHACPProtocol(ILog<NHACPProtocol> logger, INabuNetwork nabuNet) : base(logger)
     {
         Storage = new(Logger, Settings);
         NabuNet = nabuNet;

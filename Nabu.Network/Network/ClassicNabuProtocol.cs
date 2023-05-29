@@ -1,5 +1,4 @@
-﻿using Nabu.Adaptor;
-using Nabu.Messages;
+﻿using Nabu.Messages;
 using Nabu.Services;
 using System.Reactive.Linq;
 
@@ -17,7 +16,7 @@ public class ClassicNabuProtocol : Protocol
     //AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 
     public ClassicNabuProtocol(
-        IConsole<ClassicNabuProtocol> logger,
+        ILog<ClassicNabuProtocol> logger,
         INabuNetwork network
     ) : base(logger)
     {

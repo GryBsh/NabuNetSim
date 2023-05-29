@@ -20,6 +20,8 @@ public class LogEntry : IEntity
         Name = name;
         Message = message;
 
+        Key = new LogKey(Round(Timestamp, TimeSpan.FromMinutes(1)), Name);
+
         Highlight = highlight;
     }
 
@@ -29,8 +31,14 @@ public class LogEntry : IEntity
 
     public string Name { get; set; } = string.Empty;
     public string Message { get; set; } = string.Empty;
-
+    public LogKey Key { get; set; } = new(DateTime.MinValue, string.Empty);
     public bool Highlight { get; set; }
+
+    DateTime Round(DateTime date, TimeSpan span)
+    {
+        long ticks = (date.Ticks + (span.Ticks / 2) + 1) / span.Ticks;
+        return new DateTime(ticks * span.Ticks, date.Kind);
+    }
 
 }
 

@@ -5,7 +5,7 @@ namespace Nabu.NetSim.UI;
 
 public class GCJob : Job
 {
-    public GCJob(IConsole<GCJob> logger, Settings settings) : base(logger, settings)
+    public GCJob(ILog<GCJob> logger, Settings settings) : base(logger, settings)
     {
 
     }

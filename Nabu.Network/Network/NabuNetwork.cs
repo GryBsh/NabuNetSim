@@ -1,5 +1,6 @@
 ﻿using Nabu.Patching;
 using Nabu.Services;
+using Napa;
 using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
@@ -10,46 +11,53 @@ namespace Nabu.Network;
 public partial class NabuNetwork : NabuBase, INabuNetwork
 {
     CachingHttpClient Http { get; }
-    FileCache FileCache { get; set; }
+    IFileCache FileCache { get; set; }
     Settings Settings { get; }
-    List<ProgramSource> Sources { get; }
+    SourceService Sources { get; }
     static ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
     static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), Memory<byte>> PakCache { get; } = new();
 
-    //readonly IRepository Database;
+    IPackageManager Packages { get; }
+    StorageService Storage { get; }
 
     public NabuNetwork(
-        IConsole<NabuNetwork> logger,
+        ILog<NabuNetwork> logger,
         Settings settings,
         HttpClient http,
-        FileCache cache
-    //IRepository database
+        IFileCache cache,
+        SourceService sources,
+        IPackageManager packages,
+        StorageService storage
     ) : base(logger)
     {
         Settings = settings;
-        Sources = settings.Sources;
+        Sources = sources;
         Http = new(http, logger, cache);
         FileCache = cache;
-
+        Packages = packages;
+        Storage = storage;
         BackgroundRefresh(RefreshType.All);
     }
     public ProgramSource? Source(AdaptorSettings settings)
         => Source(settings.Source);
 
     public ProgramSource? Source(string name)
-        => Sources.FirstOrDefault(s => s.Name.ToLower() == name.ToLower());
+        => Sources.Get(name);
 
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
     {
         var source = Source(settings);
-        if (source is null) return Array.Empty<NabuProgram>();
+        if (source is null) 
+            return Array.Empty<NabuProgram>();
+
         return Programs(source);
     }
 
     public IEnumerable<NabuProgram> Programs(string name)
     {
         var source = Source(name);
-        if (source is null) return Array.Empty<NabuProgram>();
+        if (source is null) 
+            return Array.Empty<NabuProgram>();
 
         return Programs(source);
     }
@@ -58,6 +66,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         if (SourceCache.TryGetValue(source, out IEnumerable<NabuProgram>? value))
             return value;
+        
         return Array.Empty<NabuProgram>();
     }
 
@@ -76,7 +85,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     (bool, string, ImageType) ContainsPak(string[] files)
     {
         var encryptedMenuPakName = NabuLib.PakName(Constants.CycleMenuNumber);
-
 
         foreach (var f in files)
         {
@@ -102,9 +110,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
     public void BackgroundRefresh(RefreshType refresh)
     {
-        Task.Run(() => {
-            RefreshSources(refresh);
-        });
+        RefreshSources(refresh);
     }
 
     async Task<(bool, NabuProgram[])> IsKnownListType(string name, string path)
@@ -123,107 +129,141 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     }
 
 
-    void RefreshSources(RefreshType refresh = RefreshType.All)
+    async void RefreshSources(RefreshType refresh = RefreshType.All)
     {
         if (refresh.HasFlag(RefreshType.Remote))
             Log($"Refreshing remote sources");
 
-        foreach (var source in Sources)
+        await Packages.UpdateInstalled();
+
+        foreach (var source in Sources.All())
         {
-            Task.Run(async () =>
+            
+            var isRemote = IsWebSource(source.Path);
+
+            var checkRemote = refresh.HasFlag(RefreshType.Remote);
+            var checkLocal = refresh.HasFlag(RefreshType.Local);
+
+            if (isRemote) 
+                source.SourceType = SourceType.Remote;
+            else if (source.SourceType is SourceType.Unknown)
+                source.SourceType = SourceType.Local;
+
+            if (checkRemote && source.SourceType is SourceType.Remote)
             {
-                var isRemote = IsWebSource(source.Path);
-
-                var checkRemote = refresh.HasFlag(RefreshType.Remote);
-                var checkLocal = refresh.HasFlag(RefreshType.Local);
-
-                if (isRemote) source.SourceType = SourceType.Remote;
-                else source.SourceType = SourceType.Local;
-
-                if (checkRemote && source.SourceType is SourceType.Remote)
+                var programs = new List<NabuProgram>();
+                source.SourceType = SourceType.Remote;
+                var (isList, items) = await IsKnownListType(source.Name, source.Path);
+                var (isPak, pakUrl, type) = await IsPak(source.Path, 1);
+                if (isList)
                 {
-                    var programs = new List<NabuProgram>();
-                    source.SourceType = SourceType.Remote;
-                    var (isList, items) = await IsKnownListType(source.Name, source.Path);
-                    var (isPak, pakUrl, type) = await IsPak(source.Path, 1);
-                    if (isList)
-                    {
-                        programs.AddRange(items);
-                    }
-                    else if (isPak)
-                    {
-                        programs.Add(new(
-                            "Cycle Menu",
-                            Constants.CycleMenuPak,
-                            source.Name,
-                            pakUrl,
-                            source.SourceType,
-                            type,
-                            new[] { new PassThroughPatch(Logger) },
-                            true
-                        ));
-                    }
-                    else if (IsNabu(source.Path))
-                    {
-                        var name = Path.GetFileName(pakUrl);
-                        programs.Add(new(
-                            source.Name,
-                            name,
-                            source.Name,
-                            source.Path,
-                            source.SourceType,
-                            ImageType.Raw,
-                            new[] { new PassThroughPatch(Logger) }
-                        ));
-                    }
+                    programs.AddRange(items);
+                }
+                else if (isPak)
+                {
+                    programs.Add(new(
+                        "Cycle Menu",
+                        Constants.CycleMenuPak,
+                        source.Name,
+                        pakUrl,
+                        source.SourceType,
+                        type,
+                        new[] { new PassThroughPatch(Logger) },
+                        true
+                    ));
+                }
+                else if (IsNabu(source.Path))
+                {
+                    var name = Path.GetFileName(pakUrl);
+                    programs.Add(new(
+                        source.Name,
+                        name,
+                        source.Name,
+                        source.Path,
+                        source.SourceType,
+                        ImageType.Raw,
+                        new[] { new PassThroughPatch(Logger) }
+                    ));
+                }
+                SourceCache[source] = programs;
+            }
+            else if (checkLocal && source.SourceType is SourceType.Local)
+            {
+                if (Directory.Exists(source.Path) is false) return;
+                var programs = new List<NabuProgram>();
+                source.SourceType = SourceType.Local;
+
+
+                var files = Directory.GetFiles(source.Path);
+
+                var (supported, menuPak, type) = ContainsPak(files);
+
+                if (supported && (source.EnableExploitLoader is false && menuPak is not null))
+                {
+                    programs.Add(new(
+                        "Cycle Menu",
+                        Constants.CycleMenuPak,
+                        source.Name,
+                        menuPak,
+                        source.SourceType,
+                        type,
+                        new[] { new PassThroughPatch(Logger) },
+                        true
+                    ));
+                    files = files.Except(new[] { menuPak }).ToArray();
+                }
+
+                files = files.Where(
+                    f => Path.GetExtension(f) is Constants.NabuExtension
+                ).ToArray();
+
+                foreach (var file in files)
+                {
+                    var name = Path.GetFileNameWithoutExtension(file);
+                    programs.Add(new(
+                        IsRawPak(file) ? string.Empty : name,
+                        name,
+                        source.Name,
+                        file,
+                        source.SourceType,
+                        ImageType.Raw,
+                        new[] { new PassThroughPatch(Logger) }
+                    ));
+                }
+                SourceCache[source] = programs;
+            }
+            else if (checkLocal && source.SourceType is SourceType.Package)
+            {
+                var package = Packages.Installed.FirstOrDefault(p => p.Name == source.Name);
+                if (package is null ||
+                    package.Manifest is null)
+                    continue;
+                var programs = new List<NabuProgram>();
+                programs.AddRange(
+                    from program in from p in package.Programs select p with { }
+                    select new NabuProgram(
+                        program.Name,
+                        program.Name,
+                        package.Name,
+                        NabuLib.IsHttp(program.Path) ?
+                            program.Path :
+                            Path.Combine(PackageFeatures.Programs, program.Path),
+                        NabuLib.IsHttp(program.Path) ?
+                            SourceType.Remote :
+                            SourceType.Local,
+                        ImageType.Raw,
+                        new[] { new PassThroughPatch(Logger) },
+                        options: program.Options
+                    )
+                );
+                   
+
+                if (programs.Any())
+                {
                     SourceCache[source] = programs;
                 }
-                else if (checkLocal && source.SourceType is SourceType.Local)
-                {
-                    if (Directory.Exists(source.Path) is false) return;
-                    var programs = new List<NabuProgram>();
-                    source.SourceType = SourceType.Local;
-
-
-                    var files = Directory.GetFiles(source.Path);
-
-                    var (supported, menuPak, type) = ContainsPak(files);
-
-                    if (supported && (source.EnableExploitLoader is false && menuPak is not null))
-                    {
-                        programs.Add(new(
-                            "Cycle Menu",
-                            Constants.CycleMenuPak,
-                            source.Name,
-                            menuPak,
-                            source.SourceType,
-                            type,
-                            new[] { new PassThroughPatch(Logger) },
-                            true
-                        ));
-                        files = files.Except(new[] { menuPak }).ToArray();
-                    }
-
-                    files = files.Where(
-                        f => Path.GetExtension(f) is Constants.NabuExtension
-                    ).ToArray();
-
-                    foreach (var file in files)
-                    {
-                        var name = Path.GetFileNameWithoutExtension(file);
-                        programs.Add(new(
-                            name,
-                            name,
-                            source.Name,
-                            file,
-                            source.SourceType,
-                            ImageType.Raw,
-                            new[] { new PassThroughPatch(Logger) }
-                        ));
-                    }
-                    SourceCache[source] = programs;
-                }
-            });
+            }
+            
         }
     }
 
@@ -248,29 +288,38 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         }
 
         var path = source.Path;
-        var image = pak switch
+        var image = settings.Image;
+        var prg = Empty(image) ? 
+                    SourceCache[source].FirstOrDefault(p => p.Name == settings.Image) :
+                    null;
+
+        
+        image = pak switch
         {
-            0x191 when source.EnableExploitLoader => settings.Image!,
+            0x191 when source.EnableExploitLoader => image!,
             > 1 => FormatTriple(pak),
-            1 when Empty(settings.Image) || source.EnableExploitLoader => FormatTriple(1),
-            1 => settings.Image!,
+            1 when Empty(image) || source.EnableExploitLoader => FormatTriple(1),
+            1 => image!,
             _ => null
         };
 
         if (image == null)
             return (ImageType.None, Array.Empty<byte>());
 
-        var prg = SourceCache[source].FirstOrDefault(p => p.Name == image);
-        //var prg = programs.FirstOrDefault(p => p.Name == image) ?? 
-        //          programs.FirstOrDefault();
+        prg = SourceCache[source].FirstOrDefault(p => p.Name == image);
 
-        if (prg is null && pak > Constants.CycleMenuNumber)
+
+        //BECAUSE: A package using the exploit loader should not have to bundle a menu.
+        if (prg is null /* && pak > Constants.CycleMenuNumber */) 
         {
-            prg = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == image);  
+            prg = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == image);
+            if (prg is not null)
+                Logger.WriteWarning($"Source {prg.Source} was used for {image}");
         }
 
         if (prg is null)
             return (ImageType.None, Array.Empty<byte>());
+        
 
         if (prg.IsPakMenu && pak > Constants.CycleMenuNumber)
         {
@@ -287,6 +336,10 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                 _ => FormatTriple(pak)
             };
             path = $"{path}/{name}.{ext}";
+        }
+        else if (source.SourceType is SourceType.Package)
+        {
+            path = Path.Combine(source.Path, prg.Path);
         }
         else path = prg.Path;
 
@@ -447,7 +500,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         return (true, progs.ToArray());
     }
 
-    [GeneratedRegex(".*/d{6}.nabu")]
+    [GeneratedRegex(".*\\d{6}\\.nabu")]
     private static partial Regex PakFile();
     #endregion
 

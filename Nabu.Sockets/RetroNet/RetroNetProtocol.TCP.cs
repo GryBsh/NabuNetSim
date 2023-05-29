@@ -93,8 +93,8 @@ namespace Nabu.Network.RetroNet
 
         void ShutdownTCPServer()
         {
-            Logger.WriteWarning($"Shutting down lingering TCP Server");
             if (Server is null) return;
+            Logger.WriteWarning($"Shutting down lingering TCP Server");
             foreach (var connected in Connected)
             {
                 connected.Disconnect(false);

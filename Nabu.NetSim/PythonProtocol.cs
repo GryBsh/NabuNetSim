@@ -9,7 +9,7 @@ public class PythonProtocol : Protocol
 {
     ProtocolSettings Protocol { get; }
     
-    public PythonProtocol(IConsole<PythonProtocol> logger, ProtocolSettings protoSettings) : base(logger)
+    public PythonProtocol(ILog<PythonProtocol> logger, ProtocolSettings protoSettings) : base(logger)
     {
         Protocol = protoSettings;
         Commands = Protocol.Commands;
@@ -58,7 +58,7 @@ public class PythonProtocol : Protocol
     }
     */
 
-    public static void Startup(IConsole logger)
+    public static void Startup(ILog logger)
     {
         logger.Write($"Starting Python from {Runtime.PythonDLL}");
         PythonEngine.Initialize();

@@ -4,13 +4,13 @@ namespace Nabu.Network.NHACP.V0;
 
 public class RAMStorageHandler : IStorageHandler
 {
-    protected IConsole Logger;
+    protected ILog Logger;
     protected AdaptorSettings Settings;
     protected byte[] Buffer = Array.Empty<byte>();
 
     Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
 
-    public RAMStorageHandler(IConsole logger, AdaptorSettings settings)
+    public RAMStorageHandler(ILog logger, AdaptorSettings settings)
     {
         Logger = logger;
         Settings = settings;

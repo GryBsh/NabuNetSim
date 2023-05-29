@@ -5,7 +5,7 @@ namespace Nabu.Network.NHACP.V0;
 
 public class HttpStorageHandler : RAMStorageHandler
 {
-    public HttpStorageHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
+    public HttpStorageHandler(ILog logger, AdaptorSettings settings) : base(logger, settings)
     {
     }
 

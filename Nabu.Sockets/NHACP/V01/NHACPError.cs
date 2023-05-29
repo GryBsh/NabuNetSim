@@ -9,7 +9,7 @@ public enum NHACPError : short
     IOError = 4,
     BadDescriptor = 5,
     OutOfMemory = 6,
-    PermissionDenied = 7,
+    AccessDenied = 7,
     Busy = 8,
     Exists = 9,
     IsDirectory = 10,
@@ -23,5 +23,5 @@ public enum NHACPError : short
     NoSuchSession = 18,
     TooManySessions = 19,
     TryAgain = 20,
-    ReadOnly = 21
+    WriteProtected = 21
 }

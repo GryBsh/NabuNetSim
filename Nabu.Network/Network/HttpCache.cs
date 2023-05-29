@@ -6,17 +6,20 @@ namespace Nabu.Network;
 public class CachingHttpClient : IHttpCache
 {
     HttpClient Http { get; }
-    IConsole Logger { get; }
+    ILog Logger { get; }
     AdaptorSettings Settings { get; }
     protected string CacheFolder { get; }
-    protected FileCache MemoryCache { get; }
+    protected IFileCache Cache { get; }
     //readonly Settings Settings;
 
-    public CachingHttpClient(HttpClient http, IConsole logger, FileCache cache, AdaptorSettings? settings = null)
+    public CachingHttpClient(HttpClient http, ILog<CachingHttpClient> logger, IFileCache cache)
+        : this(http, logger, cache, null) { }
+        
+    public CachingHttpClient(HttpClient http, ILog logger, IFileCache cache, AdaptorSettings? settings = null)
     {
         Http = http;
         Logger = logger;
-        MemoryCache = cache;
+        Cache = cache;
         Settings = settings ?? new NullAdaptorSettings();
         CacheFolder = Settings is TCPAdaptorSettings ?
                 Path.Join(AppContext.BaseDirectory, "cache", $"{Settings.Port.Split(":")[0]}") :
@@ -30,9 +33,10 @@ public class CachingHttpClient : IHttpCache
         {
             return await Http.SendAsync(new(HttpMethod.Head, uri));
         }
-        catch
+        catch (Exception ex)
         {
-            return new HttpResponseMessage(HttpStatusCode.NotFound);
+            Logger.WriteError(string.Empty, ex);
+            return new HttpResponseMessage(HttpStatusCode.BadRequest);
         }
     }
 
@@ -52,13 +56,19 @@ public class CachingHttpClient : IHttpCache
         }
 
         var modified = head.Content.Headers.LastModified;
-        var lastCached = MemoryCache.LastChange(path);
+        var lastCached = Cache.LastChange(path);
 
         if (modified > lastCached)
         {
             return new (true, true, true, DateTime.MinValue);
         }
         return new (false, true, true, lastCached);
+    }
+
+    public string CachePath(string uri)
+    {
+        var safeName = NabuLib.SafeFileName(uri);
+        return Path.Join(CacheFolder, safeName);
     }
 
     public async Task<Memory<byte>> GetBytes(string uri)
@@ -81,7 +91,7 @@ public class CachingHttpClient : IHttpCache
             try
             {
                 //await File.WriteAllBytesAsync(path, bytes);
-                MemoryCache.CacheFile(path, bytes, true);
+                Cache.CacheFile(path, bytes, true);
             }
             catch
             {
@@ -91,7 +101,7 @@ public class CachingHttpClient : IHttpCache
         }
 
         Logger.Write($"Reading {name} from cache");
-        return await MemoryCache.GetFile(path);
+        return await Cache.GetFile(path);
     }
 
     
@@ -114,7 +124,7 @@ public class CachingHttpClient : IHttpCache
             try
             {
                 //await File.WriteAllTextAsync(path, str);
-                MemoryCache.CacheString(path, str, true);
+                Cache.CacheString(path, str, true);
             }
             catch
             {
@@ -125,7 +135,7 @@ public class CachingHttpClient : IHttpCache
         }
         
         Logger.Write($"Reading {name} from cache");
-        return await MemoryCache.GetString(path);
+        return await Cache.GetString(path);
 
     }
 

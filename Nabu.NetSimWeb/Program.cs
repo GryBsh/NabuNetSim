@@ -14,6 +14,7 @@ using Nabu.NetSim.UI.Services;
 //using NeoSmart.Caching.Sqlite;
 //using Microsoft.EntityFrameworkCore;
 using Nabu.NetSimWeb;
+using Blazorise.Icons.Material;
 using LiteDb.Extensions.Caching;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -57,7 +58,8 @@ void ConfigureServices(IServiceCollection services, Settings settings)
             options.IdleTimeout = TimeSpan.FromDays(1);
         });
     */
-
+    //services.AddMemoryCache();
+    //
     services.AddLogging(
         logging => {
             logging.ClearProviders()
@@ -66,21 +68,21 @@ void ConfigureServices(IServiceCollection services, Settings settings)
         }
     );
     
-    services.AddTransient(typeof(IConsole<>), typeof(LoggingConsole<>));
+    services.AddTransient(typeof(ILog<>), typeof(LoggingConsole<>));
     services.AddDataProtection();
 
     services.AddSingleton(settings);
-    services.AddSingleton(settings.Sources);
+    //services.AddSingleton(settings.Sources);
     services.AddLiteDb();
     services.AddHttpClient();
     //services.AddLiteDbCache(
     //    options =>
     //    {
     //        options.Connection = LiteDB.ConnectionType.Shared;
-    //        options.CachePath = settings.CacheDatabasePath;
+     //       options.CachePath = settings.CacheDatabasePath;
     //    }
     //);
-
+    //services.AddSession();
     services.AddSingleton<IJob, LogCleanupJob>();
     services.AddSingleton<IJob, GCJob>();
     services.AddSingleton<LogService>();
@@ -91,18 +93,22 @@ void ConfigureServices(IServiceCollection services, Settings settings)
     services.AddServerSideBlazor();
     services
         .AddBlazorise(
-            options => {
+            options =>
+            {
                 options.Immediate = true;
             }
         ).AddBootstrap5Components()
         .AddBootstrap5Providers()
         .AddFontAwesomeIcons();
-
+    //services.AddTransient<ViewModelActivator>();
     services.AddScoped<MainLayoutViewModel>();
     services.AddScoped<HomeViewModel>();
-    services.AddScoped<MenuViewModel>();
+    services.AddScoped<AdaptorSettingsViewModel>();
     services.AddScoped<StatusViewModel>();
     services.AddScoped<LogViewModel>();
     services.AddScoped<AdaptorViewModel>();
-    services.AddScoped<LogButtonViewModel>();
+    services.AddScoped<ButtonTrayViewModel>();
+    services.AddScoped<FilesViewModel>();
+    services.AddScoped<PackagesViewModel>();
+    services.AddScoped<SettingsViewModel>();
 }

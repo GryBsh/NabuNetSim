@@ -12,7 +12,7 @@ await   Host
                 var settings = new Settings();
                 context.Configuration.Bind("Settings", settings);
                 services.AddSingleton(settings);
-                services.AddSingleton(settings.Sources);
+                //services.AddSingleton(settings.Sources);
                 services.AddLogging(
                     logging =>
                         logging.ClearProviders().AddNLog("nlog.config")

@@ -14,6 +14,7 @@ your own custom protocols via JavaScript and Python.
 ## Stand Out Features
 
 - > Supports multiple NABU adaptors, serial and TCP. You can use multiple serial adaptors and listen for clients on multiple ports at the same time if you so choose.
+- > Supports NAPA packages, so you can drop in content updates, without a restart
 - > Supports local file system NABU files and cycles, with the classic cycles included
 - > Supports feeds from NABUNetwork.com and Nabu.ca.
 - > Supports NHACP and Retronet, so it can run IshkurCPM and Cloud CPM.
@@ -23,8 +24,13 @@ your own custom protocols via JavaScript and Python.
 
 ## Whats New(ish)
 
+- > **IF YOU ARE ON A VERSION BEFORE 0.9.8: BACKUP YOUR CONFIG FILES** and drop in the one from the current version. Then apply your customizations.
+- > NAPA Package support, content is now provided as NAPA packages, so they can be updated seperately.
+![Package Storage](./Assets/storage.png)
+    Content from packages is symlinked into storage by default, but files users will alter are copied, to avoid clobbering.
 - > User Storage Isolation
   - > This allows users to have their own copy of local storage files, and will avoid clobber issues with RetroNet and NHACP.
+  ![Storage](./Assets/isolated-storage.png)
 - > Hybrid IskurCPM support, allows physical disk drives
 - > RetroNet TCP Client/Server Support
   - > Telnet/RetroNet Chat/etc are working.
@@ -38,11 +44,10 @@ your own custom protocols via JavaScript and Python.
 
 ## Known Issues
 
-- > Use IshkurCPM with multiple connections at your own risk, should be solved in future by Client Storage Isolation.
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
 - > RetroNet support is experimental.
-- > Only one client way open and use the RetroNet TCP Server at a time, because the RetroNet was designed that way.
+- > Only one client way open and use the RetroNet TCP Server at a time, because RetroNet was designed that way.
 - > NHACP support is experimental.
 - > Python support is experimental, and probably doesn't work on non-Windows platforms.
 - > JavaScript support is experimental.
@@ -177,8 +182,7 @@ Preliminary Docker support is available, but is not extensively tested. It #Work
 
 - > NabuNetwork.com Headless Support
   - > This will allow you to use the on NABU browser/launcher with NNS
-- > NAPA Package Support
-  - > NAPA is a package manager for NABU content. It allows authors to package their programs, storage content, custom protocols, and even pre-cached remote content, and make them available in a central repository.
+
 
 ## No hardware? No Problem
 

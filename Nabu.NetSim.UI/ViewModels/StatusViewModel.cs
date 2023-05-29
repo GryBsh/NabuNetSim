@@ -1,42 +1,49 @@
 ﻿using Nabu.Adaptor;
 using ReactiveUI;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
-public class StatusViewModel : ReactiveObject
+public class StatusViewModel : ReactiveObject, IActivatableViewModel
 {
     public StatusViewModel(
         HomeViewModel home, 
-        MenuViewModel menu, 
+        AdaptorSettingsViewModel menu, 
         LogViewModel logViewer,
-        Settings settings)
+        Settings settings
+    )
     {
         Home = home;
         Menu = menu;
         Settings = settings;
+        Activator = new();
         LogViewer = logViewer;
 
-        Observable
-            .Interval(TimeSpan.FromSeconds(5))
-            .Subscribe(_ => {
-                this.RaisePropertyChanged(nameof(Serial));
-                this.RaisePropertyChanged(nameof(TCP));
-                this.RaisePropertyChanged(nameof(Connections));
-                //NotifyChange();
+        this.WhenActivated(
+            disposables =>
+            {
+                Observable
+                    .Interval(TimeSpan.FromSeconds(5), RxApp.TaskpoolScheduler)
+                        .Subscribe(_ =>
+                        {
+                            this.RaisePropertyChanged(nameof(Serial));
+                            this.RaisePropertyChanged(nameof(TCP));
+                            this.RaisePropertyChanged(nameof(Connections));
+                            //NotifyChange();
+                        }
+                    ).DisposeWith(disposables);
             }
         );
+
+        
     }
 
     public HomeViewModel Home { get; }
-    public MenuViewModel Menu { get; }
+    public AdaptorSettingsViewModel Menu { get; }
     public LogViewModel LogViewer { get; }
     public Settings Settings { get; }
-
-    void NotifyChange()
-    {
-        //Home.RaisePropertyChanged(nameof(Home.Status));
-    }
+    public ViewModelActivator Activator { get; }
 
     public ICollection<SerialAdaptorSettings> Serial
     {

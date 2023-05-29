@@ -13,7 +13,7 @@ public class NHACPV01Session : Dictionary<byte, INHACPStorageHandler>, IDisposab
         {
             if (disposing)
             {
-                foreach (var slot in this.Values) {
+                foreach (var slot in Values) {
                     slot.End();
                 }
             }

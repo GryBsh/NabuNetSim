@@ -23,14 +23,14 @@ using Splat;
 
 namespace Nabu.NetSim.UI.Views
 {
-    public partial class AdaptorView : ReactiveComponentBase<AdaptorViewModel>
+    public partial class AdaptorView : ReactiveInjectableComponentBase<AdaptorViewModel>
     {
         [Parameter]
         public IEnumerable<AdaptorSettings>? Adaptors { get; set; }
         ICollection<AdaptorSettings> AdaptorList => Adaptors?.ToArray() ?? Array.Empty<AdaptorSettings>();
         public AdaptorView()
         {
-            ViewModel = Locator.Current.GetService<AdaptorViewModel>();
+            //ViewModel = Locator.Current.GetService<AdaptorViewModel>();
         }
     }
 }

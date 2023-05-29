@@ -1,175 +1,202 @@
 ﻿using Blazorise;
 using LiteDB;
+using Microsoft.Extensions.Logging;
 using Nabu.Models;
+using Nabu.NetSim.UI.Models;
 using Nabu.NetSim.UI.Services;
 using ReactiveUI;
+using System;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using YamlDotNet.Core.Tokens;
 
-namespace Nabu.NetSim.UI.ViewModels
+namespace Nabu.NetSim.UI.ViewModels;
+
+public enum RefreshMode
 {
+    Database,
+    MemoryCache
+}
 
-    public class LogViewModel : ReactiveObject
+public class LogViewModel : ReactiveObject, IActivatableViewModel
+{
+    public ViewModelActivator Activator { get; }
+    LogService LogService { get; }
+    public LogViewModel(
+        LogService logService,
+        HomeViewModel home
+    )
     {
-        LogService LogService { get; }
-        public LogViewModel(
-            LogService logService,
-            HomeViewModel home
-        )
-        {
-            Home = home;
-            //Repository = repository;
-
-            LogService = logService;
-            Observable.Interval(TimeSpan.FromSeconds(10))
-                 .Subscribe(_ =>
-                 {
-                     Refresh();
-                     //GC.Collect();
-                 });
-        }
-        HomeViewModel Home { get; set; }
-        //IRepository<LogEntry> Repository { get; }
-
-        void NotifyChange()
-        {
-            this.RaisePropertyChanged(nameof(PageCount));
-            this.RaisePropertyChanged(nameof(CurrentPage));
-            Home.RaisePropertyChanged(nameof(Home.Visible));
-        }
-
-        bool logVisible = false;
-        public bool LogVisible { 
-            get { return logVisible; } 
-            set {
-                logVisible = value;
-                Home.Visible = !logVisible;
-                LogService.Update = value;
-                NotifyChange();
-            }
-        }
-        public string ButtonText { get => LogVisible ? "Hide Log" : "Show Log"; }
-
-        public Visibility Visibility => LogVisible ? Visibility.Visible : Visibility.Invisible;
-
-        //public List<LogEntry> Entries { get; private set; } = new List<LogEntry>();
-
-        public string DateTimeFormat { get; } = "yyyy-MM-dd HH:mm:ss.ffff";
-        public int Page { get; set; } = 1;
-        public int PageSize { get; set; } = 100;
-
-        string search = string.Empty;
-
-        public string Search
-        {
-            get
+        Home = home;
+        //Repository = repository;
+        Activator = new();
+        LogService = logService;
+        LogService.RefreshMode = RefreshMode.Database;
+        this.WhenActivated(
+            disposables =>
             {
-                return search;
+                Observable
+                    .Interval(TimeSpan.FromSeconds(30), RxApp.TaskpoolScheduler)
+                    .Subscribe(
+                        _ =>
+                        {
+                            NotifyChange();
+                            //GC.Collect();
+                        }
+                    ).DisposeWith(disposables);
+                
+                Home.ObservableForProperty(h => h.VisiblePage)
+                    .Subscribe(
+                        visible =>
+                        {
+                            if (visible.Value is VisiblePage.Logs)
+                            {
+                                ToggleVisible();
+                            }
+                        }
+                    ).DisposeWith(disposables);
             }
-            set
-            {
-                search = value ?? string.Empty;
 
-                this.RaisePropertyChanged(nameof(Search));
-                this.RaisePropertyChanged(nameof(CurrentPage));
-            }
-        }
+        );
+    }
+    public HomeViewModel Home { get; }
+    //IRepository<LogEntry> Repository { get; }
 
-        public int PageCount
+    void NotifyChange()
+    {
+        this.RaisePropertyChanged(nameof(PageCount));
+        this.RaisePropertyChanged(nameof(CurrentPage));
+        this.RaisePropertyChanged(nameof(PageSize));
+    }
+
+    
+    public bool LogVisible { get; set; }
+
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 100;
+
+    string search = string.Empty;
+
+    public string Search
+    {
+        get
         {
-            get
-            {
-                var total = LogService.Entries.Count;
-                if (total is 0) return 0;
-                var count = (int)Math.Ceiling((double)(total / PageSize));
-                return count < 1 ? 1 : count;
-            }
+            return search;
         }
-
-        public void Refresh()
+        set
         {
+            search = value ?? string.Empty;
 
-            //Entries = Repository.SelectAll().OrderByDescending(e => e.Timestamp).ToList();
-
-            if (LogVisible is false) return;
-            //{
-            //    LogService.Pause();
-            //    return;
-            //}
-            //LogService.Refresh();
-            this.RaisePropertyChanged(nameof(PageCount));
-            this.RaisePropertyChanged(nameof(CurrentPage));
-        }
-
-        LogEntry Highlight(LogEntry e)
-        {
-            var term = Search.ToLowerInvariant();
-            if (
-                Search != string.Empty && (
-                    e.Timestamp.ToString(DateTimeFormat).ToLowerInvariant().Contains(term) ||
-                    e.Name.ToLowerInvariant().Contains(term) ||
-                    e.Message.ToLowerInvariant().Contains(term)
-                )
-            ) e.Highlight = true;
-            else e.Highlight = false;
-
-            return e;
-        }
-
-        public IEnumerable<LogEntry> CurrentPage
-        {
-            get
-            {
-                return LogService
-                        .Entries
-                        .Skip((Page - 1) * PageSize)
-                        .Take(PageSize)
-                        /*
-                         LogService.Repository.Query<ILiteQueryable<LogEntry>>(
-                            q => q.OrderByDescending(e => e.Timestamp)
-                                  .Skip((Page - 1) * PageSize)
-                                  .Limit(PageSize)
-                                  .ToEnumerable()
-                        )*/
-                        .Select(Highlight);
-            }
-        }
-
-        public void SetPage(string page) => Page = int.Parse(page);
-        public void PageBack()
-        {
-            if (Page is 1) return;
-            Page -= 1;
-            this.RaisePropertyChanged(nameof(Page));
-            this.RaisePropertyChanged(nameof(CurrentPage));
-        }
-
-        public void PageForward()
-        {
-            if (Page == PageCount || PageCount is 0) return;
-            Page += 1;
-            this.RaisePropertyChanged(nameof(Page));
-            this.RaisePropertyChanged(nameof(CurrentPage));
-        }
-
-        public bool IsActivePage(int page)
-            => Page == page || page is 0;
-
-        public void ClearSearch()
-        {
-            Search = string.Empty;
             this.RaisePropertyChanged(nameof(Search));
+            //this.RaisePropertyChanged(nameof(CurrentPage));
         }
+    }
 
-        public void ToggleVisible()
+    public int PageCount
+    {
+        get
         {
-            LogVisible = !LogVisible;
-            //this.RaisePropertyChanged(nameof(Search));
-            this.RaisePropertyChanged(nameof(PageCount));
-            //this.RaisePropertyChanged(nameof(Entries));
-            this.RaisePropertyChanged(nameof(CurrentPage));
-            this.RaisePropertyChanged(nameof(LogVisible));
+            var total = LogService.Count;
+            if (total is 0) return 0;
+            var rounded = Math.Ceiling((double)total / PageSize);
+            var count = (int)rounded;
+            return count < 1 ? 1 : count;
         }
+    }
+
+    public void Refresh()
+    {
+        if (LogVisible is false) return;
 
         
     }
+
+    LogEntry Highlight(LogEntry e)
+    {
+        var term = Search.ToLowerInvariant();
+        if (
+            Search != string.Empty && (
+                e.Timestamp.ToString().ToLowerInvariant().Contains(term) ||
+                e.Name.ToLowerInvariant().Contains(term) ||
+                e.Message.ToLowerInvariant().Contains(term)
+            )
+        ) e.Highlight = true;
+        else e.Highlight = false;
+
+        return e;
+    }
+
+    
+
+    (int, int, int, ICollection<IGrouping<LogKey, LogEntry>>)? PageCache { get; set; }
+    public ICollection<IGrouping<LogKey, LogEntry>> CurrentPage
+    {
+        get
+        {
+            var count = LogService.Count;
+            if (PageCache is not null)
+            {
+                var (page, total, size, entries) = PageCache.Value;
+                if (page == Page && total == count && size == PageSize)
+                    return entries;
+            }
+
+            var newPage = 
+                LogService
+                    .GetPage(Page, PageSize)
+                    .GroupBy(l => l.Key)
+                    .ToList();
+
+            PageCache = (
+                Page,
+                PageSize,
+                count,
+                newPage
+            );
+
+            return newPage;
+
+        }
+    }
+
+    
+
+    public void SetPage(string page) => Page = int.Parse(page);
+    public void PageBack()
+    {
+        if (Page is 1) return;
+
+        Page -= 1;
+        this.RaisePropertyChanged(nameof(Page));
+        this.RaisePropertyChanged(nameof(CurrentPage));
+    }
+
+    public void PageForward()
+    {
+        if (Page == PageCount || PageCount is 0) return;
+
+        Page += 1;
+        this.RaisePropertyChanged(nameof(Page));
+        this.RaisePropertyChanged(nameof(CurrentPage));
+    }
+
+    public bool IsActivePage(int page)
+        => Page == page || page is 0;
+
+    public void ClearSearch()
+    {
+        Search = string.Empty;
+        this.RaisePropertyChanged(nameof(Search));
+    }
+
+    public void ToggleVisible()
+    {
+        this.RaisePropertyChanged(nameof(Search));
+        this.RaisePropertyChanged(nameof(PageCount));
+        //this.RaisePropertyChanged(nameof(Entries));
+        this.RaisePropertyChanged(nameof(CurrentPage));
+        this.RaisePropertyChanged(nameof(LogVisible));
+    }
+
+    
 }

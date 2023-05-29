@@ -6,7 +6,7 @@ namespace Nabu.Network.NHACP.V01;
 public class HttpStorageHandler : RAMStorageHandler
 {
     readonly CachingHttpClient Http;
-    public HttpStorageHandler(IConsole logger, AdaptorSettings settings, HttpClient http, FileCache cache) : base(logger, settings)
+    public HttpStorageHandler(ILog logger, AdaptorSettings settings, HttpClient http, IFileCache cache) : base(logger, settings)
     {
         Http = new CachingHttpClient(http, logger, cache, settings);
     }
@@ -25,7 +25,7 @@ public class HttpStorageHandler : RAMStorageHandler
             {
                 NHACPError errorCode = response.StatusCode switch {
                     HttpStatusCode.Forbidden or 
-                        HttpStatusCode.Unauthorized => NHACPError.PermissionDenied,
+                        HttpStatusCode.Unauthorized => NHACPError.AccessDenied,
                     HttpStatusCode.NotFound         => NHACPError.NotFound,
                     _ => NHACPError.Undefined // Undefined error
                 };

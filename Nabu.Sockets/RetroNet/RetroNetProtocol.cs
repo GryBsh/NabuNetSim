@@ -1,7 +1,7 @@
-using Nabu.Adaptor;
 using System.Text.RegularExpressions;
 using Nabu.Services;
 using System.Reactive.Linq;
+using System.Net.Http;
 
 namespace Nabu.Network.RetroNet;
 
@@ -11,8 +11,9 @@ public partial class RetroNetProtocol : Protocol
     
     FileDetails[]? CurrentList { get; set; }
     HttpClient HttpClient { get; }
-    FileCache FileCache { get; }
+    IFileCache FileCache { get; }
     INabuNetwork NabuNet { get; }
+    CachingHttpClient? Http { get; set; }
     Dictionary<string, byte[]> Cache { get; } = new();
     readonly Settings Global;
     
@@ -27,10 +28,10 @@ public partial class RetroNetProtocol : Protocol
     }
 
     public RetroNetProtocol(
-        IConsole<RetroNetProtocol> logger,
+        ILog<RetroNetProtocol> logger,
         HttpClient httpClient,
         INabuNetwork nabuNet,
-        FileCache cache,
+        IFileCache cache,
         Settings settings
     ) : base(logger)
     {
@@ -38,6 +39,7 @@ public partial class RetroNetProtocol : Protocol
         NabuNet = nabuNet;
         FileCache = cache;
         Global = settings;
+        
     }
 
     public override byte[] Commands { get; } = new byte[] {
@@ -183,6 +185,7 @@ public partial class RetroNetProtocol : Protocol
     public override bool Attach(AdaptorSettings settings, Stream stream)
     {
         Listener(settings);
+        Http = new(HttpClient, Logger, FileCache, settings);
         return base.Attach(settings, stream);
     }
     
@@ -199,7 +202,7 @@ public partial class RetroNetProtocol : Protocol
 
         return filename switch
         {
-            _ when Http().IsMatch(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings, FileCache),
+            _ when NabuLib.IsHttp(filename) => new RetroNetHttpHandler(Logger, HttpClient, Settings, FileCache),
             _ => new RetroNetFileHandler(Logger, Settings)
         };
     }
@@ -295,8 +298,7 @@ public partial class RetroNetProtocol : Protocol
 
 
 
-    [GeneratedRegex("http[s]?://.*")]
-    private static partial Regex Http();
+
 
     [GeneratedRegex("ftp://.*")]
     private static partial Regex Ftp();

@@ -13,9 +13,9 @@ namespace Nabu.NetSim.UI.ViewModels
     {
         public HomeViewModel Home { get; }
 
-        public MenuViewModel Menu { get; }
+        public AdaptorSettingsViewModel Menu { get; }
 
-        public AdaptorViewModel(HomeViewModel home, MenuViewModel menu) {
+        public AdaptorViewModel(HomeViewModel home, AdaptorSettingsViewModel menu) {
             Home = home;
             Menu = menu;
         }
@@ -33,6 +33,15 @@ namespace Nabu.NetSim.UI.ViewModels
                 ServiceShould.Restart => "Stopping",
                 ServiceShould.Stop => "Stopped",
                 _ => "Unknown"
+            };
+        }
+
+        public string AdaptorButtonText(AdaptorSettings settings)
+        {
+            return settings.State switch
+            {
+                ServiceShould.Run => "Stop Adaptor",
+                _ => "Start Adaptor"
             };
         }
     }

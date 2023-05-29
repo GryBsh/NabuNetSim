@@ -5,35 +5,45 @@ using System.Collections.Concurrent;
 
 namespace Nabu.NetSim.UI;
 
-public class AppLogConfiguration
-{
-    public LogLevel LogLevel { get; set; } = LogLevel.Information;
-}
 public class AppLogProvider : ILoggerProvider
 {
-    readonly IOptionsMonitor<AppLogConfiguration> Config;
     readonly ConcurrentDictionary<string, AppLogger> Loggers = new(StringComparer.OrdinalIgnoreCase);
     LogService Logs { get; }
     readonly Settings Settings;
+    private bool disposedValue;
+
     public AppLogProvider(
         Settings settings,
-        IOptionsMonitor<AppLogConfiguration> config,
         LogService repository
     )
     {
         Settings = settings;
-        Config = config;
         Logs = repository;
     }
 
     public ILogger CreateLogger(string categoryName)
         => Loggers.GetOrAdd(
             categoryName,
-            name => new AppLogger(name, Config.CurrentValue, Logs)
+            name => new AppLogger(name, Logs)
         );
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!disposedValue)
+        {
+            if (disposing)
+            {
+                
+                Loggers.Clear();             
+            }
+            disposedValue = true;
+        }
+    }
 
     public void Dispose()
     {
-        Loggers.Clear();
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
     }
 }

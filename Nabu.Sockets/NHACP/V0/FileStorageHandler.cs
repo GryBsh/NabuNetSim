@@ -9,7 +9,7 @@ public class FileStorageHandler : IStorageHandler
     StorageFlags Flags = StorageFlags.ReadWrite;
     FileInfo? File;
 
-    public FileStorageHandler(IConsole logger, AdaptorSettings settings)
+    public FileStorageHandler(ILog logger, AdaptorSettings settings)
     {
         Settings = settings;
     }

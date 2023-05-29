@@ -5,7 +5,7 @@ namespace Nabu.Network.RetroNet;
 
 public class RetroNetFileHandler : NabuService, IRetroNetFileHandler
 {
-    public RetroNetFileHandler(IConsole logger, AdaptorSettings settings) : base(logger, settings)
+    public RetroNetFileHandler(ILog logger, AdaptorSettings settings) : base(logger, settings)
     {
     }
 

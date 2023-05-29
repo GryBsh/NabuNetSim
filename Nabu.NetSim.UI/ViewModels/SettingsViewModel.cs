@@ -1,29 +1,23 @@
-﻿using ReactiveUI;
+﻿using Nabu.NetSim.UI.Services;
+using ReactiveUI;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
 public class SettingsViewModel : ReactiveObject
 {
     Settings Settings { get; }
-    public SettingsViewModel(Settings settings)
+    LogService Logs { get; }
+
+    public SettingsViewModel(Settings settings, LogService logs)
     {
         Settings = settings;
+        Logs = logs;
     }
 
-    public bool EnableLocalFileCache
+    public string LogRefreshMode
     {
-        get => Settings.EnableLocalFileCache; 
-        set => Settings.EnableLocalFileCache = value;
-    }
-
-    public bool EnablePython
-    {
-        get => Settings.EnablePython; 
-        set => Settings.EnablePython = value;
-    }
-    public bool EnableJavaScript
-    {
-        get => Settings.EnableJavaScript; 
-        set => Settings.EnableJavaScript = value;
-    }
+        get => Logs.RefreshMode.ToString();
+        set => Logs.RefreshMode = Enum.Parse<RefreshMode>(value, true);
+    } 
+  
 }

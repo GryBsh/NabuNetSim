@@ -1,4 +1,4 @@
-﻿@inherits ReactiveComponentBase<HomeViewModel>
+﻿@inherits ReactiveInjectableComponentBase<HomeViewModel>
 
 <Div Visibility=@(ViewModel!.Loaded ? Visibility.Visible : Visibility.Invisible) Class="main-menu container-fluid" Style="min-height: 500px">
     <div Class="row row-divider" />
@@ -12,26 +12,43 @@
         </ul>
     </div>
     <div Class="row row-divider" /> 
-    <Div Class="row" Visibility="@(ViewModel.Visible ? Visibility.Visible : Visibility.Invisible)">
+    <Div Class="row" >
         <div class="col flex-fill title-col">
             <div class="container-fluid title-box">
                 <div class="row">
-                       
-                    <div class="col col-4">
-                        <Image class="logo" Source="_content/Nabu.NetSim.UI/images/nabu.png" />
-                        <Div Class="center"><LogButtonView /></Div>
+                    <div class="col col-3">
+                        <div class="logo">
+                            <Image class="logo" Source="_content/Nabu.NetSim.UI/images/nabu.png" />
+                        </div>
+                        <Div Class="center"><ButtonTrayView /></Div>
                     </div>
-                    <div class="col top col-4">
+                    <Div class="col top col-5" Visibility="@(ViewModel!.IsVisible(VisiblePage.Adaptors))">
                         <StatusView />
-                    </div>
-                    <Div Class="col col-4 top" Style="min-height: 50%">
-                        <MenuView />
+                    </Div>
+                    <Div Class="col top" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.Adaptors))">
+                        <Div Class="center center-all">
+                            <Icon IconSize="@IconSize.x5" Name="@IconName.Home" Style="color: rgba(204, 204, 204, .2)" />
+                        </Div>
+                    </Div>
+                    <Div Class="col col-5 top" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.AdaptorSettings))">
+                        <AdaptorSettingsView />
+                    </Div>
+                    <Div Class="col col-4 top" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.AdaptorSettings))">
+                        <FilesView />
+                    </Div>
+                    <Div Class="col top col-9" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.Logs))">
+                        <LogView />
+                    </Div>
+                    <Div Class="col top" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.Packages))">
+                        <PackagesView />
+                    </Div>
+                    <Div Class="col top" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.Settings))">
+                        <!--<SettingsView />-->
                     </Div>
                 </div>
             </div>
         </div>
     </Div>
-    <LogView />
 </Div>
 
 <Div Visibility=@(ViewModel!.Loaded ? Visibility.Invisible : Visibility.Visible) Class="loading-phrase">
