@@ -1,22 +1,21 @@
 ﻿using Nabu.Network;
 using Nabu.Services;
-using System.Collections.Concurrent;
 using System.Reactive.Linq;
 
 namespace Nabu.Adaptor;
-
 
 /// <summary>
 /// The emulated adaptor, wrapping the actual communication Stream to the NABU PC
 /// </summary>
 public class EmulatedAdaptor : NabuBase
 {
-    readonly AdaptorSettings Settings;
-    readonly Stream Stream;
-    readonly BinaryReader Reader;
-    readonly ClassicNabuProtocol NabuNet;
+    private readonly AdaptorSettings Settings;
+    private readonly Stream Stream;
+    private readonly BinaryReader Reader;
+    private readonly ClassicNabuProtocol NabuNet;
+
     //readonly ACPProtocol ACP;
-    IEnumerable<IProtocol> Protocols { get; }
+    private IEnumerable<IProtocol> Protocols { get; }
 
     public EmulatedAdaptor(
         AdaptorSettings settings,
@@ -25,7 +24,7 @@ public class EmulatedAdaptor : NabuBase
         ILog logger,
         Stream stream,
         string? label = null
-       
+
     ) : base(logger, label)
     {
         Settings = settings;
@@ -37,31 +36,29 @@ public class EmulatedAdaptor : NabuBase
         NabuNet.Attach(Settings, Stream);
         foreach (var protocol in Protocols)
             protocol.Attach(Settings, Stream);
-        
     }
 
     public bool IsRunning { get; protected set; }
 
+    #region Adaptor Loop
 
-    #region Adaptor Loop   
-    
     public virtual async Task Listen(CancellationToken cancel)
     {
         IsRunning = true;
         Log("Waiting for NABU");
-        
+
         while (cancel.IsCancellationRequested is false)
         {
             try
-            {   
+            {
                 // Read the command message
                 byte incoming = Reader.ReadByte();
                 ///SetActive();
                 // Locate the protocol handler for this command message
                 var handler = Protocols.FirstOrDefault(p => p.ShouldAccept(incoming)) ?? NabuNet;
-                
+
                 if (handler == NabuNet)
-                    foreach (var protocol in Protocols) 
+                    foreach (var protocol in Protocols)
                         protocol.Reset();
 
                 if (await handler.HandleMessage(incoming, cancel))
@@ -82,8 +79,8 @@ public class EmulatedAdaptor : NabuBase
                 // There is a big fail in dotnet 7 where Stream throws an IOException
                 // instead of a TimeoutException.
                 if (ex.HResult == -2147023436) // <-- That's the HResult for a Timeout
-                    continue; 
-                
+                    continue;
+
                 Log($"Adaptor Loop Error: {ex.Message}");
                 //SetIdle();
                 break;
@@ -98,13 +95,13 @@ public class EmulatedAdaptor : NabuBase
         }
         IsRunning = false;
         Log("Disconnected");
-       
+
         // Detach all the protocol handlers from the Adaptor.
         NabuNet.Detach();
         foreach (var protocol in Protocols)
             protocol.Detach();
         Stream.Dispose();
     }
-    #endregion
 
+    #endregion Adaptor Loop
 }

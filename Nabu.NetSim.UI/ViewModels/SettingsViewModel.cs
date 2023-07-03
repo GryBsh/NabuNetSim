@@ -1,14 +1,15 @@
 ﻿using Nabu.NetSim.UI.Services;
+using Nabu.Services;
 using ReactiveUI;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
 public class SettingsViewModel : ReactiveObject
 {
-    Settings Settings { get; }
-    LogService Logs { get; }
+    private Settings Settings { get; }
+    private ILogService Logs { get; }
 
-    public SettingsViewModel(Settings settings, LogService logs)
+    public SettingsViewModel(Settings settings, ILogService logs)
     {
         Settings = settings;
         Logs = logs;
@@ -18,6 +19,5 @@ public class SettingsViewModel : ReactiveObject
     {
         get => Logs.RefreshMode.ToString();
         set => Logs.RefreshMode = Enum.Parse<RefreshMode>(value, true);
-    } 
-  
+    }
 }

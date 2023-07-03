@@ -5,7 +5,9 @@ namespace Napa;
 
 public record SourcePackage : Package
 {
-    public SourcePackage(Package package, string source, string path) : base(package)
+    public SourcePackage() { }
+
+    public SourcePackage(Package package, string? source, string path) : base(package)
     {
         Source = source;
         Path = path;
@@ -13,9 +15,9 @@ public record SourcePackage : Package
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore)]
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull | DefaultValuesHandling.OmitDefaults)]
-    public string Source
+    public string? Source
     {
-        get => Get<string>(nameof(Source)) ?? string.Empty;
+        get => Get<string>(nameof(Source));
         set => Set(nameof(Source), value);
     }
 
@@ -25,4 +27,3 @@ public record SourcePackage : Package
         set => Set(nameof(Path), value);
     }
 }
-

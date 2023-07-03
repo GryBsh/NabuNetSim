@@ -1,5 +1,4 @@
-﻿using System;
-//using Nabu.Network.RetroNetHandle;
+﻿//using Nabu.Network.RetroNetHandle;
 
 namespace Nabu.Network.RetroNet;
 
@@ -14,15 +13,15 @@ public partial class RetroNetProtocol : Protocol
         await FileOpen(filename, flags, handle, cancel);
     }
 
-    async Task FileOpen(string filename, FileOpenFlags flags, byte handle, CancellationToken cancel)
+    private async Task FileOpen(string filename, FileOpenFlags flags, byte handle, CancellationToken cancel)
     {
         if (handle is 0xFF) handle = NextSlotIndex();
         Log($"Open: {handle} {filename}");
         var path = filename switch
         {
-            _ when NabuLib.IsHttp(filename) => NabuLib.Uri(Settings, filename),
-            _ when Memory().IsMatch(filename) => NabuLib.Uri(Settings, filename),
-            _ => NabuLib.FilePath(Settings, filename)
+            _ when NabuLib.IsHttp(filename) => NabuLib.Uri(Adaptor, filename),
+            _ when Memory().IsMatch(filename) => NabuLib.Uri(Adaptor, filename),
+            _ => NabuLib.FilePath(Adaptor, filename)
         };
         if (path != filename)
         {
@@ -31,17 +30,15 @@ public partial class RetroNetProtocol : Protocol
 
         Slots[handle] = path switch
         {
-            _ when NabuLib.IsHttp(path) => new RetroNetMemoryHandle(Logger, Settings, Http?.CachePath(path), await FileHandler(path).Get(path, cancel)),
-            _ when Memory().IsMatch(path) => new RetroNetMemoryHandle(Logger, Settings),
-            _ => new RetroNetFileHandle(Logger, Settings)
+            _ when NabuLib.IsHttp(path) => new RetroNetMemoryHandle(Logger, Adaptor, Http?.CachePath(path), await FileHandler(path).Get(path, cancel)),
+            _ when Memory().IsMatch(path) => new RetroNetMemoryHandle(Logger, Adaptor),
+            _ => new RetroNetFileHandle(Logger, Adaptor)
         };
-        
+
         var opened = await Slots[handle].Open(path, flags, cancel);
         if (opened is false) Writer.Write(0xFF);
         else Writer.Write(handle);
     }
-
-    
 
     private async Task FileHandleClose(CancellationToken cancel)
     {
@@ -90,7 +87,6 @@ public partial class RetroNetProtocol : Protocol
         Log($"SeqRead:{handle}: O:{Slots[handle].Position} L:{length}");
         WriteBuffer(bytes);
         return;
-
     }
 
     private async Task FileHandleDetails(CancellationToken cancel)
@@ -150,5 +146,4 @@ public partial class RetroNetProtocol : Protocol
         Log($"Replace:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Replace(offset, data, cancel);
     }
-
 }

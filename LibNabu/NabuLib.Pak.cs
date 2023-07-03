@@ -7,8 +7,8 @@ public static partial class NabuLib
 {
     /// <summary>
     ///     Gets the name of a PAK file, which is the MD5 hash
-    ///     of the `000000nabu` where `000000` is the PAK ID 
-    ///     in 3 octets. 
+    ///     of the `000000nabu` where `000000` is the PAK ID
+    ///     in 3 octets.
     /// </summary>
     /// <param name="pakId">the ID of the desired PAK</param>
     /// <returns></returns>

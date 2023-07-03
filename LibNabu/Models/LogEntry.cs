@@ -1,9 +1,10 @@
-
 namespace Nabu.Models;
 
 public class LogEntry : IEntity
 {
-    public LogEntry() { }
+    public LogEntry()
+    { }
+
     public LogEntry(
         Guid id,
         DateTime timestamp,
@@ -34,11 +35,9 @@ public class LogEntry : IEntity
     public LogKey Key { get; set; } = new(DateTime.MinValue, string.Empty);
     public bool Highlight { get; set; }
 
-    DateTime Round(DateTime date, TimeSpan span)
+    private DateTime Round(DateTime date, TimeSpan span)
     {
         long ticks = (date.Ticks + (span.Ticks / 2) + 1) / span.Ticks;
         return new DateTime(ticks * span.Ticks, date.Kind);
     }
-
 }
-

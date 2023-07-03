@@ -1,5 +1,5 @@
-﻿using System.Net.NetworkInformation;
-using System.Net;
+﻿using System.Net;
+using System.Net.NetworkInformation;
 using System.Net.Sockets;
 
 namespace Nabu;
@@ -13,7 +13,7 @@ public static partial class NabuLib
 
     public static Socket Socket(bool noDelay = true, int sBufferSize = 8, int rBufferSize = 8)
     {
-        var socket = 
+        var socket =
             new Socket(
                 AddressFamily.InterNetwork,
                 SocketType.Stream,
@@ -35,7 +35,7 @@ public static partial class NabuLib
         return tcpEndPoints.Select(p => p.Port).ToArray();
     }
 
-    public static bool IsPortFree(int port) 
+    public static bool IsPortFree(int port)
         => !GetOpenPorts().Contains(port);
 
     public static int GetFreePort(int start, int? count = null)
@@ -47,4 +47,3 @@ public static partial class NabuLib
         return unusedPort;
     }
 }
-

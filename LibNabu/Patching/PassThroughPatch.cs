@@ -19,4 +19,3 @@ public class PassThroughPatch : IProgramPatch
         return Task.FromResult(bytes);
     }
 }
-

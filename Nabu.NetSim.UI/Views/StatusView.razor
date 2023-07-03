@@ -1,8 +1,6 @@
 ﻿@inherits ReactiveInjectableComponentBase<StatusViewModel>
-<HeaderView IconName="@IconName.Home"
-            Heading="Home" />
 
-<HeaderView IconName="@IconName.Server"
+<HeaderView Icon="@IconName.Server"
             Heading="Adaptors" />
             
 <AdaptorView Adaptors="@ViewModel!.Serial" />
@@ -10,7 +8,7 @@
 
 @if (ViewModel.Connections.Count > 0)
 {
-    <HeaderView IconName="@IconName.UserFriends"
+    <HeaderView Icon="@IconName.UserFriends"
                 Heading="Connections" />
 
     

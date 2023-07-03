@@ -4,20 +4,8 @@ namespace Nabu
 {
     public partial class NabuLib
     {
-        public static string SafeFileName(string name)
+        public static string ApplyRedirect(AdaptorSettings settings, string filePath)
         {
-            foreach (var bad in Path.GetInvalidFileNameChars())
-                name = name.Replace(bad, '_');
-            return name;
-        }
-
-        public static string PlatformPath(string path)
-        {
-            return path.Replace(@"\", Path.DirectorySeparatorChar is '\\' ? "\\" : $"{Path.DirectorySeparatorChar}")
-                       .Replace('/', Path.DirectorySeparatorChar);
-        }
-
-        public static string ApplyRedirect(AdaptorSettings settings, string filePath) {
             var modified = false;
             do
             {
@@ -33,20 +21,26 @@ namespace Nabu
             return filePath;
         }
 
-        public static bool IsSymLink(string path)
+        public static void EnsureFolder(string folder)
         {
-            var file = new FileInfo(path);
-            if (!file.Exists) return false;
-            return file.Attributes.HasFlag(FileAttributes.ReparsePoint);
+            if (Directory.Exists(folder) is false)
+                Directory.CreateDirectory(folder);
         }
 
-        public static string ResolveLink(string filePath)
-            => File.ResolveLinkTarget(filePath, true)?.FullName ?? filePath;
+        public static Task<bool> FileAvailable(string path)
+        {
+            return Task.Run(() =>
+            {
+                return IsFileAvailable(path);
+            });
+        }
 
-        public static string FilePath(AdaptorSettings settings, string filePath) {
-           
+        public static string FilePath(AdaptorSettings settings, string filePath)
+        {
             filePath = ApplyRedirect(settings, filePath);
+            filePath = SanitizePath(filePath);
             filePath = Path.Combine(settings.StoragePath, filePath);
+
             if (IsSymLink(filePath))
             {
                 filePath = ResolveLink(filePath) ?? filePath;
@@ -54,28 +48,14 @@ namespace Nabu
             return filePath;
         }
 
-        public static (bool, string) PathInfo(AdaptorSettings settings, string filePath)
-        {
-            var isSymLink = false;
-            filePath = ApplyRedirect(settings, filePath);
-            filePath = Path.Combine(settings.StoragePath, filePath);
-            if (IsSymLink(filePath))
-            {
-                isSymLink = true;
-                filePath = File.ResolveLinkTarget(filePath, true)?.FullName ?? filePath;
-            }
-            return (isSymLink, filePath);
-        }
-
-        public static string Uri(AdaptorSettings settings, string uri)
-        {
-            uri = ApplyRedirect(settings, uri);
-            return uri;
-        }
-
         public static int FileSize(string path)
         {
-            return (int) new FileInfo(path).Length;
+            return (int)new FileInfo(path).Length;
+        }
+
+        public static bool InsensitiveEqual(string path1, string path2)
+        {
+            return path1.ToLowerInvariant() == path2.ToLowerInvariant();
         }
 
         public static bool IsFileAvailable(string path)
@@ -91,25 +71,56 @@ namespace Nabu
             }
         }
 
-        public static Task<bool> FileAvailable(string path)
-        {
-            return Task.Run(() => {
-                return IsFileAvailable(path);
-            });
-        }
-
-        public static void EnsureFolder(string folder)
-        {
-            if (Directory.Exists(folder) is false)
-                Directory.CreateDirectory(folder);
-        }
-
-        public static bool IsHttp(string path) 
+        public static bool IsHttp(string path)
             => Http().IsMatch(path);
 
-        public static bool InsensitiveEqual(string path1, string path2)
+        public static bool IsSymLink(string path)
         {
-            return path1.ToLowerInvariant() == path2.ToLowerInvariant();
+            var file = new FileInfo(path);
+            if (!file.Exists) return false;
+            return file.Attributes.HasFlag(FileAttributes.ReparsePoint);
+        }
+
+        public static (bool, string) PathInfo(AdaptorSettings settings, string filePath)
+        {
+            var isSymLink = false;
+
+            filePath = ApplyRedirect(settings, filePath);
+            filePath = Path.Combine(settings.StoragePath, filePath);
+            //filePath = SanitizePath(filePath);
+            if (IsSymLink(filePath))
+            {
+                isSymLink = true;
+                filePath = File.ResolveLinkTarget(filePath, true)?.FullName ?? filePath;
+            }
+            return (isSymLink, filePath);
+        }
+
+        public static string PlatformPath(string path)
+        {
+            return path.Replace(@"\", $"{Path.DirectorySeparatorChar}")
+                       .Replace('/', Path.DirectorySeparatorChar);
+        }
+
+        public static string ResolveLink(string filePath)
+            => File.ResolveLinkTarget(filePath, true)?.FullName ?? filePath;
+
+        public static string SafeFileName(string name)
+        {
+            foreach (var bad in Path.GetInvalidFileNameChars())
+                name = name.Replace(bad, '_');
+            return name;
+        }
+
+        public static string SanitizePath(string path)
+        {
+            return path.Replace("..", string.Empty).Replace(":", string.Empty);
+        }
+
+        public static string Uri(AdaptorSettings settings, string uri)
+        {
+            uri = ApplyRedirect(settings, uri);
+            return uri;
         }
 
         [GeneratedRegex("[hH][tT]{2}[pP][sS]?://.*")]

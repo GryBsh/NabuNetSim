@@ -1,7 +1,6 @@
-﻿using System.Text;
-using Nabu.Services;
+﻿using Nabu.Services;
 using System.Reactive.Linq;
-using Nabu.Adaptor;
+using System.Text;
 
 namespace Nabu.Network;
 
@@ -9,13 +8,14 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
 {
     //public AdaptorSettings Settings { get; private set; }
     public Stream Stream { get; private set; } = Stream.Null;
+
     public BinaryReader Reader { get; private set; }
     public BinaryWriter Writer { get; private set; }
     public abstract byte Version { get; }
     public abstract byte[] Commands { get; }
     public bool Attached => Stream != Stream.Null;
 
-    int SendDelay = 0;
+    private int SendDelay = 0;
     private bool disposedValue;
 
     public Protocol(
@@ -23,16 +23,12 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         AdaptorSettings? settings = null
     ) : base(logger, settings ?? new NullAdaptorSettings())
     {
-
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
-
-
-
     }
 
-
     #region Send / Receive
+
     // These methods perform all the stream reading / writing
     // for all communication with the NABU PC / Emulator
 
@@ -72,6 +68,7 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     }
 
     public int RecvInt() => NabuLib.ToInt(Reader.ReadBytes(4));
+
     public short RecvShort() => NabuLib.ToShort(Reader.ReadBytes(2));
 
     public string RecvString() => Reader.ReadString();
@@ -103,7 +100,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         if (!good) Warning($"NA: {FormatSeparated(expected)} != {FormatSeparated(read)}");
         return (good, read);
     }
-
 
     /// <summary>
     ///     Logs the current transfer rate
@@ -142,7 +138,7 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         Trace($"NA: SEND: {FormatSeparated(bytes)}");
 
         //if (bytes.Length > 128)
-        //{ 
+        //{
         //    DateTime start = DateTime.Now;
         //    Writer.Write(bytes);
 
@@ -156,7 +152,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         Writer.Flush();
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
-
 
     /// <summary>
     ///     Provides a method to send data to the NABU PC / Emulator
@@ -174,14 +169,15 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 
-    #endregion
+    #endregion Send / Receive
 
     #region Framed Protocols
+
     public void SendFramed(params byte[] buffer)
     {
         var length = (short)buffer.Length;
-        Send(NabuLib.FromShort(length));
-        Send(buffer);
+        var frame = NabuLib.Frame(NabuLib.FromShort(length), buffer);
+        Send(frame.ToArray());
     }
 
     public void SendFramed(byte header, params Memory<byte>[] buffer)
@@ -209,7 +205,7 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         return (length, buffer);
     }
 
-    #endregion
+    #endregion Framed Protocols
 
     #region IProtocol
 
@@ -222,11 +218,12 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         ) return false;
 
         Stream = stream;
-        Settings = settings;
+        Adaptor = settings;
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
         return true;
     }
+
     protected abstract Task Handle(byte unhandled, CancellationToken cancel);
 
     public async Task<bool> HandleMessage(byte incoming, CancellationToken cancel)
@@ -238,7 +235,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         }
         catch (TimeoutException)
         {
-
             return true;
         }
         catch (Exception ex)
@@ -246,18 +242,18 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
             Error($"FAIL: {ex.Message}");
             return false;
         }
-
     }
 
     public virtual void Detach()
     {
-        Settings = new NullAdaptorSettings();
+        Adaptor = new NullAdaptorSettings();
         Stream = Stream.Null;
         Reader = new BinaryReader(Stream);
         Writer = new BinaryWriter(Stream);
     }
 
-    public virtual void Reset() { }
+    public virtual void Reset()
+    { }
 
     public virtual bool ShouldAccept(byte unhandled)
     {
@@ -293,7 +289,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         Dispose(disposing: true);
         GC.SuppressFinalize(this);
     }
-    #endregion
 
+    #endregion IProtocol
 }
-

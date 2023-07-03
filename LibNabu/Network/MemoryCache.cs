@@ -4,45 +4,48 @@ namespace Nabu.Network;
 
 public class MemoryCache<T>
 {
-    ConcurrentDictionary<string, CacheItem<T>> Cached { get; } = new();
+    public IEnumerable<string> Keys => Cached.Keys;
+    private ConcurrentDictionary<string, CacheItem<T>> Cached { get; } = new();
 
-    public CacheItem<T>? Cache(string key, T value)
+    public CacheItem<T>? Cache(string key, T value, DateTime? timestamp = null)
     {
+        timestamp ??= DateTime.Now;
         var emptyValue = value?.Equals(default) is true;
         var cached = Cached.TryGetValue(key, out var old);
         if (cached && old is not null && old.Value?.Equals(value) is true)
             return old;
-        else if (emptyValue) 
+        else if (emptyValue)
             return null;
-        return Cached[key] = new CacheItem<T>(DateTime.Now, value);
+        return Cached[key] = new CacheItem<T>(timestamp.Value, value);
     }
 
-    public CacheItem<T>? UnCache(string key)
+    public async Task<T?> CacheOrUpdate(string key, Func<DateTime, T?, Task<T>> memory, DateTime? cacheTime = null)
     {
-        Cached.TryRemove(key, out var old);        
-        return old;
+        DateTime timestamp = DateTime.MinValue;
+        T? value = default;
+
+        if (Cached.TryGetValue(key, out var item))
+            (timestamp, value) = item;
+
+        var newValue = await memory.Invoke(timestamp, value);
+        if (newValue?.Equals(value) is false)
+        {
+            var newItem = Cache(key, newValue, cacheTime);
+            return newItem is not null ? newItem.Value : default;
+        }
+        return item is not null ? item.Value : default;
     }
 
     public DateTime LastCached(string key)
     {
-        if (!Cached.TryGetValue(key, out var value)) 
+        if (!Cached.TryGetValue(key, out var value))
             return DateTime.MinValue;
         return value!.Timestamp;
     }
 
-    public async Task<T?> CacheOrUpdate(string key, Func<DateTime, T?, Task<T>> memory)
+    public CacheItem<T>? UnCache(string key)
     {
-        //memory ??= (timestamp, old) => Task.FromResult(old ?? T.Empty);
-        if (Cached.TryGetValue(key, out var item))
-        {
-            var (timestamp, value) = item;
-            value = await memory.Invoke(timestamp, value);
-            item = Cache(key, value);
-            return item is not null ? item.Value : default;
-        }
-
-        var content = await memory.Invoke(DateTime.MinValue, default);
-        item = Cache(key, content);
-        return item is not null ? item.Value : default;
-    }   
+        Cached.TryRemove(key, out var old);
+        return old;
+    }
 }

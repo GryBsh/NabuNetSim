@@ -4,11 +4,12 @@ namespace Nabu.Network.NHACP.V0;
 
 public class NHACPProtocol : Protocol
 {
-    INabuNetwork NabuNet { get; }
-    NHACPProtocolService Storage { get; }
+    private INabuNetwork NabuNet { get; }
+    private NHACPProtocolService Storage { get; }
+
     public NHACPProtocol(ILog<NHACPProtocol> logger, INabuNetwork nabuNet) : base(logger)
     {
-        Storage = new(Logger, Settings);
+        Storage = new(Logger, Adaptor);
         NabuNet = nabuNet;
     }
 
@@ -16,7 +17,8 @@ public class NHACPProtocol : Protocol
     public override byte Version => 0x01;
 
     #region ACP Frames / Messages
-    void StorageStarted()
+
+    private void StorageStarted()
     {
         SendFramed(
             0x80,
@@ -25,7 +27,7 @@ public class NHACPProtocol : Protocol
         );
     }
 
-    void StorageError(short code, string message)
+    private void StorageError(short code, string message)
     {
         SendFramed(
             0x82,
@@ -33,7 +35,8 @@ public class NHACPProtocol : Protocol
             NabuLib.ToSizedASCII(message).ToArray()
         );
     }
-    void StorageLoaded(short index, int length)
+
+    private void StorageLoaded(short index, int length)
     {
         SendFramed(
             0x83,
@@ -41,7 +44,8 @@ public class NHACPProtocol : Protocol
             NabuLib.FromInt(length)
         );
     }
-    void DataBuffer(Memory<byte> buffer)
+
+    private void DataBuffer(Memory<byte> buffer)
     {
         SendFramed(
             0x84,
@@ -50,19 +54,20 @@ public class NHACPProtocol : Protocol
         );
     }
 
-    #endregion
+    #endregion ACP Frames / Messages
 
     #region Helpers
 
-    void OnPacketSliced(int next, long length)
+    private void OnPacketSliced(int next, long length)
     {
         if (next > 0) Warning($"Packet length {length - next} != Frame length {length}");
     }
 
-    #endregion
+    #endregion Helpers
 
     #region ACP Operations
-    async Task Open(Memory<byte> buffer)
+
+    private async Task Open(Memory<byte> buffer)
     {
         Log($"NPC: Open");
         try
@@ -89,7 +94,7 @@ public class NHACPProtocol : Protocol
         }
     }
 
-    async Task Get(Memory<byte> buffer)
+    private async Task Get(Memory<byte> buffer)
     {
         Log($"NPC: Get");
         try
@@ -111,10 +116,9 @@ public class NHACPProtocol : Protocol
         {
             StorageError(500, ex.Message);
         }
-
     }
 
-    async Task Put(Memory<byte> buffer)
+    private async Task Put(Memory<byte> buffer)
     {
         Log($"NPC: Put");
         try
@@ -138,9 +142,9 @@ public class NHACPProtocol : Protocol
         {
             StorageError(500, ex.Message);
         }
-
     }
-    async Task DateTime(Memory<byte> none)
+
+    private async Task DateTime(Memory<byte> none)
     {
         Log($"NPC: DateTime");
         var (_, date, time) = await Storage.DateTime();
@@ -152,7 +156,7 @@ public class NHACPProtocol : Protocol
         Log($"NA: DataTime Send");
     }
 
-    #endregion
+    #endregion ACP Operations
 
     protected virtual Dictionary<byte, Func<Memory<byte>, Task>> PrepareHandlers()
     {
@@ -182,15 +186,17 @@ public class NHACPProtocol : Protocol
 
                 switch (command)
                 {
-
                     case 0x00:
                         Warning($"v{Version} Received: 0, Aborting");
                         break;
+
                     case 0xEF:
                         break;
+
                     case var c when handlers.ContainsKey(c):
                         await handlers[command](message);
                         break;
+
                     default:
                         Warning($"Unsupported: {Format(command)}");
                         continue;
@@ -214,8 +220,6 @@ public class NHACPProtocol : Protocol
     public override bool ShouldAccept(byte unhandled)
     {
         return base.ShouldAccept(unhandled) &&
-               NabuNet.Source(Settings)?.EnableRetroNet is false;
+               NabuNet.Source(Adaptor)?.EnableRetroNet is false;
     }
-
 }
-

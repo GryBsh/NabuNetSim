@@ -7,7 +7,8 @@ public abstract class DisposableBase : IDisposable
     private bool disposedValue;
     protected CompositeDisposable Disposables { get; } = new();
 
-    public DisposableBase() { }
+    public DisposableBase()
+    { }
 
     protected virtual void Dispose(bool disposing)
     {
@@ -21,7 +22,9 @@ public abstract class DisposableBase : IDisposable
             disposedValue = true;
         }
     }
-    protected virtual void Disposing() { }
+
+    protected virtual void Disposing()
+    { }
 
     public void Dispose()
     {

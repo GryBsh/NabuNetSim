@@ -3,11 +3,11 @@
 [Flags]
 public enum AttrFlags : short
 {
-    None      = 0x0000,
-    Read      = 0x0001,
-    Write     = 0x0002,
+    None = 0x0000,
+    Read = 0x0001,
+    Write = 0x0002,
     Directory = 0x0004,
-    Special   = 0x0008
+    Special = 0x0008
 }
 
 [Flags]

@@ -1,73 +1,19 @@
-﻿using ReactiveUI;
-using System.Reactive.Linq;
-using Nabu.Network;
+﻿using Blazorise;
 using LiteDB;
 using Nabu.Models;
-using Nabu.NetSim.UI.Services;
 using Nabu.NetSim.UI.Models;
-using Blazorise;
+using Nabu.NetSim.UI.Services;
+using Nabu.Network;
+using Nabu.Services;
+using ReactiveUI;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
-
-
 public class HomeViewModel : ReactiveObject, IActivatableViewModel
 {
-    public Settings Settings { get; }
-    public INabuNetwork Sources { get; }
-    public ISimulation Simulation { get; }
-    HeadlineService News { get; }
-    public bool Visible { get; set; } = true;
-
-    public ViewModelActivator Activator { get; }
-
-
-    public HomeViewModel(
-        Settings settings,
-        INabuNetwork sources,
-        ISimulation simulation,
-        HeadlineService news
-    )
-    {
-        Settings = settings;
-        Sources = sources;
-        Simulation = simulation;
-        News = news;
-        Activator = new();
-
-        this.WhenActivated(
-            disposables =>
-            {
-                Observable.Interval(TimeSpan.FromMinutes(10), RxApp.TaskpoolScheduler)
-                    .Subscribe(_ => GetHeadlines())
-                    .DisposeWith(disposables);
-            }
-        );
-
-        Task.Run(async () =>
-        {
-            //Log!.RefreshLog();
-            GetHeadlines();
-            await Task.Delay(TimeSpan.FromSeconds(5));
-            Loaded = true;
-        });
-
-        
-    }
-
-    bool loaded = false;
-    public bool Loaded
-    {
-        get => loaded;
-        set
-        {
-            loaded = value;
-            this.RaisePropertyChanged();
-        }
-    }
-
-    static string[] Phrases = new[] {
+    private static string[] Phrases = new[] {
         "👁️🚢👿",
         "Assimilation in progress",
         "Admiral! There be whales here!",
@@ -88,28 +34,48 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
         "Excuse me human, can I interest you in this pamphlet on the kingdom of NABU?"
     };
 
+    private bool loaded = false;
+
+    public HomeViewModel(
+        Settings settings,
+        INabuNetwork sources,
+        ISimulation simulation,
+        IHeadlineService news
+    )
+    {
+        Settings = settings;
+        Sources = sources;
+        Simulation = simulation;
+
+        Activator = new();
+
+        Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            Loaded = true;
+        });
+    }
+
+    public ViewModelActivator Activator { get; }
+
+    public bool Loaded
+    {
+        get => loaded;
+        set
+        {
+            loaded = value;
+            this.RaisePropertyChanged();
+        }
+    }
+
     public string Phrase => Phrases[Random.Shared.Next(0, Phrases.Length)];
-
-    public ICollection<TickerItem> Headlines => News.Headlines.ToList();
-
-    public void GetHeadlines()
-    {
-        this.RaisePropertyChanged(nameof(Headlines));
-
-    }
-
-    public void ToggleAdaptor(AdaptorSettings settings)
-    {
-        if (settings is TCPAdaptorSettings connection && connection.Connection)
-            connection.ListenTask?.Cancel();
-        else 
-            Simulation?.ToggleAdaptor(settings);
-    }
-
+    public Settings Settings { get; }
+    public ISimulation Simulation { get; }
+    public INabuNetwork Sources { get; }
+    public bool Visible { get; set; } = true;
     public VisiblePage VisiblePage { get; set; } = VisiblePage.Adaptors;
-    VisiblePage LastPage { get; set; } = VisiblePage.Adaptors;
 
-    
+    private VisiblePage LastPage { get; set; } = VisiblePage.Adaptors;
 
     public Visibility IsVisible(VisiblePage page) => VisiblePage == page ? Visibility.Visible : Visibility.Invisible;
 
@@ -120,6 +86,8 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
         this.RaisePropertyChanged(nameof(VisiblePage));
     }
 
+    
+
     public void ToggleVisible(VisiblePage page)
     {
         if (VisiblePage == page)
@@ -127,8 +95,4 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
         else
             SetVisible(page);
     }
-    
-
-
 }
-

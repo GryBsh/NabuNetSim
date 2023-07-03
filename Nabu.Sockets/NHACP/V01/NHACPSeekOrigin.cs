@@ -6,5 +6,3 @@ public enum NHACPSeekOrigin
     Current = 1,
     End = 2
 }
-
-

@@ -5,15 +5,16 @@ namespace Nabu.Network.NHACP.V01;
 public class RAMStorageHandler : INHACPStorageHandler
 {
     protected ILog Logger;
-    protected AdaptorSettings Settings;
+    protected AdaptorSettings Adaptor;
     protected Memory<byte> Buffer = Array.Empty<byte>();
 
     public int Position { get; set; } = 0;
     public string Path { get; set; } = string.Empty;
+
     public RAMStorageHandler(ILog logger, AdaptorSettings settings)
     {
         Logger = logger;
-        Settings = settings;
+        Adaptor = settings;
     }
 
     public virtual Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
@@ -38,7 +39,8 @@ public class RAMStorageHandler : INHACPStorageHandler
         {
             if (offset >= Buffer.Length) return Task.FromResult((false, "Offset beyond end of file", (Memory<byte>)Array.Empty<byte>(), NHACPError.InvalidRequest));
             var (_, buffer) = NabuLib.Slice(Buffer, offset, length);
-            if (realLength is false && buffer.Length != length) {
+            if (realLength is false && buffer.Length != length)
+            {
                 var read = buffer;
                 buffer = new Memory<byte>(new byte[length]);
                 read.CopyTo(buffer[..read.Length]);
@@ -76,11 +78,11 @@ public class RAMStorageHandler : INHACPStorageHandler
         Buffer = Array.Empty<byte>();
     }
 
-
     public (bool, int, string, NHACPError) Seek(int offset, NHACPSeekOrigin origin)
     {
         return (true, Position += offset, string.Empty, NHACPError.Undefined);
     }
+
     public (bool, string, string, NHACPError) Info()
     {
         if (Path == string.Empty) return (false, string.Empty, "Memory Bank does not exist", NHACPError.InvalidRequest);

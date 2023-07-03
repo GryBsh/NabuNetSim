@@ -9,8 +9,7 @@ public static class LiteDbExtensions
     public static IServiceCollection AddLiteDb(this IServiceCollection services)
     {
         services.AddSingleton(typeof(IRepository<>), typeof(LiteDbRepository<>));
-        services.AddSingleton<LiteDbModel<LogEntry>, LogEntryModel>();
+        services.AddSingleton<ILiteDbModel<LogEntry>, LogEntryModel>();
         return services;
     }
 }
-

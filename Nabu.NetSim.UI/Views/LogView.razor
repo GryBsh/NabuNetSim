@@ -1,13 +1,12 @@
 ﻿@inherits ReactiveInjectableComponentBase<LogViewModel>
 
-<HeaderView IconName="@IconName.Plug"
+<HeaderView Icon="@IconName.BookReader"
             Heading="Log"/>
 
-<ListGroup Flush>
+<ListGroup Flush Class="sticky-top sticky-padded-top">
     <ListGroupItem>
-        <Div Flex="Flex.JustifyContent.Around" Width="Width.Is100">
-            <Div Width="Width.Is25">
-                <Div TextAlignment="TextAlignment.Center" Width="Width.Is100">Page</Div>
+        <Div Flex="Flex.JustifyContent.Between">
+            <Div Class="hstack gap-3" Style="width: 30%">
                 <Div Class="input-group">
                     <Button Class="btn btn-primary" Disabled=ViewModel!.IsActivePage(1) @onclick="@ViewModel.PageBack">
                         <Icon Name="IconName.ArrowLeft" />
@@ -17,33 +16,29 @@
                             <SelectItem @key=context Value="context">@(context)</SelectItem>
                         </Repeater>
                     </Select>
+                    <Select TValue="int" @bind-SelectedValue="@ViewModel.PageSize">
+                        <SelectItem Value="100">100</SelectItem>
+                        <SelectItem Value="200">200</SelectItem>
+                        <SelectItem Value="500">500</SelectItem>
+                        <SelectItem Value="1000">1000</SelectItem>
+                    </Select>
                     <Button Class="btn btn-primary" Disabled=ViewModel.IsActivePage(ViewModel.PageCount) @onclick="@ViewModel.PageForward">
                         <Icon Name="IconName.ArrowRight" />
                     </Button>
                 </Div>
             </Div>
             <Div>
-                <Div TextAlignment="TextAlignment.Center" Width="Width.Is100">Per Page</Div>
-                <Select TValue="int" @bind-SelectedValue="@ViewModel.PageSize">
-                    <SelectItem Value="100">100</SelectItem>
-                    <SelectItem Value="200">200</SelectItem>
-                    <SelectItem Value="500">500</SelectItem>
-                    <SelectItem Value="1000">1000</SelectItem>
-                </Select>
-            </Div>
-            <Div>
-                <Div TextAlignment="TextAlignment.Center" Width="Width.Is100">Search</Div>
                 <Div Class="input-group">
-                    <TextEdit @bind-Text="@ViewModel.Search" />
+                    <TextEdit @bind-Text="@ViewModel.Search" Placeholder="Search..." />
                     <Button Disabled=@(ViewModel.Search == string.Empty) Class="btn-primary" @onclick=@ViewModel.ClearSearch>
                         <Icon IconSize=@IconSize.Large Name="IconName.Clear" />
                     </Button>
                 </Div>
             </Div>
         </Div>
+        
     </ListGroupItem>
 </ListGroup>
-<Divider />
 <ListGroup Flush>
     <Virtualize TItem="IGrouping<LogKey, LogEntry>" Items="ViewModel.CurrentPage" OverscanCount="50">
         <ListGroupItem>
@@ -51,13 +46,13 @@
                 <Small Width="Width.Is50">
                     <Highlighter Text="@context.Key.Name" HighlightedText="@ViewModel.Search" />
                 </Small>
-                <Small><Highlighter Text="@context.Key.Timestamp.ToString()" HighlightedText="@ViewModel.Search" /></Small>
             </Div>
-            <Repeater TItem="LogEntry" Items="@context.Reverse()" Context="entry">
+            <Repeater TItem="LogEntry" Items="@context" Context="entry">
                 
                 <Div Width="Width.Is100" TextOverflow="TextOverflow.Wrap" Flex="Flex.JustifyContent.Between">
+                    <Div><Small><Highlighter Text="@entry.Timestamp.ToString()" HighlightedText="@ViewModel.Search" /></Small></Div>
                     <Div><Small><Highlighter Text="@entry.LogLevel" HighlightedText="@ViewModel.Search" /></Small></Div>
-                    <Div Width="Width.Is75" Style="word-break:break-all"><Small><Highlighter Text="@entry.Message" HighlightedText="@ViewModel.Search" /></Small></Div>
+                    <Div Style="width: 65%; word-break:break-all"><Small><Highlighter Text="@entry.Message" HighlightedText="@ViewModel.Search" /></Small></Div>
                 </Div>
             </Repeater>
         </ListGroupItem>

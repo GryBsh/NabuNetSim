@@ -5,19 +5,15 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UserSecretsId>1edfc615-53f7-4ec2-9052-78dfd6daea82</UserSecretsId>
-    <AssemblyName>nns-wui</AssemblyName>
+    <AssemblyName>nns</AssemblyName>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
-    <Platforms>AnyCPU;x64</Platforms>
+    <Platforms>AnyCPU</Platforms>
+    <!--<ApplicationManifest>app.manifest</ApplicationManifest>-->
   </PropertyGroup>
 
   <ItemGroup>
     <Content Remove="nlog.config" />
 
-  </ItemGroup>
-
-  <ItemGroup>
-    <Compile Include="..\Nabu.NetSim\PythonProtocol.cs" Link="PythonProtocol.cs" />
-    <Compile Include="..\Nabu.NetSim\Simulation.cs" Link="Simulation.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -28,21 +24,25 @@
 
 
   <ItemGroup>
-    <PackageReference Include="Blazorise" Version="1.2.3" />
-    <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.3" />
-    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.3" />
-    <PackageReference Include="Blazorise.Icons.Material" Version="1.2.3" />
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
+    <PackageReference Include="Blazorise" Version="1.2.4" />
+    <PackageReference Include="Blazorise.Bootstrap5" Version="1.2.4" />
+    <PackageReference Include="Blazorise.Icons.FontAwesome" Version="1.2.4" />
+    <PackageReference Include="Blazorise.Icons.Material" Version="1.2.4" />
     <PackageReference Include="LiteDb.Extensions.Caching" Version="2.5.1" />
     <PackageReference Include="Microsoft.VisualStudio.Azure.Containers.Tools.Targets" Version="1.18.1" />
-    <PackageReference Include="NLog.Extensions.Logging" Version="5.2.3" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.3.0" />
+    <PackageReference Include="NLog.Web.AspNetCore" Version="5.3.0" />
     <PackageReference Include="Python.Included" Version="3.11.2" />
-    <PackageReference Include="ReactiveUI.Blazor" Version="18.4.44" />
-    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="14.6.8" />
+    <PackageReference Include="ReactiveUI.Blazor" Version="19.2.1" />
+    <PackageReference Include="Splat.Microsoft.Extensions.DependencyInjection" Version="14.6.37" />
   </ItemGroup>
 
 
   <ItemGroup>
+    <ProjectReference Include="..\LibNabu.Console\LibNabu.Console.csproj" />
     <ProjectReference Include="..\LibNabu.JavaScript\LibNabu.JavaScript.csproj" />
+    <ProjectReference Include="..\LIbNabu.LiteDB\LIbNabu.LiteDB.csproj" />
     <ProjectReference Include="..\LibNabu\LibNabu.csproj" />
     <ProjectReference Include="..\Nabu.NetSim.UI\Nabu.NetSim.UI.csproj" />
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />

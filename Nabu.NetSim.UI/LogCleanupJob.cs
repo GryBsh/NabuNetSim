@@ -1,20 +1,18 @@
 ﻿using Nabu.NetSim.UI.Services;
 using Nabu.Services;
-using System.Reactive.Linq;
 
 namespace Nabu.NetSim.UI;
 
 public class LogCleanupJob : Job
 {
-    
-    public LogService LogService { get; set; }
+    public ILogService LogService { get; set; }
 
-    public LogCleanupJob(ILog<LogCleanupJob> logger, Settings settings, LogService logService) : base(logger, settings)
+    public LogCleanupJob(ILog<LogCleanupJob> logger, Settings settings, ILogService logService) : base(logger, settings)
     {
         LogService = logService;
     }
 
-    void Cleanup()
+    private void Cleanup()
     {
         //using var scope = Scope.CreateScope();
         var repository = LogService.Repository;
@@ -29,16 +27,16 @@ public class LogCleanupJob : Job
         {
             repository.Delete(e => e.Timestamp < cutoff);
         }
-        
+
         //GC.Collect();
     }
 
-    void Maintenance()
+    private void Maintenance()
     {
         Logger.Write("Database Maintenance");
         LogService.Repository.RunMaintenance();
     }
-    
+
     public override void Start()
     {
         Cleanup();
@@ -48,7 +46,7 @@ public class LogCleanupJob : Job
             _ => Cleanup()
         );
         Disposables.AddInterval(
-            TimeSpan.FromMinutes(15),
+            TimeSpan.FromHours(1),
             _ => Maintenance()
         );
     }

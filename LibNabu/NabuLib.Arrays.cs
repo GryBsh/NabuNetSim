@@ -39,7 +39,8 @@ public static partial class NabuLib
     public static (int, Memory<byte>) Slice(Memory<byte> buffer, int offset, int length)
     {
         int next = offset + length;
-        if (next >= buffer.Length) {
+        if (next >= buffer.Length)
+        {
             next = 0;
             length = buffer.Length - offset;
         }
@@ -47,7 +48,7 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Expands or contracts the provided array, 
+    ///     Expands or contracts the provided array,
     ///     filling empty elements with the provided fill value.
     /// </summary>
     /// <typeparam name="T"></typeparam>
@@ -58,7 +59,7 @@ public static partial class NabuLib
     public static Memory<T> SetLength<T>(int length, Memory<T> items, T fill)
     {
         if (items.Length == length) return items;
-       
+
         var result = new Memory<T>(new T[length]);
         length = length > items.Length ? items.Length : length;
         items[..length].CopyTo(result);
@@ -67,7 +68,7 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Expands or contracts the provided array, 
+    ///     Expands or contracts the provided array,
     ///     filling empty elements with the result of the
     ///     provided Func[<typeparamref name="T"/>].
     /// </summary>
@@ -82,7 +83,7 @@ public static partial class NabuLib
 
         var result = new Memory<T>(new T[length]);
         var count = items.Length;
-        
+
         items[..count].CopyTo(result);
         for (int i = count; i < length; i++)
         {
@@ -106,7 +107,7 @@ public static partial class NabuLib
     {
         Memory<byte> r = new byte[buffer.Length + data.Length];
         buffer.CopyTo(r);
-        data.CopyTo(r[buffer.Length..(buffer.Length+data.Length)]);
+        data.CopyTo(r[buffer.Length..(buffer.Length + data.Length)]);
         return r;
     }
 
@@ -123,7 +124,7 @@ public static partial class NabuLib
 
     public static Memory<byte> Delete(Memory<byte> buffer, int offset, int length)
     {
-        var end = offset + length;   
+        var end = offset + length;
         Memory<byte> r = new byte[length];
         buffer[..offset].CopyTo(r);
         buffer[end..].CopyTo(r[offset..]);
@@ -136,7 +137,7 @@ public static partial class NabuLib
         var length = size > buffer.Length ? size : buffer.Length;
         var r = SetLength<byte>(length, buffer, 0x00);
 
-        data.CopyTo(r[offset..(offset+data.Length)]);   
+        data.CopyTo(r[offset..(offset + data.Length)]);
         return r;
     }
 }

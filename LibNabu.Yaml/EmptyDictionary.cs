@@ -5,9 +5,9 @@ namespace Nabu;
 
 public class EmptyDictionary<TKey, TValue> : IDictionary<TKey, TValue>
 {
-    TKey[] EmptyKeys { get; } = Array.Empty<TKey>();
-    TValue[] EmptyValues { get; } = Array.Empty<TValue>();
-    IEnumerable<KeyValuePair<TKey, TValue>> EmptyPairs { get; } = Array.Empty<KeyValuePair<TKey, TValue>>();
+    private TKey[] EmptyKeys { get; } = Array.Empty<TKey>();
+    private TValue[] EmptyValues { get; } = Array.Empty<TValue>();
+    private IEnumerable<KeyValuePair<TKey, TValue>> EmptyPairs { get; } = Array.Empty<KeyValuePair<TKey, TValue>>();
 
     public TValue this[TKey key]
     {
@@ -25,17 +25,14 @@ public class EmptyDictionary<TKey, TValue> : IDictionary<TKey, TValue>
 
     public void Add(TKey key, TValue value)
     {
-
     }
 
     public void Add(KeyValuePair<TKey, TValue> item)
     {
-
     }
 
     public void Clear()
     {
-
     }
 
     public bool Contains(KeyValuePair<TKey, TValue> item)
@@ -50,7 +47,6 @@ public class EmptyDictionary<TKey, TValue> : IDictionary<TKey, TValue>
 
     public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
     {
-
     }
 
     public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
@@ -79,4 +75,3 @@ public class EmptyDictionary<TKey, TValue> : IDictionary<TKey, TValue>
         return EmptyPairs.GetEnumerator();
     }
 }
-

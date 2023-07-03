@@ -5,29 +5,17 @@ namespace Nabu.Network.RetroNet;
 public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 {
     public RetroNetHttpHandler(
-        ILog logger, 
-        HttpClient client, 
-        AdaptorSettings settings, 
+        ILog logger,
+        HttpClient client,
+        AdaptorSettings adaptor,
+        Settings settings,
         IFileCache cache
-    ) : base(logger, settings)
+    ) : base(logger, adaptor)
     {
-        Client = new CachingHttpClient(client, Logger, cache, settings);
+        Client = new HttpCache(client, Logger, cache, settings, adaptor);
     }
-    public CachingHttpClient Client { get; }
 
-    public async Task<Memory<byte>> Get(string filename, CancellationToken cancel)
-    {
-        //filename = NabuLib.Uri(Settings, filename);
-        try
-        {
-           return await Client.GetBytes(filename);
-        }
-        catch (Exception ex)
-        {
-            Error(ex.Message);
-            return Array.Empty<byte>();
-        }
-    }
+    public HttpCache Client { get; }
 
     public Task Copy(string source, string destination, CopyMoveFlags flags)
     {
@@ -42,6 +30,20 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
     public Task<FileDetails> FileDetails(string filename)
     {
         throw new NotImplementedException();
+    }
+
+    public async Task<Memory<byte>> Get(string filename, CancellationToken cancel)
+    {
+        //filename = NabuLib.Uri(Settings, filename);
+        try
+        {
+            return await Client.GetBytes(filename);
+        }
+        catch (Exception ex)
+        {
+            Error(ex.Message);
+            return Array.Empty<byte>();
+        }
     }
 
     public Task<FileDetails> Item(short index)
@@ -61,11 +63,10 @@ public class RetroNetHttpHandler : NabuService, IRetroNetFileHandler
 
     public async Task<int> Size(string filename)
     {
-        filename = NabuLib.Uri(Settings, filename);
+        filename = NabuLib.Uri(Adaptor, filename);
         var head = await Client.GetHead(filename);
         var size = (int?)head.Content.Headers.ContentLength ?? -1;
         Log($"HTTP: {filename}:{size}");
         return size;
     }
 }
-

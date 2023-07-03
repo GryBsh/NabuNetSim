@@ -1,0 +1,10 @@
+﻿<Div Class="center center-all" Visibility="@Visibility">
+    <Icon IconSize="@IconSize.x5" Name="@Icon" Style="color: rgba(204, 204, 204, .2)" />
+</Div>
+@code {
+    [Parameter]
+    public Visibility Visibility { get; set; } = Visibility.Visible;
+
+    [Parameter]
+    public object? Icon { get; set; }
+}

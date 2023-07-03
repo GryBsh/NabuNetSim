@@ -1,30 +1,40 @@
 ﻿@inherits ReactiveInjectableComponentBase<AdaptorViewModel>
 
-    <ListGroup Flush>
-        <Repeater TItem="AdaptorSettings" Items="AdaptorList">    
-            <ListGroupItem @key=@context>
-                <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
-                    <Heading Size="HeadingSize.Is5" Margin="Margin.Is1.FromBottom">
-                        <button class="btn @(ViewModel?.AdaptorStatus(context) == "Running" ? "btn-success" : "btn-primary")" onclick="@(() => { ViewModel?.Menu.SetSelected(context); })" title="Adaptor Settings">
-                            @if (context is TCPAdaptorSettings)
-                            {
-                                <Icon IconSize=@IconSize.Large Name="IconName.Wifi" />
-                            }
-                            else
-                            {
-                                <Icon IconSize=@IconSize.Large Name="IconName.Plug" />
-                            }
-                        </button>
-                        @context.Port
-                    </Heading>
-                    <button type="button" class="btn @(ViewModel?.AdaptorStatus(context) == "Running" ? "btn-danger" : "btn-success")" onclick="@(() => ViewModel?.Home.ToggleAdaptor(context))">
-                        <Icon Name="@(ViewModel?.AdaptorStatus(context) == "Running" ? IconName.Stop : IconName.Play)" title="@ViewModel?.AdaptorButtonText(context)" />
+<ListGroup Flush>
+    <Repeater TItem="AdaptorSettings" Items="AdaptorList">    
+        <ListGroupItem @key=@context>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Heading Size="HeadingSize.Is5" Margin="Margin.Is1.FromBottom">
+                    <button class="btn @(ViewModel?.AdaptorStatus(context) == "Running" ? "btn-success" : "btn-primary")" onclick="@(() => { ViewModel?.Menu.SetSelected(context); })" data-bs-toggle="tooltip" title="Adaptor Settings">
+                        @if (context is TCPAdaptorSettings)
+                        {
+                            <Icon IconSize=@IconSize.Large Name="IconName.Wifi" />
+                        }
+                        else
+                        {
+                            <Icon IconSize=@IconSize.Large Name="IconName.Plug" />
+                        }
                     </button>
+                    @context.Port
+                </Heading>
+                <Div Class="hstack">
+                    <Span data-bs-toggle="tooltip" title="Start Emulator">
+                        <Button Type="ButtonType.Button" Class="btn-primary" Visibility=@ViewModel.RunVisibility(context) Disabled=@(!ViewModel.RunAvailable(context)) onclick="@(() => ViewModel.RunEmulator(context))" >
+                            <Icon Name="IconName.Running"/>
+                        </Button>
+                    </Span>
+                    <Button Type=@ButtonType.Button Visibility=@(ViewModel?.AdaptorStatus(context) != "Running" ? Visibility.Visible : Visibility.Invisible) class="btn btn-success" onclick="@(() => ViewModel?.ToggleAdaptor(context))" data-bs-toggle="tooltip" title="Start Adaptor">
+                        <Icon Name="IconName.Play"  />
+                    </Button>
+                    <Button Type=@ButtonType.Button Visibility="@(ViewModel?.AdaptorStatus(context) == "Running" ? Visibility.Visible : Visibility.Invisible)" class="btn btn-danger" onclick="@(() => ViewModel?.ToggleAdaptor(context))" data-bs-toggle="tooltip" title="Stop Adaptor">
+                        <Icon Name="IconName.Stop"  />
+                    </Button>
                 </Div>
-                <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
-                    <Icon IconSize="@IconSize.Large" Name="IconName.Folder" />
-                    @context.Source/@(!string.IsNullOrWhiteSpace(context.Image) ? context.Image : "Main")
-                </Paragraph>
-            </ListGroupItem>
-        </Repeater>
-    </ListGroup>
+            </Div>
+            <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
+                <Icon IconSize="@IconSize.Large" Name="IconName.Folder" />
+                @context.Source/@(!string.IsNullOrWhiteSpace(context.Program) ? context.Program : "Main")
+            </Paragraph>
+        </ListGroupItem>
+    </Repeater>
+</ListGroup>

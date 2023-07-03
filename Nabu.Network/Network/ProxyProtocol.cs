@@ -17,4 +17,3 @@ public class ProxyProtocol : Protocol
         return Task.CompletedTask;
     }
 }
-

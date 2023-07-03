@@ -1,19 +1,56 @@
-﻿using Newtonsoft.Json.Linq;
-using YamlDotNet.Core.Events;
-using YamlDotNet.Core;
-using YamlDotNet.Serialization;
+﻿using Nabu.Network;
+using Newtonsoft.Json.Linq;
 using System.Globalization;
-using Nabu.Network;
+using System.Text;
+using YamlDotNet.Core;
+using YamlDotNet.Core.Events;
+using YamlDotNet.Serialization;
 
 namespace Nabu;
 
 public static class Yaml
 {
-    public class LowerFirstNamingConvention : INamingConvention
+    public static async Task<T[]> Deserialize<T>(string medium, IFileCache? cache = null, IHttpCache? http = null)
     {
-        static readonly TextInfo Text = CultureInfo.InvariantCulture.TextInfo;
-        public string Apply(string value)
-            => Text.ToLower(value[0]) + value[1..];
+        var file = http switch
+        {
+            not null when NabuLib.IsHttp(medium) => await http.GetBytes(medium),
+            //_ when Path.Exists(medium) && cache is not null => await cache.GetBytes(medium),
+            _ when Path.Exists(medium) => await File.ReadAllBytesAsync(medium),
+            _ => Encoding.Default.GetBytes(medium),
+        };
+
+        using TextReader source = new StreamReader(new MemoryStream(file.ToArray()));
+
+        return Deserialize<T>(source);
+    }
+
+    public static T[] Deserialize<T>(TextReader source)
+    {
+        var naming = new LowerFirstNamingConvention();
+        var reader = new Parser(source);
+        var deserializer = new DeserializerBuilder()
+                               .WithNamingConvention(naming)
+                               .Build();
+
+        reader.Expect<StreamStart>();
+
+        var documents = new List<IDictionary<string, object>>();
+
+        while (reader.Accept<DocumentStart>())
+        {
+            var document = deserializer.Deserialize<IDictionary<string, object>>(reader);
+            documents.Add(document);
+        }
+
+        using var writer = new StringWriter();
+        var serializer = new SerializerBuilder()
+                            .JsonCompatible()
+                            .Build();
+
+        serializer.Serialize(writer, documents.ToArray());
+        return JArray.Parse(writer.ToString())?.ToObject<T[]>() ??
+               Array.Empty<T>();
     }
 
     public static string Serialize<T>(params T[] documents)
@@ -30,58 +67,11 @@ public static class Yaml
         return string.Join("---\n", strings);
     }
 
-    public static async Task<T[]> Deserialize<T>(string medium, IFileCache cache, IHttpCache? http = null)
+    public class LowerFirstNamingConvention : INamingConvention
     {
-        var file = http switch
-        {
-            not null when NabuLib.IsHttp(medium) => await http.GetBytes(medium),
-            null when Path.Exists(medium) => await cache.GetFile(medium),
-            _ => Memory<byte>.Empty
-        };
+        private static readonly TextInfo Text = CultureInfo.InvariantCulture.TextInfo;
 
-        using TextReader source =
-            file.Equals(Memory<byte>.Empty) ?
-                new StringReader(medium) :
-                new StreamReader(new MemoryStream(file.ToArray()));
-
-        return Deserialize<T>(source);
-    }
-
-    public static T[] Deserialize<T>(TextReader source)
-    {
-        var naming = new LowerFirstNamingConvention();
-        var reader = new Parser(source);
-        var deserializer = new DeserializerBuilder()
-                               .WithNamingConvention(naming)
-                               .Build();
-
-        _ = reader.TryConsume<StreamStart>(out var _);
-
-        var documents = new List<IDictionary<string, object>>();
-
-        while (reader.TryConsume<DocumentStart>(out var _))
-        {
-            reader.Accept<NodeEvent>(out var nextNode); //Peek next node
-            switch (nextNode)
-            {
-                case SequenceStart seq:
-                    var elements = deserializer.Deserialize<IDictionary<string, object>[]>(reader);
-                    documents.AddRange(elements);
-                    break;
-                default:
-                    var document = deserializer.Deserialize<IDictionary<string, object>>(reader);
-                    documents.Add(document);
-                    break;
-            }
-        }
-
-        using var writer = new StringWriter();
-        var serializer = new SerializerBuilder()
-                            .JsonCompatible()
-                            .Build();
-
-        serializer.Serialize(writer, documents.ToArray());
-        return JArray.Parse(writer.ToString())?.ToObject<T[]>() ??
-               Array.Empty<T>();
+        public string Apply(string value)
+            => Text.ToLower(value[0]) + value[1..];
     }
 }

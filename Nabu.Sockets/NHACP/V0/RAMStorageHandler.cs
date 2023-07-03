@@ -8,7 +8,7 @@ public class RAMStorageHandler : IStorageHandler
     protected AdaptorSettings Settings;
     protected byte[] Buffer = Array.Empty<byte>();
 
-    Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
+    private Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
 
     public RAMStorageHandler(ILog logger, AdaptorSettings settings)
     {

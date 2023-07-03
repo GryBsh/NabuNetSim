@@ -1,23 +1,20 @@
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Nabu.NetSim.UI.Services;
+using Nabu.Services;
 using System.Collections.Concurrent;
 
 namespace Nabu.NetSim.UI;
 
 public class AppLogProvider : ILoggerProvider
 {
-    readonly ConcurrentDictionary<string, AppLogger> Loggers = new(StringComparer.OrdinalIgnoreCase);
-    LogService Logs { get; }
-    readonly Settings Settings;
+    private readonly ConcurrentDictionary<string, AppLogger> Loggers = new(StringComparer.OrdinalIgnoreCase);
+    private ILogService Logs { get; }
+
     private bool disposedValue;
 
     public AppLogProvider(
-        Settings settings,
-        LogService repository
+        ILogService repository
     )
     {
-        Settings = settings;
         Logs = repository;
     }
 
@@ -33,8 +30,7 @@ public class AppLogProvider : ILoggerProvider
         {
             if (disposing)
             {
-                
-                Loggers.Clear();             
+                Loggers.Clear();
             }
             disposedValue = true;
         }

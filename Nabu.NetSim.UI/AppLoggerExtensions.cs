@@ -7,15 +7,12 @@ namespace Nabu.NetSim.UI;
 
 public static class AppLoggerExtensions
 {
-    public static ILoggingBuilder AddInMemoryLogger(this ILoggingBuilder builder)
+    public static ILoggingBuilder AddDBLogger(this ILoggingBuilder builder)
     {
         builder.AddConfiguration();
 
-        builder.Services.TryAddEnumerable(
-            ServiceDescriptor.Singleton<ILoggerProvider, AppLogProvider>()
-        );
+        builder.Services.AddSingleton<ILoggerProvider, AppLogProvider>();
 
         return builder;
     }
 }
-

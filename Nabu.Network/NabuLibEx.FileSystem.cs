@@ -1,12 +1,4 @@
 ﻿using Microsoft.Extensions.FileSystemGlobbing;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reactive.Joins;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 
 namespace Nabu
 {
@@ -15,9 +7,25 @@ namespace Nabu
         public static IEnumerable<string> List(string path, AdaptorSettings settings, params string[] patterns)
         {
             path = NabuLib.FilePath(settings, path);
+            return List(path, patterns);
+        }
+
+        public static IEnumerable<string> List(string path, params string[] patterns)
+        {
+            foreach (string pattern in patterns)
+            {
+                var literalPath = Path.Combine(path, pattern);
+                if (Path.Exists(literalPath))
+                    yield return literalPath;
+            }
+
             Matcher matcher = new();
             matcher.AddIncludePatterns(patterns);
-            return matcher.GetResultsInFullPath(Path.GetFullPath(path));
+
+            var matches = matcher.GetResultsInFullPath(Path.GetFullPath(path));
+
+            foreach (var match in matches)
+                yield return match;
         }
     }
 }

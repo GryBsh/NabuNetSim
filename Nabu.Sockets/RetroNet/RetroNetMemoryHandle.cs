@@ -11,6 +11,7 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
 
         Filename = CachePath = cachePath;
     }
+
     protected string? CachePath { get; }
     protected Memory<byte> Buffer { get; set; } = new(Array.Empty<byte>());
     protected FileOpenFlags Flags { get; set; }

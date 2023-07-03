@@ -1,4 +1,4 @@
-﻿using InvertedTomato.IO;
+﻿using InvertedTomato.Crc;
 
 namespace Nabu.Network.NHACP.V01;
 

@@ -13,11 +13,12 @@ public static class NHACPStructure
     public static Memory<byte> FileInfo(string path, int maxNameLength = int.MaxValue)
     {
         var flags = AttrFlags.None;
-        
+
         DateTime lastWrite = System.DateTime.MinValue;
         string name = string.Empty;
         var length = 0;
-        if (File.Exists(path)) {
+        if (File.Exists(path))
+        {
             var info = new FileInfo(path);
             name = info.Name;
             length = (int)info.Length;
@@ -29,8 +30,8 @@ public static class NHACPStructure
                 info.Attributes.HasFlag(FileAttributes.IntegrityStream) ||
                 info.Attributes.HasFlag(FileAttributes.ReparsePoint) ||
                 info.Attributes.HasFlag(FileAttributes.Device)
-            )   flags |= AttrFlags.Special;
-        } 
+            ) flags |= AttrFlags.Special;
+        }
         else if (Directory.Exists(path))
         {
             var info = new DirectoryInfo(path);
@@ -40,7 +41,7 @@ public static class NHACPStructure
             flags |= AttrFlags.Directory;
         }
 
-        if (name.Length > maxNameLength) 
+        if (name.Length > maxNameLength)
             name = name[..maxNameLength];
 
         return NabuLib.Concat<byte>(
@@ -61,5 +62,4 @@ public static class NHACPStructure
         }
         return str;
     }
-
 }

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Nabu.Network;
+using Nabu.Packages;
 using Nabu.Services;
 using Napa;
 using System.IO.Ports;
@@ -8,15 +9,19 @@ namespace Nabu.Adaptor;
 
 public class SerialAdaptor
 {
-    private SerialAdaptor() { }
+    private SerialAdaptor()
+    { }
+
     public static async Task Start(
-        IServiceProvider serviceProvider, 
-        SerialAdaptorSettings settings, 
+        IServiceProvider serviceProvider,
+        SerialAdaptorSettings settings,
         CancellationToken stopping
-    ) {
+    )
+    {
+        var global = serviceProvider.GetRequiredService<Settings>();
         var logger = serviceProvider.GetRequiredService<ILog<SerialAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
-        var packages = serviceProvider.GetRequiredService<IPackageManager>();
+        var packages = serviceProvider.GetRequiredService<PackageService>();
 
         var serial = new SerialPort(
             settings.Port,
@@ -44,17 +49,16 @@ public class SerialAdaptor
         );
 
         var name = settings.Port.Split(Path.DirectorySeparatorChar)[^1];
-        
-        var originalSettings = settings with { };
+        //settings.StoragePath = global.StoragePath;
 
-        
+        var originalSettings = settings with { };
 
         while (serial.IsOpen is false)
             try
             {
-                await packages.UpdateInstalled();
-                storage.UpdateStorageFromPackages(packages, settings);
-                storage.UpdateStorage(settings, name);
+                //await packages.UpdateInstalled();
+                storage.UpdateStorageFromPackages(packages.Packages);
+                storage.AttachStorage(settings, name);
                 serial.Open();
             }
             catch (UnauthorizedAccessException)
@@ -87,9 +91,7 @@ public class SerialAdaptor
             );
             logger.Write($"Adaptor Started");
             await adaptor.Listen(stopping);
-
         }
-        
         catch (Exception ex)
         {
             logger.WriteError(ex.Message, ex);
@@ -98,7 +100,5 @@ public class SerialAdaptor
         settings.StoragePath = originalSettings.StoragePath;
         serial.Close();
         serial.Dispose();
-
     }
-
 }

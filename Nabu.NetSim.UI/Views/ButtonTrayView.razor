@@ -1,29 +1,47 @@
 ﻿@inherits ReactiveInjectableComponentBase<ButtonTrayViewModel>
-<Div Class="hstack gap-1">
-    <button type="button" 
-            class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Adaptors) is Visibility.Visible ? "btn-success" : "btn-primary")" 
-            disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Adaptors) is Visibility.Visible)"
-            onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Adaptors); })" title="Home">
-        <Icon Name="IconName.Home" />
-    </button>
-    <button type="button" 
-            class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Logs) is Visibility.Visible ? "btn-success" : "btn-primary")" 
-            disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Logs) is Visibility.Visible)"
-            onclick="@(() => { ViewModel!.Home.SetVisible(VisiblePage.Logs); })" title="Show Logs">
-        <Icon Name="IconName.BookReader" />
-    </button>
-    <button type="button" 
-            class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Packages) is Visibility.Visible ? "btn-success" : "btn-primary")" 
-            disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Packages) is Visibility.Visible)" 
-            onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Packages); })" title="Packages">
-        <Icon Name="IconName.Store" />
-    </button>
-    <!--<button type="button"
-            class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Settings) is Visibility.Visible ? "btn-success" : "btn-primary")"
-            disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Settings) is Visibility.Visible)"
-            onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Settings); })" title="Settings">
-        <Icon Name="IconName.SliderHorizontal" />
-    </button>-->
-</Div>
+<Container Class="sticky-top sticky-padded-top">
+    <Row>
+        <Div Class="btn-group-vertical" Style="width:min-content; margin: auto;"> 
+            <Span data-bs-toggle="tooltip"
+                  title="Home">
+                <button type="button"
+                        class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Adaptors) is Visibility.Visible ? "btn-success" : "btn-primary")"
+                        disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Adaptors) is Visibility.Visible)"
+                        onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Adaptors); })">
+                    <Icon Name="IconName.Home" />
+                </button>
+            </Span>
+            <Span data-bs-toggle="tooltip"
+                  title="Logs">
+                <button type="button"
+                        class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Logs) is Visibility.Visible ? "btn-success" : "btn-primary")"
+                        disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Logs) is Visibility.Visible)"
+                        onclick="@(() => { ViewModel!.Home.SetVisible(VisiblePage.Logs); })">
+                    <Icon Name="IconName.BookReader" />
+                </button>
+            </Span>
+            <Span data-bs-toggle="tooltip"
+                  title="Packages">
+                <button type="button"
+                        class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Packages) is Visibility.Visible ? "btn-success" : "btn-primary")"
+                        disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Packages) is Visibility.Visible)"
+                        onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Packages); })">
+                    <Icon Name="@("fa-box")" />
+                </button>
+            </Span>
+            <Span data-bs-toggle="tooltip" 
+                  title="Storage">
+                <button type="button"
+                        class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Files) is Visibility.Visible ? "btn-success" : "btn-primary") justify-content-md-start"
+                        disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Files) is Visibility.Visible)"
+                        onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Files); })">
+                    <Icon Name="IconName.Folder" />
+                </button>
+            </Span>
+        </Div>
+    </Row>
+</Container>
+
+
 
 

@@ -1,26 +1,17 @@
-﻿using Microsoft.Extensions.FileSystemGlobbing;
-using Nabu.Services;
+﻿using Nabu.Services;
 
 namespace Nabu.Network.NHACP.V01;
 
 public class FileStorageHandler : INHACPStorageHandler
 {
-    AdaptorSettings Settings;
-    String? Path;
-    OpenFlags Flags;
-    FileInfo? _file;
-    FileStream? _stream;
-    DirectoryInfo? _directory;
-    readonly List<string> _list = new();
-    int _listPosition = 0;
-    public int Position { get; private set; }
-    public int Length => (int?)_file?.Length ?? 0;
-
-
-    bool IsSymLink { get; set; }
-    string OriginalUri { get; set; }
-
-    ILog Logger { get; }
+    private readonly List<string> _list = new();
+    private DirectoryInfo? _directory;
+    private FileInfo? _file;
+    private int _listPosition = 0;
+    private FileStream? _stream;
+    private OpenFlags Flags;
+    private String? Path;
+    private AdaptorSettings Settings;
 
     public FileStorageHandler(ILog logger, AdaptorSettings settings, bool isSymLink, string originalUri)
     {
@@ -31,13 +22,78 @@ public class FileStorageHandler : INHACPStorageHandler
         OriginalUri = originalUri;
     }
 
-    bool Exclusive => Flags.HasFlag(OpenFlags.Exclusive);
-    bool Create => Flags.HasFlag(OpenFlags.Create);
-    bool Folder => Flags.HasFlag(OpenFlags.Directory);
-    bool ReadWrite => Flags.HasFlag(OpenFlags.ReadWrite);
-    bool ReadOnly => Flags.HasFlag(OpenFlags.ReadOnly);
-    bool ReadWriteProtect => Flags.HasFlag(OpenFlags.ReadWriteProtect);
-    bool Writable => ReadWrite || ReadWriteProtect;
+    public int Length => (int?)_file?.Length ?? 0;
+    public int Position { get; private set; }
+    private bool Create => Flags.HasFlag(OpenFlags.Create);
+    private bool Exclusive => Flags.HasFlag(OpenFlags.Exclusive);
+    private bool Folder => Flags.HasFlag(OpenFlags.Directory);
+    private bool IsSymLink { get; set; }
+    private ILog Logger { get; }
+    private string OriginalUri { get; set; }
+    private bool ReadOnly => Flags.HasFlag(OpenFlags.ReadOnly);
+    private bool ReadWrite => Flags.HasFlag(OpenFlags.ReadWrite);
+    private bool ReadWriteProtect => Flags.HasFlag(OpenFlags.ReadWriteProtect);
+    private bool Writable => ReadWrite || ReadWriteProtect;
+
+    public Task Close()
+    {
+        _file = null;
+        _list.Clear();
+        _stream?.Dispose();
+        return Task.CompletedTask;
+    }
+
+    public void End()
+    {
+        Close();
+    }
+
+    public async Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length, bool realLength = false)
+    {
+        if (_stream is null)
+            return (false, string.Empty, Array.Empty<byte>(), NHACPError.InvalidRequest);
+
+        if (offset > _stream.Length)
+            return (true, string.Empty, Array.Empty<byte>(), 0);
+
+        var buffer = new Memory<byte>(new byte[length]);
+
+        Logger.WriteVerbose($"Reading {length} bytes from {offset}, File Length: {_stream.Length}");
+        _stream.Seek(offset, SeekOrigin.Begin);
+        var read = await _stream.ReadAsync(buffer);
+        if (read != length && realLength)
+            buffer = buffer[0..read];
+
+        return (true, string.Empty, buffer, 0);
+    }
+
+    public (bool, string?, string, NHACPError) GetDirEntry(byte maxNameLength)
+    {
+        if (_listPosition == _list.Count)
+            return (true, null, string.Empty, 0);
+        var entry = _list[_listPosition++];
+        return (true, entry, string.Empty, 0);
+    }
+
+    public (bool, string, string, NHACPError) Info()
+    {
+        if (Path is null) return (false, string.Empty, "No file/directory open", NHACPError.InvalidRequest);
+        return (true, Path, string.Empty, 0);
+    }
+
+    public (bool, string, NHACPError) ListDir(string pattern)
+    {
+        if (_directory is null) return (false, string.Empty, NHACPError.InvalidRequest);
+
+        pattern = string.IsNullOrWhiteSpace(pattern) ? "*" : pattern;
+        _list.Clear();
+        _listPosition = 0;
+
+        var r = NabuLibEx.List(_directory.FullName, pattern);
+
+        _list.AddRange(r);
+        return (true, string.Empty, 0);
+    }
 
     public Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
     {
@@ -45,7 +101,7 @@ public class FileStorageHandler : INHACPStorageHandler
         Path = uri;
 
         var exists = File.Exists(Path);
-        if (Exclusive && exists) 
+        if (Exclusive && exists)
         {
             return Task.FromResult((false, "Exists", Length, NHACPError.Exists));
         }
@@ -53,8 +109,7 @@ public class FileStorageHandler : INHACPStorageHandler
         {
             return Task.FromResult((false, "Not found", Length, NHACPError.NotFound));
         }
-        
-        
+
         //Logger.Write($"Create: {create}, ReadWrite: {readWrite}");
         if (Folder is false && (exists || Create))
         {
@@ -67,49 +122,30 @@ public class FileStorageHandler : INHACPStorageHandler
             _stream = new FileStream(
                 _file!.FullName,
                 Create ? FileMode.OpenOrCreate : FileMode.Open,
-                Writable ? FileAccess.ReadWrite : FileAccess.Read, 
+                Writable ? FileAccess.ReadWrite : FileAccess.Read,
                 FileShare.ReadWrite
             );
 
             if (!_file.Exists)
             {
-                return Task.FromResult((false, "Cant Open", Length, NHACPError.NotPermitted));
+                return Task.FromResult((false, "Cant Open", 0, NHACPError.NotPermitted));
             }
             //Length = (int)_file.Length;
             return Task.FromResult((true, string.Empty, Length, NHACPError.Undefined));
         }
-        else if (Folder && Directory.Exists(Path)) {
+        else if (Folder && Directory.Exists(Path))
+        {
             _directory = new DirectoryInfo(Path);
-            return Task.FromResult((true, string.Empty, Length, NHACPError.Undefined));
+            return Task.FromResult((true, string.Empty, 0, NHACPError.Undefined));
         }
-        return Task.FromResult((false, "Not found", Length, NHACPError.NotFound));
-    }
-
-    public async Task<(bool, string, Memory<byte>, NHACPError)> Get(int offset, int length, bool realLength = false)
-    {
-        if (_stream is null)
-            return (false, string.Empty, Array.Empty<byte>(), NHACPError.InvalidRequest);
-        
-        if (offset > _stream.Length)  
-            return (true, string.Empty, Array.Empty<byte>(), 0);
-        
-        var buffer = new Memory<byte>(new byte[length]);
-
-        Logger.WriteVerbose($"Reading {length} bytes from {offset}, File Length: {_stream.Length}");
-        _stream.Seek(offset, SeekOrigin.Begin);
-        var read = await _stream.ReadAsync(buffer);
-        if (read != length && realLength) 
-            buffer = buffer[0..read];
-
-        return (true, string.Empty, buffer, 0);
-        
+        return Task.FromResult((false, "Not found", 0, NHACPError.NotFound));
     }
 
     public async Task<(bool, string, NHACPError)> Put(int offset, Memory<byte> buffer)
     {
-        if (_stream is null) 
+        if (_stream is null)
             return (false, string.Empty, NHACPError.InvalidRequest);
-        
+
         if (ReadWriteProtect && _file?.IsReadOnly is true)
             return (false, "Write Protected", NHACPError.WriteProtected);
         else if (ReadOnly && !ReadWriteProtect && _file?.IsReadOnly is true)
@@ -149,32 +185,6 @@ public class FileStorageHandler : INHACPStorageHandler
         return (true, string.Empty, 0);
     }
 
-    public void End()
-    {
-        Close();
-    }
-
-    public (bool, int, string, NHACPError) Seek(int offset, NHACPSeekOrigin origin)
-    {
-        if (_stream is null)
-            return (false, 0, string.Empty, NHACPError.InvalidRequest);
-
-        int? newPosition = origin switch
-        {
-            NHACPSeekOrigin.Set     => offset,
-            NHACPSeekOrigin.Current => Position + offset,
-            NHACPSeekOrigin.End     => Length - offset,
-            _                       => null
-        };
-
-        if (newPosition is null) return (false, Position, "Unknown Seek Origin", NHACPError.InvalidRequest);
-
-        _stream.Seek((long)newPosition!, SeekOrigin.Begin);
-        
-        return (true, Position, string.Empty, NHACPError.Undefined);
-    }
-
-
     public async Task<(bool, string, Memory<byte>, NHACPError)> Read(int length)
     {
         if (Position > Length) return (true, string.Empty, Array.Empty<byte>(), NHACPError.Undefined);
@@ -185,6 +195,32 @@ public class FileStorageHandler : INHACPStorageHandler
         return result;
     }
 
+    public (bool, int, string, NHACPError) Seek(int offset, NHACPSeekOrigin origin)
+    {
+        if (_stream is null)
+            return (false, 0, string.Empty, NHACPError.InvalidRequest);
+
+        int? newPosition = origin switch
+        {
+            NHACPSeekOrigin.Set => offset,
+            NHACPSeekOrigin.Current => Position + offset,
+            NHACPSeekOrigin.End => Length - offset,
+            _ => null
+        };
+
+        if (newPosition is null) return (false, Position, "Unknown Seek Origin", NHACPError.InvalidRequest);
+
+        _stream.Seek((long)newPosition!, SeekOrigin.Begin);
+
+        return (true, Position, string.Empty, NHACPError.Undefined);
+    }
+
+    public (bool, int, string, NHACPError) SetSize(int size)
+    {
+        _stream?.SetLength(size);
+        return (true, (int)(_stream?.Length ?? 0), string.Empty, 0);
+    }
+
     public async Task<(bool, string, NHACPError)> Write(Memory<byte> buffer)
     {
         if (Position > Length)
@@ -193,50 +229,7 @@ public class FileStorageHandler : INHACPStorageHandler
             await Put(Length, Enumerable.Repeat((byte)0x00, fillLength).ToArray());
         }
         var result = await Put(Position, buffer);
-        
+
         return result;
-    }
-
-    public (bool, string, NHACPError) ListDir(string pattern)
-    {
-        if (_directory is null) return (false, string.Empty, NHACPError.InvalidRequest);
-        
-        pattern = string.IsNullOrWhiteSpace(pattern) ? "*" : pattern;
-        _list.Clear();
-        _listPosition = 0;
-
-        var r = NabuLibEx.List(_directory.FullName, Settings, pattern);
-
-        _list.AddRange(r);
-        return (true, string.Empty, 0);
-    }
-
-    public (bool, string?, string, NHACPError) GetDirEntry(byte maxNameLength)
-    {
-        if (_listPosition == _list.Count)
-            return (true, null, string.Empty, 0);
-        var entry = _list[_listPosition++];
-        return (true, entry, string.Empty, 0);
-    }
-
-
-    public Task Close()
-    {
-        _file = null;
-        _list.Clear();
-        _stream?.Dispose();
-        return Task.CompletedTask;
-    }
-
-    public (bool, string, string, NHACPError) Info()
-    {
-        if (Path is null) return (false, string.Empty, "No file/directory open", NHACPError.InvalidRequest);
-        return (true, Path, string.Empty, 0);
-    }
-
-    public (bool, int, string, NHACPError) SetSize(int size)
-    {
-        _stream?.SetLength(size);
-        return (true, (int)(_stream?.Length ?? 0), string.Empty, 0);   
     }
 }

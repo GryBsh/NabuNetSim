@@ -1,19 +1,18 @@
-﻿using System.Security;
-using Nabu.Services;
+﻿using Nabu.Services;
+using System.Security;
 
 namespace Nabu.Network.NHACP.V0;
 
 public class FileStorageHandler : IStorageHandler
 {
-    AdaptorSettings Settings;
-    StorageFlags Flags = StorageFlags.ReadWrite;
-    FileInfo? File;
+    private AdaptorSettings Settings;
+    private StorageFlags Flags = StorageFlags.ReadWrite;
+    private FileInfo? File;
 
     public FileStorageHandler(ILog logger, AdaptorSettings settings)
     {
         Settings = settings;
     }
-
 
     public Task<(bool, string, int)> Open(short flags, string uri)
     {

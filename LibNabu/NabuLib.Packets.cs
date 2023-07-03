@@ -5,9 +5,6 @@ namespace Nabu;
 
 public static partial class NabuLib
 {
-
-    
-
     /// <summary>
     ///    Generates the CRC bytes of a packet
     ///    from the CRC table.
@@ -23,8 +20,6 @@ public static partial class NabuLib
             crc <<= 8;
             crc ^= Constants.CRCTable[b];
         }
-
-        
 
         /*
         var crc = CrcAlgorithm
@@ -72,7 +67,6 @@ public static partial class NabuLib
 
         logger.WriteVerbose("Preparing Packet");
 
-
         var (next, slice) = Slice(buffer, offset, Constants.MaxPayloadSize);
         bool lastPacket = next is 0;
         int packetSize = slice.Length + Constants.HeaderSize + Constants.FooterSize;
@@ -80,7 +74,7 @@ public static partial class NabuLib
         int idx = 0;
 
         /*
-         * 
+         *
          * [   Packet   ]
          * [3           ]   Pak ID M-L                  ]
          * [ 1          ]   Segment L                   ]
@@ -90,19 +84,19 @@ public static partial class NabuLib
          * [     1      ]   Type (See code below)       ]
          * [      2     ]   Segment LM                  ]
          * [       2    ]   Offset ML                   ]
-         * [      <=991 ]   DATA up to 991 bytes        
+         * [      <=991 ]   DATA up to 991 bytes
          * [           2]   CRC
          * [     END    ]
-         * 
+         *
          */
 
         // 16 bytes of header
-        message.Span[idx++] = (byte)(pakId >> 16 & 0xFF);              //Pak MSB   
-        message.Span[idx++] = (byte)(pakId >> 8 & 0xFF);               //              
-        message.Span[idx++] = (byte)(pakId >> 0 & 0xFF);               //Pak LSB   
-        message.Span[idx++] = (byte)(segmentIndex & 0xff);                //Segment LSB    
-        message.Span[idx++] = 0x01;                                  //Owner         
-        message.Span[idx++] = 0x7F;                                  //Tier MSB      
+        message.Span[idx++] = (byte)(pakId >> 16 & 0xFF);              //Pak MSB
+        message.Span[idx++] = (byte)(pakId >> 8 & 0xFF);               //
+        message.Span[idx++] = (byte)(pakId >> 0 & 0xFF);               //Pak LSB
+        message.Span[idx++] = (byte)(segmentIndex & 0xff);                //Segment LSB
+        message.Span[idx++] = 0x01;                                  //Owner
+        message.Span[idx++] = 0x7F;                                  //Tier MSB
         message.Span[idx++] = 0xFF;
         message.Span[idx++] = 0xFF;
         message.Span[idx++] = 0xFF;                                  //Tier LSB
@@ -139,28 +133,28 @@ public static partial class NabuLib
     {
         /*
          *  [  Pak   ]
-         *  [2       ]  Segment Length (X below) 
+         *  [2       ]  Segment Length (X below)
          *  [ 16     ]  Header
          *  [   XXXX ]  DATA
          *  [       2]  CRC
          *  [  NEXT  ]  The above over and over
-         *  
+         *
          *  All the cycle 1 and 2 PAKs are made the same way you'd
          *  make packets from raw program data, they are 16 + 991 + 2
          *  bytes unescaped until the last one.
-         *  
+         *
          *  SO: I'm not even going to bother to parse it, I will simply count
          *  the required bytes, and then read the packet, and correct the CRC.
          *  BECAUSE: From a performance standpoint, it's less work, and theoretically
          *  faster.
          */
-        
+
         int length = Constants.TotalPayloadSize;
 
-                     // 2 bytes/seg         //Segment Offset
+        // 2 bytes/seg         //Segment Offset
         int offset = (2 * (segment + 1)) + (segment * length);
         var (next, message) = Slice(buffer, offset, length);
-        
+
         logger.WriteVerbose("Slicing Packet from PAK");
         var crc = GenerateCRC(message[0..^2]);
         message.Span[^2] = crc[0];    //CRC MSB

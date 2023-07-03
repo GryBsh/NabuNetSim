@@ -1,14 +1,11 @@
 ﻿namespace Nabu.Network.NHACP.V0;
 
-
-
 [Flags]
 public enum StorageFlags : short
 {
     ReadWrite = 0x0000,
     ReadOnly = 0x0001, //1
     Create = 0x0002, //2
-
 }
 
 [Flags]

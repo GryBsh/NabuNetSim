@@ -16,21 +16,17 @@ public record ManifestItem : DeserializedWithOptions
 
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore)]
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull | DefaultValuesHandling.OmitDefaults)]
-    public string Type
+    public string? Type
     {
-        get => Get<string>(nameof(Type)) ?? string.Empty;
+        get => Get<string>(nameof(Type));
         set => Set(nameof(Type), value);
     }
 
-
-
     [JsonProperty(NullValueHandling = NullValueHandling.Ignore, DefaultValueHandling = DefaultValueHandling.Ignore)]
     [YamlMember(DefaultValuesHandling = DefaultValuesHandling.OmitNull | DefaultValuesHandling.OmitDefaults)]
-    public string Name
+    public string? Name
     {
-        get => Get<string>(nameof(Name)) ?? string.Empty;
+        get => Get<string>(nameof(Name));
         set => Set(nameof(Name), value);
     }
-
 }
-

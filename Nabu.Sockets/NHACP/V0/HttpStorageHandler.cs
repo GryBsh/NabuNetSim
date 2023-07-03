@@ -1,5 +1,5 @@
-using System.Net;
 using Nabu.Services;
+using System.Net;
 
 namespace Nabu.Network.NHACP.V0;
 
@@ -35,10 +35,7 @@ public class HttpStorageHandler : RAMStorageHandler
         }
         catch (Exception ex)
         {
-
             return (false, ex.Message, 0);
         }
     }
-
-
 }

@@ -8,8 +8,8 @@ namespace Nabu.NetSim.UI.ViewModels;
 public class StatusViewModel : ReactiveObject, IActivatableViewModel
 {
     public StatusViewModel(
-        HomeViewModel home, 
-        AdaptorSettingsViewModel menu, 
+        HomeViewModel home,
+        AdaptorSettingsViewModel menu,
         LogViewModel logViewer,
         Settings settings
     )
@@ -35,8 +35,6 @@ public class StatusViewModel : ReactiveObject, IActivatableViewModel
                     ).DisposeWith(disposables);
             }
         );
-
-        
     }
 
     public HomeViewModel Home { get; }
@@ -70,5 +68,4 @@ public class StatusViewModel : ReactiveObject, IActivatableViewModel
             _ => "Unknown"
         };
     }
-
 }

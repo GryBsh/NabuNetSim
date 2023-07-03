@@ -1,29 +1,21 @@
-﻿using Blazorise;
-using LiteDB;
-using Microsoft.Extensions.Logging;
+﻿using LiteDB;
 using Nabu.Models;
 using Nabu.NetSim.UI.Models;
 using Nabu.NetSim.UI.Services;
+using Nabu.Services;
 using ReactiveUI;
-using System;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using YamlDotNet.Core.Tokens;
 
 namespace Nabu.NetSim.UI.ViewModels;
-
-public enum RefreshMode
-{
-    Database,
-    MemoryCache
-}
 
 public class LogViewModel : ReactiveObject, IActivatableViewModel
 {
     public ViewModelActivator Activator { get; }
-    LogService LogService { get; }
+    private ILogService LogService { get; }
+
     public LogViewModel(
-        LogService logService,
+        ILogService logService,
         HomeViewModel home
     )
     {
@@ -31,7 +23,7 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
         //Repository = repository;
         Activator = new();
         LogService = logService;
-        LogService.RefreshMode = RefreshMode.Database;
+        LogService.RefreshMode = RefreshMode.None;
         this.WhenActivated(
             disposables =>
             {
@@ -44,7 +36,7 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
                             //GC.Collect();
                         }
                     ).DisposeWith(disposables);
-                
+
                 Home.ObservableForProperty(h => h.VisiblePage)
                     .Subscribe(
                         visible =>
@@ -59,23 +51,23 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
 
         );
     }
+
     public HomeViewModel Home { get; }
     //IRepository<LogEntry> Repository { get; }
 
-    void NotifyChange()
+    private void NotifyChange()
     {
         this.RaisePropertyChanged(nameof(PageCount));
         this.RaisePropertyChanged(nameof(CurrentPage));
         this.RaisePropertyChanged(nameof(PageSize));
     }
 
-    
     public bool LogVisible { get; set; }
 
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 100;
 
-    string search = string.Empty;
+    private string search = string.Empty;
 
     public string Search
     {
@@ -107,11 +99,9 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
     public void Refresh()
     {
         if (LogVisible is false) return;
-
-        
     }
 
-    LogEntry Highlight(LogEntry e)
+    private LogEntry Highlight(LogEntry e)
     {
         var term = Search.ToLowerInvariant();
         if (
@@ -126,9 +116,8 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
         return e;
     }
 
-    
+    private (int, int, int, ICollection<IGrouping<LogKey, LogEntry>>)? PageCache { get; set; }
 
-    (int, int, int, ICollection<IGrouping<LogKey, LogEntry>>)? PageCache { get; set; }
     public ICollection<IGrouping<LogKey, LogEntry>> CurrentPage
     {
         get
@@ -141,7 +130,7 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
                     return entries;
             }
 
-            var newPage = 
+            var newPage =
                 LogService
                     .GetPage(Page, PageSize)
                     .GroupBy(l => l.Key)
@@ -155,13 +144,11 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
             );
 
             return newPage;
-
         }
     }
 
-    
-
     public void SetPage(string page) => Page = int.Parse(page);
+
     public void PageBack()
     {
         if (Page is 1) return;
@@ -197,6 +184,4 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
         this.RaisePropertyChanged(nameof(CurrentPage));
         this.RaisePropertyChanged(nameof(LogVisible));
     }
-
-    
 }

@@ -1,0 +1,55 @@
+﻿@using System.Web;
+@inherits ReactiveInjectableComponentBase<HeadlineViewModel>
+
+<HeaderView Icon="@("fa-newspaper")"
+            Heading="NabuNetwork.com News"
+            ShowButton=true
+            ButtonTitle="Collapse"
+            ButtonIconName="IconName.MinusCircle"
+            OnButtonClick=@(() => { ViewModel.ExpandCollapseNews(); }) 
+            Visibility="@ViewModel.ExpandedVisibility" />
+<ListGroup Flush Visibility="@ViewModel.ExpandedVisibility">
+     <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
+         <ListGroupItem>
+             <small>
+                 <Div>
+                     <Small><a target="_blank" href="@context?.Link"><h6>@context?.Title</h6></a></Small>
+                 </Div>
+                 <Div>
+                     @HttpUtility.HtmlDecode(context.Description)
+                 </Div>
+             </small>
+         </ListGroupItem>
+     </Virtualize>
+ </ListGroup>
+
+<HeaderView Icon="@("fa-newspaper")"
+            Heading="NabuNetwork.com News"
+            ShowButton=true
+            ButtonTitle="Expand"
+            ButtonIconName="IconName.PlusCircle"
+            OnButtonClick=@(() => { ViewModel.ExpandCollapseNews(); }) 
+            Visibility="ViewModel.CollapsedVisibility"/>
+ <ListGroup Flush Visibility="ViewModel.CollapsedVisibility">
+     <Repeater TItem="TickerItem" Items="ViewModel.Headlines">
+         <ListGroupItem>
+             <Small>
+                 <Div>
+                     <a target="_blank" href="@context?.Link">@context?.Title</a>
+                 </Div>
+             </Small>
+         </ListGroupItem>
+     </Repeater>
+ </ListGroup>
+ <Div Class="center">
+     <a class="btn btn-primary btn-sm" 
+        target="_blank" 
+        href="https://www.nabunetwork.com" 
+        data-bs-toggle="tooltip" 
+        title="More at NABUNetwork.com"
+     >
+         <small>Would you like to know more?</small>
+    </a>
+</Div>
+
+

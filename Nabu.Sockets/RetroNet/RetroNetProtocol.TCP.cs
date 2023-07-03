@@ -3,19 +3,17 @@ using System.Net.Sockets;
 
 namespace Nabu.Network.RetroNet
 {
-
-
     public partial class RetroNetProtocol
     {
-        Dictionary<byte, IRetroNetTcpClientHandle> Clients { get; } = new();
+        private Dictionary<byte, IRetroNetTcpClientHandle> Clients { get; } = new();
 
-        void WriteTCPBuffer(Memory<byte> bytes)
+        private void WriteTCPBuffer(Memory<byte> bytes)
         {
             Writer.Write(NabuLib.FromInt(bytes.Length));
             Writer.Write(bytes.ToArray());
         }
 
-        byte NextClientIndex()
+        private byte NextClientIndex()
         {
             for (int i = 0x00; i < 0xFF; i++)
             {
@@ -25,7 +23,7 @@ namespace Nabu.Network.RetroNet
             return 0xFF;
         }
 
-        bool StartTCPServer(ProgramSource source)
+        private bool StartTCPServer(ProgramSource source)
         {
             var portFree = NabuLib.IsPortFree(source.RetroNetTCPServerPort);
             if (!portFree)
@@ -40,7 +38,7 @@ namespace Nabu.Network.RetroNet
             return true;
         }
 
-        async Task TCPServerListen()
+        private async Task TCPServerListen()
         {
             var incoming = await Server!.AcceptAsync();
             var name = $"{incoming.RemoteEndPoint}";
@@ -48,7 +46,7 @@ namespace Nabu.Network.RetroNet
             Connected.Add(incoming);
         }
 
-        void Listener(AdaptorSettings settings)
+        private void Listener(AdaptorSettings settings)
         {
             if (settings is NullAdaptorSettings)
                 return;
@@ -76,22 +74,18 @@ namespace Nabu.Network.RetroNet
                                 {
                                     Logger.WriteWarning($"TCP Server Failed: {ex.Message}");
                                 }
-                                
                             }
                         }
                     );
-                    
-                    
                 }
                 catch (Exception ex)
                 {
                     Logger.WriteError($"Failed to start TCP Server: {ex.Message}");
                 }
             }
-            
         }
 
-        void ShutdownTCPServer()
+        private void ShutdownTCPServer()
         {
             if (Server is null) return;
             Logger.WriteWarning($"Shutting down lingering TCP Server");
@@ -165,11 +159,10 @@ namespace Nabu.Network.RetroNet
             return Task.CompletedTask;
         }
 
+        private static Socket? Server { get; set; }
+        private static List<Socket> Connected { get; } = new();
 
-        static Socket? Server { get; set; }
-        static List<Socket> Connected { get; } = new();
-
-        void UpdateConnected()
+        private void UpdateConnected()
         {
             foreach (var client in Connected.ToArray())
             {
@@ -180,21 +173,20 @@ namespace Nabu.Network.RetroNet
             }
         }
 
-        Task TCPServerClientCount()
+        private Task TCPServerClientCount()
         {
             UpdateConnected();
             Writer.Write((byte)Connected.Count);
             return Task.CompletedTask;
         }
 
-        Task TCPServerAvailable()
+        private Task TCPServerAvailable()
         {
             Writer.Write(Server is not null);
             return Task.CompletedTask;
         }
 
-
-        async Task TCPServerRead(CancellationToken cancel)
+        private async Task TCPServerRead(CancellationToken cancel)
         {
             UpdateConnected();
             var length = Recv();
@@ -213,7 +205,7 @@ namespace Nabu.Network.RetroNet
             }
         }
 
-        async Task TCPServerWrite(CancellationToken cancel)
+        private async Task TCPServerWrite(CancellationToken cancel)
         {
             UpdateConnected();
             var length = Recv();

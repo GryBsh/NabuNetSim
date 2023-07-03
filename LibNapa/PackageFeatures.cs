@@ -9,4 +9,3 @@ public static class PackageFeatures
     public static string Cache { get; } = nameof(Cache).ToLowerInvariant();
     public static string Protocols { get; } = nameof(Protocols).ToLowerInvariant();
 }
-

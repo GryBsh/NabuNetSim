@@ -1,0 +1,60 @@
+﻿@using Nabu.Services;
+@inherits ReactiveInjectableComponentBase<FolderListViewModel>
+<Div Class="sticky-top sticky-padded-top">
+    <HeaderView Icon="@IconName.FolderOpen"
+                Heading="Storage"
+                ShowButton=false />
+
+    <ListGroup Flush Class="top-sm">
+        <ListGroupItem Class="folder">
+            <Button Type="ButtonType.Button"
+                    Class="btn btn-dark"
+                    onclick="@(() => { ViewModel?.ShowStorage(StorageNames.SourceFolder); })"
+                    data-bs-toggle="tooltip"
+                    title="Files copied/linked to all clients/adaptors">
+                <Icon Name="IconName.FolderOpen" />
+            </Button>
+            File Source
+        </ListGroupItem>
+        <ListGroupItem Class="folder">
+            <Button Type="ButtonType.Button"
+                    Class="btn btn-dark"
+                    onclick="@(() => { ViewModel?.ShowPrograms(); })"
+                    data-bs-toggle="tooltip"
+                    title="Programs listed in the 'Local NABU Files' source">
+                <Icon Name="IconName.Save" />
+            </Button>
+            Local NABU Files
+        </ListGroupItem>
+        <ListGroupItem Class="folder">
+            <Button Type="ButtonType.Button"
+                    Class="btn btn-dark"
+                    onclick="@(() => { ViewModel?.ShowLogs(); })"
+                    data-bs-toggle="tooltip"
+                    title="Program Logs">
+                <Icon Name="IconName.BookReader" />
+            </Button>
+            Logs
+        </ListGroupItem>
+    </ListGroup>
+
+    <HeaderView Icon="@IconName.FolderOpen"
+                Heading="Clients"
+                ShowButton=false />
+    <ListGroup Flush Class="top-sm">
+        <Repeater TItem="DirectoryModel" Items="ViewModel!.Folders">
+            <ListGroupItem Class="folder">
+                <Button Type="ButtonType.Button"
+                        Class="btn btn-dark"
+                        onclick="@(() => { ViewModel?.ShowStorage(context.Name); })"
+                        data-bs-toggle="tooltip"
+                        title="@ViewModel.FolderName(context.Name)">
+                    <Icon Name="IconName.FolderOpen" />
+                </Button>
+                @ViewModel.FolderName(context.Name)
+            </ListGroupItem>
+        </Repeater>
+    </ListGroup>
+</Div>
+
+

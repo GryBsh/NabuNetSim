@@ -13,6 +13,7 @@ public static class Constants
 
     // Sizes
     public const int MaxSegmentSize = 65536;
+
     public const int MaxPacketSize = 1024;
     public const short MaxPayloadSize = 991;
     public const short HeaderSize = 16;
@@ -29,6 +30,7 @@ public static class Constants
 
     // Encryption Key and init vector (seed) for npak files
     public static byte[] PakKey = { 0x6E, 0x58, 0x61, 0x32, 0x62, 0x79, 0x75, 0x7A };
+
     public static byte[] PakIV = { 0x0C, 0x15, 0x2B, 0x11, 0x39, 0x23, 0x43, 0x1B };
 
     // CRC values for lookup. There is probably a way to generate it on the fly.
@@ -98,6 +100,4 @@ public static class Constants
         Convert.ToInt16("0x6e17", 16), Convert.ToInt16("0x7e36", 16), Convert.ToInt16("0x4e55", 16), Convert.ToInt16("0x5e74", 16),
         Convert.ToInt16("0x2e93", 16), Convert.ToInt16("0x3eb2", 16), Convert.ToInt16("0x0ed1", 16), Convert.ToInt16("0x1ef0", 16)
     };
-
-
 }

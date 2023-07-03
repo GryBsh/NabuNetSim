@@ -31,18 +31,17 @@ runs:
       CONFIG: Assets/Config
       win_start: Assets/start.cmd
     run: |
-      if [ $project == $webproject ]; then
-          name="nnsweb"
-      else
-          name="nns"
-      fi
+      name='nns'
       for arch in $archs; 
       do
         BIN="bin/$os/$arch"
         dotnet publish ./Nabu.$project -r $os-$arch -p:PublishSingleFile=true --self-contained true -o $BIN -c release
         mkdir $BIN/$PAK_output
         cp -r $NABUs $BIN
-        cp -r $Files $BIN
+        
+        mkdir $BIN/Files
+        mkdir $BIN/Files/Source
+
         cp -r $Packages $BIN
         if [[ $os == osx* ]]; then
           cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json

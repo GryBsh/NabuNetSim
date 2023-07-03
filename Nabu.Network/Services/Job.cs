@@ -1,6 +1,4 @@
-﻿using Microsoft.Extensions.Logging;
-
-namespace Nabu.Services;
+﻿namespace Nabu.Services;
 
 public abstract class Job : DisposableBase, IJob
 {

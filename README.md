@@ -6,12 +6,15 @@
 
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (Marduk, MAME),
 and can host multiple instances of either. Making it possible to host a whole NABU Network from one
-adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, and can be extended to support 
-your own custom protocols via JavaScript and Python.
+adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, and can be extended to support your own custom protocols via JavaScript.
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
-**IF YOU ARE ON A VERSION BEFORE 0.9.8: BACKUP YOUR CONFIG FILES** and drop in the one from the current version. Then apply your customizations. Many of the sources previously in the config file have been moved to packages.
+**IF YOU ARE ON A VERSION BEFORE 0.9.8** 
+
+ Many of the sources/settings previously in the config file have been moved to packages, and many settings are moved or removed. Drop in the default settings files, and then make your changes.
+
+**There is no longer any need to choose your version, the UI and headless versions are now the same executable.**
 
 ## Stand Out Features
 
@@ -21,7 +24,7 @@ your own custom protocols via JavaScript and Python.
 - > Supports feeds from NABUNetwork.com and Nabu.ca.
 - > Supports NHACP and Retronet, so it can run IshkurCPM and Cloud CPM.
 - > Deeply integrated offline caching of remote files/programs.
-- > Optional Web UI for configuration, with news from NabuNetwork.com.
+- > Web UI for configuration, with news from NabuNetwork.com.
 - > Extensible protocol support, you can add your own protocol handlers in Python or Javascript.
 
 ## Whats New(ish)
@@ -39,8 +42,6 @@ your own custom protocols via JavaScript and Python.
   - > This does mean higher memory usage, but it's worth it.
 - > JavaScript support has switched from Jint to ClearScript V8.
   - > This means support for all JavaScript Features like modules and the ability to use compile and use Typescript.
-- > Storage redirection support for NHACP and RetroNet, local and remote files are supported.
-  - > Useful for disk images, etc. This will enable future features like Client Storage Isolation.
 - > 98% of all byte arrays are now dealt with using `Span<T>` and `Memory<T>` for better performance, the fastest adaptor is now even faster!
 
 ## Known Issues
@@ -48,9 +49,8 @@ your own custom protocols via JavaScript and Python.
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
 - > RetroNet support is experimental.
-- > Only one client way open and use the RetroNet TCP Server at a time, because RetroNet was designed that way.
+- > Only one client may open and use the RetroNet TCP Server at a time, because RetroNet was designed that way.
 - > NHACP support is experimental.
-- > Python support is experimental, and probably doesn't work on non-Windows platforms.
 - > JavaScript support is experimental.
 - > I'm 100% sure there are more.
 
@@ -64,101 +64,69 @@ Console:
 
 Web:
 
-- Memory: 250MB minimum, 512MB-1GB recommended.
+- Memory: 300MB minimum, 512MB-1GB recommended.
 
 Realistically, a Pi 3 can serve a dozen or so adaptors, and a Pi 4 can handle 20+
 A PC can potentially serve hundreds.
 
 ## Basics
 
-### Choose you weapon
-
-Nabu NetSim is available in 2 flavors:
-
-- Console Service App (Nabu.Netsim / nns)
-- Web UI (Nabu.NetsimWeb / nns-wui)
-
-The console service app runs headless, and runs in a set configuration. Configure, start, and go. This is ideal for in place installations, where the sources and adaptors needed are known and static.
-The Web UI is a web based interface, that allows you to configure the service on the fly, to a large degree. It also lets you manipulate individual sources for TCP clients post connection.
-
-Both have the same set of features, but for most regular users, the Web UI is recommended.
-
-**Each release package starts with `nns`, for headless, or `nnsweb` for the Web UI. Choose the one for your desired platform/architecture**
-
 ### Configuration
 
 ```json
 {
   "Settings": {
+    // The path to where storage files will be kept.
+    // By default, its "$CWD/Files"
+    //"StoragePath": "./Files",
+
+    // The path to where NABU programs will be kept.
+    // These are the files shown under the "Local NABU Files" source.
+    // By default, its "$CWD/NABUs"
+    //"LocalProgramPath": "./NABUs",
+
+    // If you have a script which will launch MAME as a NABU, 
+    // like the one included with Windows builds of BriJohns' MAME source, 
+    // you can specify it here: and the running man icon will appear to launch it
+    // from the TCP adaptor summary on the Home page.
+    //"EmulatorPath": "/path/to/emulator/start.script",
+
     "Adaptors": {
       "Serial": [
         {
-          "Port": "COM3",                 // Port, COM for Windows, /dev/... for Linux/macOS
-          "Source": "Local Cycle 1",      // The name of the source, defined below
-          "StoragePath": "./Files"        // The storage root, where NHACP/Retronet looks for files
+          "Port": "COM3",
+          "Source": "1984 Cycle 1", // <-- You change the inital source name here
+          //"Program": "NAME" // <-- You can specify the initial program to load here
+          "State": "Stop" // <-- You can specify the initial state of the adaptor here, Stop or Run.
         }
       ],
       "TCP": [
         {
           "Port": 5816,
-          "Source": "Local Cycle 1",
-          "StoragePath": "./Files" 
+          "Source": "1984 Cycle 1"
         }
       ]
     },
     "Sources": [
       {
-        "Name": "Local Cycle 1",        // Source Name
-        "Path": "./PAKs/cycle1"         // Source Path
-      },
-      {
-        "Name": "Nabu.Ca",
-        "Path": "https://cloud.nabu.ca/HomeBrew/titles/filesv2.txt",
-        "EnableRetroNet": true,           // Enable RetroNet support for this source, false by default
-        "EnableRetroNetTCPServer": false, // Enable RetroNet TCP Server support for this source, false by default
-        "RetroNetTCPServerPort": 5815,    // The port to listen on for RetroNet TCP Server, 5815 by default
-        "StorageRedirects": {             // Storage Redirects for NHACP/Retronet, case sensitive
-          "C.dsk": "my/disk.dsk"
-        }
+        "Name": "FigForth (latest)",
+        "Path": "https://github.com/hanshuebner/nabu-figforth/raw/main/figforth.nabu"
       }
     ],
-    // Optional Extensible Protocol Support
-    "Protocols": [
+    "PackageSources": [
       {
-        "Path": "test.js",                // Protocol Path
-        "type": "javascript",             // Protocol Type, javascript or python
-        "Commands": [ 131 ]              // Commands handled by this protocol
-      },
-    ],
-    "EnableJavaScript": false,            // Support for JavaScript custom protocols, disabled by default
-    "EnablePython": false,                // Support for Python custom protocols, disabled by default, experimental
-
-    // Other Settings
-    "EnableLocalFileCache": true,         // Enable local file caching of HTTP/HTTPS files, enabled by default
-
-    // Web UI Settings
-    "MaxLogEntryAgeHours": 12,            // How long to keep log entries in the UI, in hours, 12 hours by default
-    "LogCleanupIntervalMinutes": 15,      // How often to clean up old log entries, in hours, 15r by default
-    "CacheDatabasePath": "cache.db",      // The path to the UI cache database, relative to the working directory
-    "DatabasePath": "data.db",            // The path to the backend database, relative to the working directory
+        "Name": "Benevolent Society of NABUligans",
+        "Path": "https://raw.githubusercontent.com/NABUligans/NAPA/main/repository/repo.json"
+      }
+    ]
   },
-  // Web UI Settings
-  "Urls": "http://*:5000"                 // The URL to listen on, * for all, *:5000 by default
+  // These are settings for the ASP.Net web server.
+  "AllowedHosts": "*",
+  "Urls": "http://*:5000" // <-- You change the port/hostname here
 }
 ```
 
 ## Advanced
-
-### Changing the hostname, port (Web UI)
-
-Add the following property to the appsettings.json config file:
-
-```json
-  "Urls": "http://*:5000"
-```
-
-To change the hostname, replace `*` with the hostname or IP address you want to use.
-To change the port number, replace `5000` with the port number you want to use.
 
 ### Docker (Linux)
 

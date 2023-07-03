@@ -13,13 +13,15 @@ public class NHACPV01Session : Dictionary<byte, INHACPStorageHandler>, IDisposab
         {
             if (disposing)
             {
-                foreach (var slot in Values) {
+                foreach (var slot in Values)
+                {
                     slot.End();
                 }
             }
             disposedValue = true;
         }
     }
+
     public void Dispose()
     {
         // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
@@ -27,5 +29,3 @@ public class NHACPV01Session : Dictionary<byte, INHACPStorageHandler>, IDisposab
         GC.SuppressFinalize(this);
     }
 }
-
-

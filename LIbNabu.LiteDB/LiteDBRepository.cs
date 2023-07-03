@@ -1,41 +1,33 @@
 ﻿using LiteDB;
 using Nabu.Services;
 using System.Linq.Expressions;
-using System.Reactive.Disposables;
-using System.Reflection;
 
 namespace Nabu;
 
 public class LiteDbRepository<T> : DisposableBase, IRepository<T>
 {
-    private bool disposedValue;
-    LiteDatabase? Database { get; set; }
-    ILiteCollection<T> Collection => Database.GetCollection<T>();
-    protected Settings Settings { get; }
+    private LiteDatabase? Database { get; set; }
+    private ILiteCollection<T> Collection => Database!.GetCollection<T>();
+    //protected ISettingsService Settings { get; }
 
-    LiteDatabase GetConnection()
+    private LiteDatabase GetConnection(Settings settings)
     {
         var cs = new ConnectionString
         {
             Upgrade = true,
-            Filename = Settings.DatabasePath,
+            Filename = settings.DatabasePath,
             Connection = ConnectionType.Shared
         };
         var database = new LiteDatabase(cs);
-       
-
         return database;
     }
 
-    LiteDbModel<T> Model { get; }
-    public LiteDbRepository(Settings settings, LiteDbModel<T> model)
+    
+    public LiteDbRepository(Settings settings, ILiteDbModel<T>? model = null)
     {
-        Settings = settings;
-        Model = model;
-
-        Database = GetConnection();
+        Database ??= GetConnection(settings);
         Disposables.Add(Database);
-        Model.Configure(Database.Mapper.Entity<T>(), Collection);
+        model?.Configure(Database.Mapper.Entity<T>(), Collection);
     }
 
     public void Delete(Expression<Func<T, bool>> predicate)
@@ -51,7 +43,7 @@ public class LiteDbRepository<T> : DisposableBase, IRepository<T>
     public IEnumerable<T> Query<TQueryable>(Func<TQueryable, IEnumerable<T>> query)
     {
         var fail = new ArgumentException(
-            $"{typeof(TQueryable).Name} is not valid for repository of type {typeof(LiteDbRepository<T>).Name}", 
+            $"{typeof(TQueryable).Name} is not valid for repository of type {typeof(LiteDbRepository<T>).Name}",
             nameof(TQueryable)
         );
         if (typeof(TQueryable).IsAssignableFrom(typeof(ILiteQueryable<T>)) is false)
@@ -61,7 +53,8 @@ public class LiteDbRepository<T> : DisposableBase, IRepository<T>
         try
         {
             return query.Invoke((TQueryable)Collection.Query());
-        } catch (InvalidCastException)
+        }
+        catch (InvalidCastException)
         {
             throw fail;
         }
@@ -74,12 +67,7 @@ public class LiteDbRepository<T> : DisposableBase, IRepository<T>
 
     public IEnumerable<T> SelectAll(int skip = 0, int limit = int.MaxValue)
     {
-        //var collection = Database!.GetCollection<T>();
         if (skip is 0 && limit is int.MaxValue) return Collection.FindAll();
-        //var count = collection.Count();
-        //if (count is 0) return Array.Empty<T>();    
-
-        //var remains = (count -  skip); 
         return Collection.FindAll().Skip(skip).Take(limit);
     }
 
@@ -109,8 +97,8 @@ public class LiteDbRepository<T> : DisposableBase, IRepository<T>
     }
 
     public void Insert(params T[] items) => Collection.Insert(items);
+
     public void BulkInsert(params T[] items) => Collection.InsertBulk(items);
-  
 
     public void RunMaintenance()
     {

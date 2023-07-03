@@ -1,7 +1,5 @@
 ﻿namespace Nabu.Network.NHACP.V01;
 
-
-
 /*
 public class NHACPV01ProtocolService
 {
@@ -96,7 +94,7 @@ public class NHACPV01ProtocolService
     {
         StorageSlots[index].End();
     }
-    
+
     public void End()
     {
         foreach (var key in StorageSlots.Keys)

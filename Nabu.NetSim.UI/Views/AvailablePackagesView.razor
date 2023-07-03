@@ -1,0 +1,40 @@
+﻿@using Napa;
+@inherits ReactiveInjectableComponentBase<AvailablePackagesViewModel>
+
+<HeaderView Icon=@IconName.Store
+            Heading="Available"></HeaderView>
+
+<PlaceHolderView Icon="IconName.Store" Visibility="@(ViewModel.AvailablePackages.Count() is 0 ? Visibility.Visible : Visibility.Invisible)" />
+
+<ListGroup Flush Visibility="@(ViewModel.AvailablePackages.Count() > 0 ? Visibility.Visible : Visibility.Invisible)">
+    <Virtualize TItem="SourcePackage" Items="ViewModel.AvailablePackages">
+        <ListGroupItem @key=context>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+                <Div Class="hstack gap-3">
+                    <Button Type="ButtonType.Button" class="btn btn-success" title="Install" onclick="@(() => ViewModel.StagePackage(context.Id))">
+                        <Icon Name="@IconName.FolderPlus" />
+                    </Button>
+                    <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
+                        @context.Name
+                    </Heading>
+                </Div>
+                <Small TextAlignment="TextAlignment.End">
+                    <Div>@context.Version</Div>
+                    <Div>by @context.Author</Div>
+                </Small>
+            </Div>
+            <Paragraph Margin="Margin.Is1.FromBottom">
+                @context.Description
+            </Paragraph>
+        </ListGroupItem>
+    </Virtualize>
+</ListGroup>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Activated.Subscribe(_ => ViewModel?.Activator.Activate());
+        Deactivated.Subscribe(_ => ViewModel?.Activator.Deactivate());
+        base.OnInitialized();
+    }
+}

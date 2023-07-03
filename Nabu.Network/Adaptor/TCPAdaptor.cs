@@ -1,66 +1,51 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
 using Nabu.Network;
-using System.Net.Sockets;
-using System.Net;
+using Nabu.Packages;
 using Nabu.Services;
 using Napa;
+using System.Collections.Concurrent;
+using System.Net;
+using System.Net.Sockets;
 
 namespace Nabu.Adaptor;
 
 public class TCPAdaptor
 {
-    private TCPAdaptor() { }
+    private TCPAdaptor()
+    { }
 
-    public static Dictionary<string, TCPAdaptorSettings> Connections { get; } = new();
+    public static ConcurrentDictionary<string, TCPAdaptorSettings> Connections { get; } = new();
 
-    static void ServerListen(ILog logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, IEnumerable<IProtocol> protocols, CancellationToken stopping)
-    {
-        Task.Run(async () =>
-        {
-            logger.Write($"TCP Client Connected from {socket.RemoteEndPoint}");
-            try {
-                await adaptor.Listen(stopping);
-            } catch (Exception ex) {
-                logger.WriteError(ex.Message);
-            }
-            stream.Dispose();
-            logger.Write($"TCP Client from {socket.RemoteEndPoint} disconnected");
-            var name = $"{socket.RemoteEndPoint}";
-
-            Connections.Remove(name);
-            foreach (var protocol in protocols) { protocol.Detach(); }
-
-        }, stopping);
-    }
-    
     public static async Task Start(
-        IServiceProvider serviceProvider, 
-        TCPAdaptorSettings settings, 
+        IServiceProvider serviceProvider,
+        TCPAdaptorSettings settings,
         CancellationToken stopping
-    ){
-        //var tcpSettings = (TCPAdaptorSettings)settings;
+    )
+    {
+        var global = serviceProvider.GetRequiredService<Settings>();
         var logger = serviceProvider.GetRequiredService<ILog<TCPAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
-        var packages = serviceProvider.GetRequiredService<IPackageManager>();
+        var packages = serviceProvider.GetRequiredService<PackageService>();
         var socket = NabuLib.Socket(true, settings.SendBufferSize, settings.ReceiveBufferSize);
 
         if (!int.TryParse(settings.Port, out int port))
         {
             port = Constants.DefaultTCPPort;
         };
-        
+
         try
         {
             socket.Bind(new IPEndPoint(IPAddress.Any, port));
             socket.Listen();
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
             logger.WriteError(ex.Message);
             return;
         }
-        
+
         logger.Write($"TCP Server Ready, listening on port {port}");
-        
+
         while (stopping.IsCancellationRequested is false)
             try
             {
@@ -68,11 +53,16 @@ public class TCPAdaptor
                 var name = $"{incoming.RemoteEndPoint}";
                 var clientIP = name.Split(':')[0];
                 var clientCancel = CancellationTokenSource.CreateLinkedTokenSource(stopping);
-                var clientSettings = settings with { Port = name, Connection = true, ListenTask = clientCancel };
-                
-                await packages.UpdateInstalled();
-                storage.UpdateStorageFromPackages(packages, clientSettings);
-                storage.UpdateStorage(clientSettings, clientIP);
+                var clientSettings = settings with
+                {
+                    Port = name,
+                    Connection = true,
+                    ListenTask = clientCancel
+                };
+
+                //await packages.UpdateInstalled();
+                storage.UpdateStorageFromPackages(packages.Packages);
+                storage.AttachStorage(clientSettings, clientIP);
 
                 var protocols = serviceProvider.GetServices<IProtocol>();
 
@@ -88,17 +78,36 @@ public class TCPAdaptor
 
                 Connections[name] = clientSettings;
                 ServerListen(logger, adaptor, incoming, stream, protocols, clientCancel.Token);
-
             }
             catch (Exception ex)
             {
                 logger.WriteError(ex.Message);
-                break;   
+                break;
             }
-        
+        logger.Write($"TCP Server Stopped");
         socket.Close();
         socket.Dispose();
     }
 
-    
+    private static void ServerListen(ILog logger, EmulatedAdaptor adaptor, Socket socket, Stream stream, IEnumerable<IProtocol> protocols, CancellationToken stopping)
+    {
+        Task.Run(async () =>
+        {
+            logger.Write($"TCP Client Connected from {socket.RemoteEndPoint}");
+            try
+            {
+                await adaptor.Listen(stopping);
+            }
+            catch (Exception ex)
+            {
+                logger.WriteError(ex.Message);
+            }
+            stream.Dispose();
+            //logger.Write($"TCP Client from {socket.RemoteEndPoint} disconnected");
+            var name = $"{socket.RemoteEndPoint}";
+
+            Connections.Remove(name, out var _);
+            foreach (var protocol in protocols) { protocol.Detach(); }
+        }, stopping);
+    }
 }

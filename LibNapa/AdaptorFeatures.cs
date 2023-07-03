@@ -1,6 +1,6 @@
 ﻿namespace Napa
 {
-    internal static class AdaptorFeatures
+    public static class AdaptorFeatures
     {
         public static string NHACPv0 { get; } = nameof(NHACPv0).ToLowerInvariant();
         public static string NHACPv01 { get; } = nameof(NHACPv01).ToLowerInvariant();

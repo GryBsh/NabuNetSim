@@ -1,6 +1,5 @@
 ﻿using Microsoft.ClearScript;
 using Microsoft.ClearScript.V8;
-using Nabu.Adaptor;
 using Nabu.Network;
 using Nabu.Services;
 
@@ -8,14 +7,14 @@ namespace Nabu.JavaScript;
 
 public class JavaScriptProtocol : PluginProtocol
 {
-    public JavaScriptProtocol(ILog<JavaScriptProtocol> logger) : base(logger)
+    public JavaScriptProtocol(ILog logger) : base(logger)
     {
-        
     }
-    byte version = 0x01;
+
+    private byte version = 0x01;
     public override byte Version => version;
 
-    byte[] commands = Array.Empty<byte>();
+    private byte[] commands = Array.Empty<byte>();
     public override byte[] Commands => commands;
 
     public override void Activate(ProtocolSettings settings)
@@ -29,7 +28,7 @@ public class JavaScriptProtocol : PluginProtocol
         if (Protocol is null || !Path.Exists(Protocol.Path)) return;
 
         var proxy = new ProxyProtocol(Logger);
-        proxy.Attach(Settings, Stream);
+        proxy.Attach(Adaptor, Stream);
         string source = await File.ReadAllTextAsync(Protocol.Path, cancel);
         try
         {

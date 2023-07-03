@@ -6,4 +6,3 @@ public record PackageSource
     public string Description { get; set; } = string.Empty;
     public string Path { get; set; } = string.Empty;
 }
-

@@ -4,9 +4,12 @@ public static partial class NabuLib
 {
     public static bool StartSafeNoGC(long requires)
     {
-        try { 
-            return GC.TryStartNoGCRegion(requires); 
-        } catch {
+        try
+        {
+            return GC.TryStartNoGCRegion(requires);
+        }
+        catch
+        {
             return false;
         }
     }

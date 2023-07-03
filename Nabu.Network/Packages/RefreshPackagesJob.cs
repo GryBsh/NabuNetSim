@@ -6,9 +6,9 @@ namespace Nabu.Packages;
 
 public class RefreshPackagesJob : Job
 {
-    IPackageManager Packages { get; }
+    private IPackageManager Packages { get; }
 
-    public RefreshPackagesJob(ILog<RefreshPackagesJob> logger, Settings settings, IPackageManager packages) 
+    public RefreshPackagesJob(ILog<RefreshPackagesJob> logger, Settings settings, IPackageManager packages)
         : base(logger, settings)
     {
         Packages = packages;
@@ -16,11 +16,11 @@ public class RefreshPackagesJob : Job
 
     public override void Start()
     {
-        Observable.Interval(TimeSpan.FromMinutes(15))
-                  .Subscribe(async _ => {
-                      Logger.Write("Updating Available Packages");
-                      await Packages.UpdateAvailable();
-
-                  });
+        //Observable.Interval(TimeSpan.FromMinutes(5))
+         //         .Subscribe(async _ =>
+          //        {
+                      //Logger.Write("Updating Available Packages");
+           //           await Packages.Refresh();
+            //      });
     }
 }

@@ -10,5 +10,3 @@ public record ProgramSource
     public int RetroNetTCPServerPort { get; set; } = 5815;
     public bool EnableExploitLoader { get; set; }
 }
-
-

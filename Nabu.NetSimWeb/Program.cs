@@ -1,114 +1,38 @@
+﻿using Figgle;
 using Nabu;
-using Blazorise;
-using Blazorise.Bootstrap5;
-using Blazorise.Icons.FontAwesome;
-using Nabu.NetSim.UI;
-using Nabu.NetSim.UI.ViewModels;
-using Splat;
-using Splat.Microsoft.Extensions.DependencyInjection;
-using ReactiveUI;
-using NLog.Extensions.Logging;
-//using LiteDb.Extensions.Caching;
-using Nabu.Services;
-using Nabu.NetSim.UI.Services;
-//using NeoSmart.Caching.Sqlite;
-//using Microsoft.EntityFrameworkCore;
+using Nabu.Cli;
 using Nabu.NetSimWeb;
-using Blazorise.Icons.Material;
-using LiteDb.Extensions.Caching;
-
-var builder = WebApplication.CreateBuilder(args);
+using Nabu.Network;
+using Nabu.Services;
+using ReactiveUI.Blazor;
+using Spectre.Console;
+using Spectre.Console.Cli;
 
 var settings = new Settings();
-builder.Configuration.Bind("Settings", settings);
 
-ConfigureServices(builder.Services, settings);
+AnsiConsole.Write(FiggleFonts.Rectangles.Render("NABU NetSim"));
+AnsiConsole.WriteLine($"v{Emulator.Version} (c) 2022-{DateTime.Now.Year} Nick Daniels");
+AnsiConsole.WriteLine();
 
-var app = builder.Build();
+if (args.Length is 0)
+    return ServerStart.WebServer(settings, args);
 
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
-    app.UseHsts();
-}
+CancellationTokenSource CancelSource = new();
+var handlers = new BuiltInCommandHandler(CancelSource);
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-app.UseRouting();
-app.MapBlazorHub();
-app.MapFallbackToPage("/_Host");
-//app.UseSession();
+var registrations = new ServiceCollection();
 
-app.Run();
+ServerStart.AddNabu(registrations, settings);
+registrations.AddSingleton(settings);
+registrations.AddHttpClient();
 
-
-void ConfigureServices(IServiceCollection services, Settings settings)
-{
-    services.UseMicrosoftDependencyResolver();
-    var resolver = Locator.CurrentMutable;
-    resolver.InitializeSplat();
-    resolver.InitializeReactiveUI();
-
-    /*
-    services.AddSession(
-        options => {
-            options.Cookie.IsEssential = true;
-            options.IdleTimeout = TimeSpan.FromDays(1);
-        });
-    */
-    //services.AddMemoryCache();
-    //
-    services.AddLogging(
-        logging => {
-            logging.ClearProviders()
-                   .AddInMemoryLogger()
-                   .AddNLog("nlog.config");
-        }
-    );
-    
-    services.AddTransient(typeof(ILog<>), typeof(LoggingConsole<>));
-    services.AddDataProtection();
-
-    services.AddSingleton(settings);
-    //services.AddSingleton(settings.Sources);
-    services.AddLiteDb();
-    services.AddHttpClient();
-    //services.AddLiteDbCache(
-    //    options =>
-    //    {
-    //        options.Connection = LiteDB.ConnectionType.Shared;
-     //       options.CachePath = settings.CacheDatabasePath;
-    //    }
-    //);
-    //services.AddSession();
-    services.AddSingleton<IJob, LogCleanupJob>();
-    services.AddSingleton<IJob, GCJob>();
-    services.AddSingleton<LogService>();
-    services.AddSingleton<HeadlineService>();
-    Simulation.Register(services, settings);
-
-    services.AddRazorPages();
-    services.AddServerSideBlazor();
-    services
-        .AddBlazorise(
-            options =>
-            {
-                options.Immediate = true;
-            }
-        ).AddBootstrap5Components()
-        .AddBootstrap5Providers()
-        .AddFontAwesomeIcons();
-    //services.AddTransient<ViewModelActivator>();
-    services.AddScoped<MainLayoutViewModel>();
-    services.AddScoped<HomeViewModel>();
-    services.AddScoped<AdaptorSettingsViewModel>();
-    services.AddScoped<StatusViewModel>();
-    services.AddScoped<LogViewModel>();
-    services.AddScoped<AdaptorViewModel>();
-    services.AddScoped<ButtonTrayViewModel>();
-    services.AddScoped<FilesViewModel>();
-    services.AddScoped<PackagesViewModel>();
-    services.AddScoped<SettingsViewModel>();
-}
+var app = NabuCli.CreateApp(
+    registrations,
+    app => app?.SetDefaultCommand<ServerStart>(),
+    root =>
+        root.AddBranch(
+            "server",
+            server => server.AddCommand<ServerStart>("start")
+        )
+);
+return NabuCli.Execute(app, args);

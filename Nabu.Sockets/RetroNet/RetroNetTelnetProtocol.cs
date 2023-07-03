@@ -5,7 +5,6 @@ using System.Text;
 
 namespace Nabu.Network.RetroNet;
 
-
 public class RetroNetTelnetProtocol : Protocol
 {
     public RetroNetTelnetProtocol(ILog<RetroNetTelnetProtocol> logger) : base(logger)
@@ -16,11 +15,15 @@ public class RetroNetTelnetProtocol : Protocol
 
     public override byte Version => 0x01;
 
-    void Write(string message) => Send(NabuLib.FromASCII(message).ToArray());
-    void WriteLine(string? message = null) => Write($"{message}\n");
-    char[] Read() => Encoding.ASCII.GetChars(Recv(1));
-    byte[] FromCharacters(params char[] chr) => Encoding.ASCII.GetBytes(chr);
-    string ReadLine(bool echoOff = false, char? replacement = null)
+    private void Write(string message) => Send(NabuLib.FromASCII(message).ToArray());
+
+    private void WriteLine(string? message = null) => Write($"{message}\n");
+
+    private char[] Read() => Encoding.ASCII.GetChars(Recv(1));
+
+    private byte[] FromCharacters(params char[] chr) => Encoding.ASCII.GetBytes(chr);
+
+    private string ReadLine(bool echoOff = false, char? replacement = null)
     {
         var line = string.Empty;
         while (true)
@@ -49,7 +52,8 @@ public class RetroNetTelnetProtocol : Protocol
         }
         return line;
     }
-    string Prompt(string prompt, bool echoOff = false, char? replacement = null)
+
+    private string Prompt(string prompt, bool echoOff = false, char? replacement = null)
     {
         Write($"{prompt}: ");
         var input = ReadLine(echoOff, replacement);
@@ -58,7 +62,7 @@ public class RetroNetTelnetProtocol : Protocol
     }
 
     //CancellationTokenSource Cancel { get; set; } = new CancellationTokenSource();
-    Timer? StartupDetection { get; set; }
+    private Timer? StartupDetection { get; set; }
 
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
@@ -91,15 +95,15 @@ public class RetroNetTelnetProtocol : Protocol
                     continue;
                 }
 
-                
                 Log($"Relaying Telnet to {hostname}:{port}");
-                
+
                 var remote = new NetworkStream(socket);
                 var nabu = Stream;
 
                 try
                 {
-                    while (cancelLoop.IsCancellationRequested is false) {
+                    while (cancelLoop.IsCancellationRequested is false)
+                    {
                         if (remote!.DataAvailable)
                         {
                             var buffer = new Memory<byte>();
@@ -132,17 +136,14 @@ public class RetroNetTelnetProtocol : Protocol
                 Error(ex.Message);
                 return;
             }
-       
+
         return;
-
-
     }
+
     /*
     public override void Reset()
     {
         Cancel?.Cancel();
-
     }
     */
 }
-

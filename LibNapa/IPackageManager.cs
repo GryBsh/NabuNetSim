@@ -1,21 +1,29 @@
-﻿using Nabu.Network;
-using Nabu.Packages;
+﻿using Nabu.Packages;
+using System.Collections.Concurrent;
+using System.Collections.ObjectModel;
 
 namespace Napa;
 
 public interface IPackageManager
 {
-    public IList<PackageSource> Sources { get; }
-    public IEnumerable<SourcePackage> Installed { get; }
-    public IEnumerable<SourcePackage> Available { get; }
-    public Task Refresh();
-    public Task UpdateInstalled();
-    public Task UpdateAvailable();
-    Task<FoundPackage> Open(string folder, string? name = null);
-    Task<bool> CreatePackage(string path, string destination);
-    Task<Package?> InstallPackage(string path);
-    bool UninstallPackage(Package package);
-    (bool, Package) UninstallPackage(Package package, Package newPackage);
-    public IEnumerable<SourcePackage> AvailablePackages(PackageSource source);
-}
+    ObservableRange<SourcePackage> Available { get; }
+    ObservableRange<InstalledPackage> Installed { get; }
+    ConcurrentQueue<string> InstallQueue { get; }
+    List<string> PreservedPackages { get; }
+    List<PackageSource> Sources { get; }
+    ConcurrentQueue<string> UninstallQueue { get; }
 
+    Task<bool> Create(string path, string destination);
+
+    Task<FoundPackage> Install(string path);
+
+    Task<FoundPackage> Open(string folder, string? name = null);
+
+    public Task Refresh(bool silent = false);
+
+    Task Uninstall(string id);
+
+    bool Uninstall(InstalledPackage package);
+
+    (bool, Package) Uninstall(InstalledPackage package, Package newPackage);
+}

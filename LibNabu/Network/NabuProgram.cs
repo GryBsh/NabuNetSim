@@ -2,18 +2,6 @@
 
 namespace Nabu.Network;
 
-public class Options : Dictionary<string, object?>
-{
-    public T? Option<T>(string name)
-    {
-        if (TryGetValue(name, out var value) is true)
-        {
-            return (T?)value;
-        }
-        return default;
-    }
-}
-
 public record NabuProgram
 {
     public NabuProgram()
@@ -30,7 +18,8 @@ public record NabuProgram
         IProgramPatch[] patches,
         bool isPakMenu = false,
         IDictionary<string, object?>? options = null
-    ) {
+    )
+    {
         DisplayName = displayName;
         Name = name;
         Source = source;
@@ -51,4 +40,13 @@ public record NabuProgram
     public ImageType ImageType { get; set; }
     public IList<IProgramPatch> Patches { get; set; } = new List<IProgramPatch>();
     public bool IsPakMenu { get; set; }
+
+    public T? Option<T>(string name)
+    {
+        if (Options.TryGetValue(name, out var value) is true)
+        {
+            return (T?)value;
+        }
+        return default;
+    }
 }

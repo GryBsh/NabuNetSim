@@ -10,16 +10,6 @@ namespace Nabu.Network;
 
 public partial class NabuNetwork : NabuBase, INabuNetwork
 {
-    CachingHttpClient Http { get; }
-    IFileCache FileCache { get; set; }
-    Settings Settings { get; }
-    SourceService Sources { get; }
-    static ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
-    static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), Memory<byte>> PakCache { get; } = new();
-
-    IPackageManager Packages { get; }
-    StorageService Storage { get; }
-
     public NabuNetwork(
         ILog<NabuNetwork> logger,
         Settings settings,
@@ -32,22 +22,31 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         Settings = settings;
         Sources = sources;
-        Http = new(http, logger, cache);
+        Http = new(http, logger, cache, settings);
         FileCache = cache;
         Packages = packages;
         Storage = storage;
         BackgroundRefresh(RefreshType.All);
     }
-    public ProgramSource? Source(AdaptorSettings settings)
-        => Source(settings.Source);
 
-    public ProgramSource? Source(string name)
-        => Sources.Get(name);
+    private static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), Memory<byte>> PakCache { get; } = new();
+    private static ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
+    private IFileCache FileCache { get; set; }
+    private HttpCache Http { get; }
+    private IPackageManager Packages { get; }
+    private Settings Settings { get; }
+    private SourceService Sources { get; }
+    private StorageService Storage { get; }
+
+    public void BackgroundRefresh(RefreshType refresh)
+    {
+        RefreshSources(refresh);
+    }
 
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
     {
         var source = Source(settings);
-        if (source is null) 
+        if (source is null)
             return Array.Empty<NabuProgram>();
 
         return Programs(source);
@@ -56,7 +55,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     public IEnumerable<NabuProgram> Programs(string name)
     {
         var source = Source(name);
-        if (source is null) 
+        if (source is null)
             return Array.Empty<NabuProgram>();
 
         return Programs(source);
@@ -66,23 +65,133 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         if (SourceCache.TryGetValue(source, out IEnumerable<NabuProgram>? value))
             return value;
-        
+
         return Array.Empty<NabuProgram>();
     }
 
-    (bool, ImageType) IsSupportedType(string file)
+    public async Task<(ImageType, Memory<byte>)> Request(AdaptorSettings settings, int pak)
     {
-        var ext = Path.GetExtension(file);
-        return ext switch
+        if (Empty(settings.Source))
         {
-            _ when IsRawPak(file) => (true, ImageType.Raw),
-            Constants.PakExtension => (true, ImageType.Pak),
-            Constants.EncryptedPakExtension => (true, ImageType.EncryptedPak),
-            _ => (false, ImageType.None)
+            Warning("No Source Defined");
+            return (ImageType.None, Array.Empty<byte>());
+        }
+
+        var source = Source(settings);
+        if (source is null)
+            return (ImageType.None, Array.Empty<byte>());
+
+        if (SourceCache.ContainsKey(source) is false)
+            return (ImageType.None, Array.Empty<byte>());
+
+        if (PakCache.TryGetValue((settings, source, pak), out var value))
+        {
+            return (ImageType.Raw, value);
+        }
+
+        var path = source.Path;
+
+        var program = Empty(settings.Program) ?
+                        SourceCache[source].FirstOrDefault(p => p.Name == settings.Program) :
+                        null;
+
+        var targetProgram = pak switch
+        {
+            1 when Empty(settings.Program) || source.EnableExploitLoader => FormatTriple(1),
+            1 => settings.Program!,
+            0x191 when source.EnableExploitLoader => settings.Program!,
+            > 1 => FormatTriple(pak),
+            _ => null
         };
+
+        if (targetProgram == null)
+            return (ImageType.None, Array.Empty<byte>());
+
+        program = SourceCache[source].FirstOrDefault(p => p.Name == targetProgram);
+
+        //BECAUSE: A package using the exploit loader should not have to bundle a menu.
+        if (program is null /* && pak > Constants.CycleMenuNumber */)
+        {
+            program = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == targetProgram);
+            if (program is not null)
+                Logger.WriteWarning($"Source {program.Source} was used for {targetProgram}");
+        }
+
+        if (program is null)
+            return (ImageType.None, Array.Empty<byte>());
+
+        if (program.IsPakMenu && pak > Constants.CycleMenuNumber)
+        {
+            var ext = program.ImageType switch
+            {
+                ImageType.Raw => Constants.NabuExtension,
+                ImageType.Pak => Constants.PakExtension,
+                ImageType.EncryptedPak => Constants.EncryptedPakExtension,
+                _ => Constants.PakExtension
+            };
+            var name = program.ImageType switch
+            {
+                ImageType.EncryptedPak => NabuLib.PakName(pak),
+                _ => FormatTriple(pak)
+            };
+            path = $"{path}/{name}.{ext}";
+        }
+        else if (source.SourceType is SourceType.Package)
+        {
+            path = Path.Combine(source.Path, program.Path);
+        }
+        else path = program.Path;
+
+        Memory<byte> bytes = Array.Empty<byte>();
+        try
+        {
+            bytes = program.SourceType switch
+            {
+                SourceType.Remote => await Http.GetBytes(path),
+                SourceType.Local => await FileCache.GetBytes(path),
+                _ => Array.Empty<byte>()
+            };
+        }
+        catch (Exception ex)
+        {
+            Warning(ex.Message);
+            return (ImageType.None, Array.Empty<byte>());
+        }
+
+        foreach (var patch in program.Patches)
+        {
+            if (patch.Name is not nameof(PassThroughPatch))
+                Log($"Applying Patch: {patch.Name}");
+
+            bytes = await patch.Patch(program, bytes.ToArray());
+        }
+
+        var type = source.EnableExploitLoader ? ImageType.ExploitLoaded : program.ImageType;
+        Log($"Type: {program.ImageType}, Size: {bytes.Length}, Path: {path}");
+
+        PakCache[(settings, source, pak)] = bytes;
+        return (type, bytes);
     }
 
-    (bool, string, ImageType) ContainsPak(string[] files)
+    public ProgramSource? Source(AdaptorSettings settings)
+                            => Source(settings.Source);
+
+    public ProgramSource? Source(string name)
+        => Sources.Get(name);
+
+    public void UnCachePak(AdaptorSettings settings, int pak)
+    {
+        var source = Source(settings);
+        if (source is null) return;
+
+        if (PakCache.ContainsKey((settings, source, pak)))
+        {
+            Debug($"Removing pak {pak} from transfer cache");
+            PakCache.TryRemove((settings, source, pak), out _);
+        }
+    }
+
+    private (bool, string, ImageType) ContainsPak(string[] files)
     {
         var encryptedMenuPakName = NabuLib.PakName(Constants.CycleMenuNumber);
 
@@ -107,19 +216,13 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         return (false, string.Empty, ImageType.None);
     }
 
-
-    public void BackgroundRefresh(RefreshType refresh)
-    {
-        RefreshSources(refresh);
-    }
-
-    async Task<(bool, NabuProgram[])> IsKnownListType(string name, string path)
+    private async Task<(bool, NabuProgram[])> IsKnownListType(string name, string path)
     {
         var tasks = new Task<(bool, NabuProgram[])>[] {
             IsNabuCaList(name, path),
             IsNabuNetworkList(name, path)
         };
-        
+
         foreach (var task in tasks)
         {
             var (isList, programs) = await task;
@@ -128,23 +231,34 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         return (false, Array.Empty<NabuProgram>());
     }
 
-
-    async void RefreshSources(RefreshType refresh = RefreshType.All)
+    private (bool, ImageType) IsSupportedType(string file)
     {
-        if (refresh.HasFlag(RefreshType.Remote))
-            Log($"Refreshing remote sources");
+        var ext = Path.GetExtension(file);
+        return ext switch
+        {
+            _ when IsRawPak(file) => (true, ImageType.Raw),
+            Constants.PakExtension => (true, ImageType.Pak),
+            Constants.EncryptedPakExtension => (true, ImageType.EncryptedPak),
+            _ => (false, ImageType.None)
+        };
+    }
 
-        await Packages.UpdateInstalled();
+    private async void RefreshSources(RefreshType refresh = RefreshType.All)
+    {
+        //if (refresh.HasFlag(RefreshType.Remote))
+        //    Log($"Refreshing remote sources");
+
+        //await Packages.Refresh(true);
+        var installedPackages = Packages.Installed.ToArray();
 
         foreach (var source in Sources.All())
         {
-            
             var isRemote = IsWebSource(source.Path);
 
             var checkRemote = refresh.HasFlag(RefreshType.Remote);
             var checkLocal = refresh.HasFlag(RefreshType.Local);
 
-            if (isRemote) 
+            if (isRemote)
                 source.SourceType = SourceType.Remote;
             else if (source.SourceType is SourceType.Unknown)
                 source.SourceType = SourceType.Local;
@@ -185,6 +299,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                         new[] { new PassThroughPatch(Logger) }
                     ));
                 }
+
                 SourceCache[source] = programs;
             }
             else if (checkLocal && source.SourceType is SourceType.Local)
@@ -192,7 +307,6 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                 if (Directory.Exists(source.Path) is false) return;
                 var programs = new List<NabuProgram>();
                 source.SourceType = SourceType.Local;
-
 
                 var files = Directory.GetFiles(source.Path);
 
@@ -230,20 +344,22 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                         new[] { new PassThroughPatch(Logger) }
                     ));
                 }
+
                 SourceCache[source] = programs;
             }
             else if (checkLocal && source.SourceType is SourceType.Package)
             {
-                var package = Packages.Installed.FirstOrDefault(p => p.Name == source.Name);
+                var package = installedPackages.FirstOrDefault(p => p.Name == source.Name);
                 if (package is null ||
                     package.Manifest is null)
                     continue;
                 var programs = new List<NabuProgram>();
+
                 programs.AddRange(
                     from program in from p in package.Programs select p with { }
                     select new NabuProgram(
-                        program.Name,
-                        program.Name,
+                        program.Name ?? program.Path,
+                        program.Name ?? program.Path,
                         package.Name,
                         NabuLib.IsHttp(program.Path) ?
                             program.Path :
@@ -252,224 +368,42 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             SourceType.Remote :
                             SourceType.Local,
                         ImageType.Raw,
-                        new[] { new PassThroughPatch(Logger) },
+                        program.Option<bool>("ExploitPatchEnabled") ?
+                            new[] { new PassThroughPatch(Logger) } :
+                            new[] { new PassThroughPatch(Logger) },
                         options: program.Options
                     )
                 );
-                   
 
                 if (programs.Any())
                 {
                     SourceCache[source] = programs;
                 }
             }
-            
-        }
-    }
-
-    public async Task<(ImageType, Memory<byte>)> Request(AdaptorSettings settings, int pak)
-    {
-        if (Empty(settings.Source))
-        {
-            Warning("No Source Defined");
-            return (ImageType.None, Array.Empty<byte>());
-        }
-
-        var source = Source(settings);
-        if (source is null)
-            return (ImageType.None, Array.Empty<byte>());
-
-        if (SourceCache.ContainsKey(source) is false)
-            return (ImageType.None, Array.Empty<byte>());
-
-        if (PakCache.TryGetValue((settings, source, pak), out var value))
-        {
-            return (ImageType.Raw, value);
-        }
-
-        var path = source.Path;
-        var image = settings.Image;
-        var prg = Empty(image) ? 
-                    SourceCache[source].FirstOrDefault(p => p.Name == settings.Image) :
-                    null;
-
-        
-        image = pak switch
-        {
-            0x191 when source.EnableExploitLoader => image!,
-            > 1 => FormatTriple(pak),
-            1 when Empty(image) || source.EnableExploitLoader => FormatTriple(1),
-            1 => image!,
-            _ => null
-        };
-
-        if (image == null)
-            return (ImageType.None, Array.Empty<byte>());
-
-        prg = SourceCache[source].FirstOrDefault(p => p.Name == image);
-
-
-        //BECAUSE: A package using the exploit loader should not have to bundle a menu.
-        if (prg is null /* && pak > Constants.CycleMenuNumber */) 
-        {
-            prg = SourceCache.SelectMany(kv => kv.Value).FirstOrDefault(p => p.Name == image);
-            if (prg is not null)
-                Logger.WriteWarning($"Source {prg.Source} was used for {image}");
-        }
-
-        if (prg is null)
-            return (ImageType.None, Array.Empty<byte>());
-        
-
-        if (prg.IsPakMenu && pak > Constants.CycleMenuNumber)
-        {
-            var ext = prg.ImageType switch
-            {
-                ImageType.Raw => Constants.NabuExtension,
-                ImageType.Pak => Constants.PakExtension,
-                ImageType.EncryptedPak => Constants.EncryptedPakExtension,
-                _ => Constants.PakExtension
-            };
-            var name = prg.ImageType switch
-            {
-                ImageType.EncryptedPak => NabuLib.PakName(pak),
-                _ => FormatTriple(pak)
-            };
-            path = $"{path}/{name}.{ext}";
-        }
-        else if (source.SourceType is SourceType.Package)
-        {
-            path = Path.Combine(source.Path, prg.Path);
-        }
-        else path = prg.Path;
-
-
-        Memory<byte> bytes = Array.Empty<byte>();
-        try
-        {
-            bytes = prg.SourceType switch
-            {
-                SourceType.Remote => await Http.GetBytes(path),
-                SourceType.Local => await FileCache.GetFile(path),
-                _ => Array.Empty<byte>()
-            };
-        }
-        catch (Exception ex)
-        {
-            Warning(ex.Message);
-            return (ImageType.None, Array.Empty<byte>());
-        }
-        
-        foreach (var patch in prg.Patches)
-        {
-            if (patch.Name is not nameof(PassThroughPatch))
-                Log($"NTWRK: Applying Patch: {patch.Name}");
-
-            bytes = await patch.Patch(prg, bytes.ToArray());
-        }
-        
-        var type = source.EnableExploitLoader ? ImageType.ExploitLoaded : prg.ImageType;
-        Log($"Type: {prg.ImageType}, Size: {bytes.Length}, Path: {path}");
-
-        PakCache[(settings, source, pak)] = bytes;
-        return (type, bytes);
-    }   
-
-    public void UnCachePak(AdaptorSettings settings, int pak)
-    {
-        var source = Source(settings);
-        if (source is null) return;
-
-        if (PakCache.ContainsKey((settings, source, pak)))
-        {
-            Debug($"Removing pak {pak} from transfer cache");
-            PakCache.TryRemove((settings, source, pak), out _);
         }
     }
 
     #region URLs
-    protected static bool IsWebSource(string path) => path.Contains("://");
-    protected static bool IsNabu(string path) => path.EndsWith(Constants.NabuExtension);
-    protected static bool IsRawPak(string path) => PakFile().IsMatch(path);
-    protected static bool IsPak(string path) => path.EndsWith(Constants.PakExtension);
+
     protected static bool IsEncryptedPak(string path) => path.EndsWith(Constants.EncryptedPakExtension);
 
-    #endregion
+    protected static bool IsNabu(string path) => path.EndsWith(Constants.NabuExtension);
+
+    protected static bool IsPak(string path) => path.EndsWith(Constants.PakExtension);
+
+    protected static bool IsRawPak(string path) => PakFile().IsMatch(path);
+
+    protected static bool IsWebSource(string path) => path.Contains("://");
+
+    #endregion URLs
 
     #region Http Location
-    protected async Task<(bool, string, ImageType)> IsPak(string url, int pak)
-    {
-        url = url.TrimEnd('/');
-
-        var type = url switch
-        {
-            _ when IsRawPak(url) => ImageType.Raw,
-            _ when IsPak(url) => ImageType.Pak,
-            _ when IsEncryptedPak(url) => ImageType.EncryptedPak,
-            _ => ImageType.None
-        };
-        bool found, cached = false;
-
-        if (type is ImageType.None)
-        {
-
-            (_, found, cached, _) = await Http.GetUriStatus($"{url}/{FormatTriple(pak)}{Constants.NabuExtension}");
-            if (found || cached)
-                return (true, url, ImageType.Raw);
-
-            (_, found, cached, _) = await Http.GetUriStatus($"{url}/{FormatTriple(pak)}{Constants.PakExtension}");
-            if (found || cached)
-                return (true, url, ImageType.Pak);
-
-            (_, found, cached, _) = await Http.GetUriStatus($"{url}/{NabuLib.PakName(pak)}{Constants.EncryptedPakExtension}");
-            if (found || cached)
-                return (false, url, ImageType.EncryptedPak); //Encrypted pak support is disabled.
-
-            return (false, url, ImageType.None);
-        }
-
-        (_, found, cached, _) = await Http.GetUriStatus(url);
-        return (found || cached, url, type);
-    }
-
-    protected async Task<(bool, NabuProgram[])> IsNabuNetworkList(string source, string uri)
-    {
-        if (!uri.EndsWith(".xml") && !uri.Contains("nabunetwork.com")) { return (false, Array.Empty<NabuProgram>());}
-        var (shouldDownload, found, cached, _) = await Http.GetUriStatus(uri);
-        if (!found && !cached) { return (false, Array.Empty<NabuProgram>()); }
-
-        var xml = await Http.GetString(uri);
-        var list = new XmlDocument();
-        list.LoadXml(xml);
-        var cycleNodes = list.DocumentElement?.SelectNodes("Cycle");
-        if (cycleNodes is null) { return (false, Array.Empty<NabuProgram>()); }
-        var progs = new List<NabuProgram>();
-        foreach (XmlNode cycleNode in cycleNodes)
-        {
-            var targetType = cycleNode["TargetType"]?.InnerText;
-            if (targetType == "Cycle") continue;
-            var name = cycleNode["Name"]?.InnerText ?? "Unnamed Program";
-            var url = cycleNode["Url"]?.InnerText ?? string.Empty;
-            progs.Add(new(
-                name,
-                name,
-                source,
-                url,
-                SourceType.Remote,
-                ImageType.Raw,
-                new[] { new PassThroughPatch(Logger) }, 
-                false
-            ));
-        }
-        return (true, progs.ToArray());
-    }
 
     protected async Task<(bool, NabuProgram[])> IsNabuCaList(string source, string uri)
     {
-
         if (!uri.EndsWith(".txt")) { return (false, Array.Empty<NabuProgram>()); }
 
-        var (_, found, cached, _) = await Http.GetUriStatus(uri);
+        var (_, found, cached, _, _) = await Http.GetUriStatus(uri);
         if (!found && !cached) { return (false, Array.Empty<NabuProgram>()); }
 
         var lines = (await Http.GetString(uri)).Split('\n');
@@ -500,8 +434,81 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         return (true, progs.ToArray());
     }
 
+    protected async Task<(bool, NabuProgram[])> IsNabuNetworkList(string source, string uri)
+    {
+        if (!uri.EndsWith(".xml") && !uri.Contains("nabunetwork.com")) { return (false, Array.Empty<NabuProgram>()); }
+        var (shouldDownload, found, cached, _, _) = await Http.GetUriStatus(uri);
+        if (!found && !cached) { return (false, Array.Empty<NabuProgram>()); }
+
+        var xml = await Http.GetString(uri);
+        var list = new XmlDocument();
+        list.LoadXml(xml);
+        var cycleNodes = list.DocumentElement?.SelectNodes("Target");
+        if (cycleNodes is null) { return (false, Array.Empty<NabuProgram>()); }
+        var progs = new List<NabuProgram>();
+        foreach (XmlNode cycleNode in cycleNodes)
+        {
+            var targetType = cycleNode["TargetType"]?.InnerText;
+            if (targetType == "NabuNetwork")
+                continue;
+
+            var name = cycleNode["Name"]?.InnerText ?? "Unnamed Program";
+            var url = cycleNode["Url"]?.InnerText ?? string.Empty;
+
+            progs.Add(new(
+                name,
+                name,
+                source,
+                url,
+                SourceType.Remote,
+                ImageType.Raw,
+                new[] { new PassThroughPatch(Logger) },
+                false
+            ));
+        }
+        return (true, progs.ToArray());
+    }
+
+    protected async Task<(bool, string, ImageType)> IsPak(string url, int pak)
+    {
+        url = url.TrimEnd('/');
+
+        var type = url switch
+        {
+            _ when IsRawPak(url) => ImageType.Raw,
+            _ when IsPak(url) => ImageType.Pak,
+            _ when IsEncryptedPak(url) => ImageType.EncryptedPak,
+            _ => ImageType.None
+        };
+        bool found, cached = false;
+
+        if (type is ImageType.None)
+        {
+            (_, found, cached, _, _) = await Http.GetUriStatus($"{url}/{FormatTriple(pak)}{Constants.NabuExtension}");
+            if (found || cached)
+                return (true, url, ImageType.Raw);
+
+            (_, found, cached, _, _) = await Http.GetUriStatus($"{url}/{FormatTriple(pak)}{Constants.PakExtension}");
+            if (found || cached)
+                return (true, url, ImageType.Pak);
+
+            (_, found, cached, _, _) = await Http.GetUriStatus($"{url}/{NabuLib.PakName(pak)}{Constants.PakExtension}");
+            if (found || cached)
+                return (true, url, ImageType.Pak);
+
+            (_, found, cached, _, _) = await Http.GetUriStatus($"{url}/{NabuLib.PakName(pak)}{Constants.EncryptedPakExtension}");
+            if (found || cached)
+                return (false, url, ImageType.EncryptedPak); //Encrypted pak support is disabled.
+
+            return (false, url, ImageType.None);
+        }
+
+        (_, found, cached, _, _) = await Http.GetUriStatus(url);
+        return (found || cached, url, type);
+    }
+
     [GeneratedRegex(".*\\d{6}\\.nabu")]
     private static partial Regex PakFile();
-    #endregion
 
+    #endregion Http Location
 }

@@ -1,20 +1,16 @@
-﻿using Newtonsoft.Json.Linq;
-using YamlDotNet.Serialization;
-using Newtonsoft.Json;
-using Nabu.Packages;
+﻿using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using System.ComponentModel;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Text.Json;
-using YamlDotNet.Core.Tokens;
 using System.Text.Json.Nodes;
-using System.ComponentModel;
-using System.Reactive.Subjects;
-using System.Reactive.Linq;
-using System.Collections.Specialized;
+using YamlDotNet.Serialization;
 
 namespace Nabu;
 
-public abstract record ReactiveRecord : 
-    INotifyPropertyChanged, 
+public abstract record ReactiveRecord :
+    INotifyPropertyChanged,
     INotifyPropertyChanging,
     IObservable<INotifyPropertyChanged>,
     IObservable<INotifyPropertyChanging>
@@ -72,7 +68,8 @@ public abstract record DeserializedObject : ReactiveRecord
 
     protected T? Get<T>(string key)
     {
-        if (key is null) throw new ArgumentNullException(nameof(key));
+        if (key is null)
+            throw new ArgumentNullException(nameof(key));
 
         var canGet = Properties.TryGetValue(key, out object? value);
         if (!canGet) return default;
@@ -80,10 +77,10 @@ public abstract record DeserializedObject : ReactiveRecord
         return FromValue<T>(value);
     }
 
-
     protected void Set<T>(string key, T? value)
     {
-        if (key is null) throw new ArgumentNullException(nameof(key));
+        if (key is null)
+            throw new ArgumentNullException(nameof(key));
         NotifyPropertyChanging(key);
         _ = Properties.AddOrUpdate(
                 key,
@@ -98,7 +95,7 @@ public abstract record DeserializedObject : ReactiveRecord
         return value;
     }
 
-    static (bool, Func<string,T?>) CanParse<T>(string? value)
+    static (bool, Func<string, T?>) CanParse<T>(string? value)
     {
         try
         {

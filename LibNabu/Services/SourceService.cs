@@ -2,13 +2,18 @@
 
 namespace Nabu.Services;
 
-public class SourceService
+
+public class SourceService : ISourceService
 {
-    static List<ProgramSource> Sources { get; set; } = new();
-    SemaphoreSlim SourcesLock { get; } = new(1, 1);
+    
+    private List<ProgramSource> Sources => Settings.Sources;
+
+    private SemaphoreSlim SourcesLock { get; } = new(1, 1);
+    private Settings Settings { get; }
+
     public SourceService(Settings settings)
     {
-        Sources = settings.Sources.ToList();
+        Settings = settings;
     }
 
     public void RemoveAll(Predicate<ProgramSource> predicate)
@@ -26,6 +31,7 @@ public class SourceService
         {
             Sources.Add(source);
         }
+        RaiseSourceChanged(source);
     }
 
     public void Add(ProgramSource source)
@@ -34,17 +40,22 @@ public class SourceService
         {
             Sources.Add(source);
         }
+        RaiseSourceChanged(source);
     }
 
     public bool Remove(ProgramSource source)
     {
         lock (SourcesLock)
         {
-            return Sources.Remove(source);
+            var r = Sources.Remove(source);
+            RaiseSourceChanged(source);
+            return r;
         }
+
     }
 
     public IEnumerable<ProgramSource> All() => Sources.ToArray();
+
     public ProgramSource? Get(Predicate<ProgramSource> predicate)
     {
         lock (SourcesLock)
@@ -60,5 +71,10 @@ public class SourceService
             return Sources.FirstOrDefault(s => NabuLib.InsensitiveEqual(s.Name, name));
         }
     }
-}
 
+    public event EventHandler<ProgramSource> SourceChanged;
+    void RaiseSourceChanged(ProgramSource source)
+    {
+        SourceChanged?.Invoke(this, source);
+    }
+}

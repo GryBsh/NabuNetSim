@@ -1,20 +1,21 @@
-using System.Net;
 using Nabu.Services;
+using System.Net;
 
 namespace Nabu.Network.NHACP.V01;
 
 public class HttpStorageHandler : RAMStorageHandler
 {
-    readonly CachingHttpClient Http;
-    public HttpStorageHandler(ILog logger, AdaptorSettings settings, HttpClient http, IFileCache cache) : base(logger, settings)
+    private readonly HttpCache Http;
+
+    public HttpStorageHandler(ILog logger, AdaptorSettings adaptor, HttpClient http, IFileCache cache, Settings settings) : base(logger, adaptor)
     {
-        Http = new CachingHttpClient(http, logger, cache, settings);
+        Http = new HttpCache(http, logger, cache, settings, adaptor);
     }
 
     public override async Task<(bool, string, int, NHACPError)> Open(OpenFlags flags, string uri)
     {
         try
-        { 
+        {
             var response = await Http.GetHead(uri);
             if (response.IsSuccessStatusCode)
             {
@@ -23,10 +24,11 @@ public class HttpStorageHandler : RAMStorageHandler
             }
             else
             {
-                NHACPError errorCode = response.StatusCode switch {
-                    HttpStatusCode.Forbidden or 
+                NHACPError errorCode = response.StatusCode switch
+                {
+                    HttpStatusCode.Forbidden or
                         HttpStatusCode.Unauthorized => NHACPError.AccessDenied,
-                    HttpStatusCode.NotFound         => NHACPError.NotFound,
+                    HttpStatusCode.NotFound => NHACPError.NotFound,
                     _ => NHACPError.Undefined // Undefined error
                 };
                 return (false, response.ReasonPhrase ?? string.Empty, 0, errorCode);
@@ -37,6 +39,4 @@ public class HttpStorageHandler : RAMStorageHandler
             return (false, ex.Message, 0, NHACPError.Undefined);
         }
     }
-
-
 }

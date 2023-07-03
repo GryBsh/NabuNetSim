@@ -21,6 +21,3 @@ public static class Message
 
     public const int TimePak = 0x007FFFFF;
 }
-
-
-

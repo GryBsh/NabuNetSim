@@ -5,7 +5,7 @@ namespace Nabu;
 public static partial class NabuLib
 {
     /// <summary>
-    ///     Converts s little-endian 32 bit integer 
+    ///     Converts s little-endian 32 bit integer
     ///     in bytes to Int
     /// </summary>
     /// <param name="span"></param>
@@ -22,7 +22,7 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Converts an Int to a little-endian 
+    ///     Converts an Int to a little-endian
     ///     32 bit integer in bytes
     /// </summary>
     /// <param name="number"></param>
@@ -53,7 +53,7 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Converts an Short to a little-endian 
+    ///     Converts an Short to a little-endian
     ///     16 bit integer in bytes
     /// </summary>
     /// <param name="number"></param>
@@ -73,13 +73,13 @@ public static partial class NabuLib
     /// <param name="str"></param>
     /// <returns></returns>
     public static Memory<byte> ToSizedASCII(string str, int length = 0)
-    {        
+    {
         var bytes = Encoding.ASCII.GetBytes(str);
-        
-        if (length is 0) 
+
+        if (length is 0)
             length = bytes.Length;
 
-        var r = new Memory<byte>(new byte[length+1]);
+        var r = new Memory<byte>(new byte[length + 1]);
         r.Span[0] = (byte)length;
         if (bytes.Length > length)
             bytes[..length].CopyTo(r[1..]);
@@ -87,14 +87,13 @@ public static partial class NabuLib
             bytes.CopyTo(r[1..]);
 
         return r;
-        
+
         /*
         yield return (byte)str.Length;
         foreach (int index in Enumerable.Range(0, length))
             if (index >= bytes.Length) yield return 0x00;
             else yield return bytes[index];
         */
-            
     }
 
     /// <summary>
@@ -102,7 +101,7 @@ public static partial class NabuLib
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static string ToASCII(Memory<byte> buffer) 
+    public static string ToASCII(Memory<byte> buffer)
         => Encoding.ASCII.GetString(buffer.ToArray());
 
     // <summary>

@@ -5,9 +5,8 @@ public static class NHACPMessage
     public const string Magic = "ACP";
     public static short[] SupportedVersions = new short[] { 0, 1 };
 
-
-
-    public static Memory<byte> Frame(byte type, params Memory<byte>[] message) {
+    public static Memory<byte> Frame(byte type, params Memory<byte>[] message)
+    {
         return NabuLib.Frame(
             new[] { type },
             message
@@ -73,7 +72,7 @@ public static class NHACPMessage
     {
         return Frame(
             0x87,
-            new[] {byt} 
+            new[] { byt }
         );
     }
 

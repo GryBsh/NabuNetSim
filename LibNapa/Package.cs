@@ -70,6 +70,8 @@ public record Package : DeserializedWithOptions
         return false;
     }
 
+    [JsonIgnore()]
+    [YamlIgnore()]
     public ManifestItem[] Programs
     {
         get
@@ -81,6 +83,8 @@ public record Package : DeserializedWithOptions
         }
     }
 
+    [JsonIgnore()]
+    [YamlIgnore()]
     public ManifestItem[] Storage
     {
         get
@@ -92,6 +96,8 @@ public record Package : DeserializedWithOptions
         }
     }
 
+    [JsonIgnore()]
+    [YamlIgnore()]
     public ManifestItem[] PAKs
     {
         get
@@ -103,6 +109,8 @@ public record Package : DeserializedWithOptions
         }
     }
 
+    [JsonIgnore()]
+    [YamlIgnore()]
     public ManifestItem[] Sources
     {
         get
@@ -124,4 +132,3 @@ public record Package : DeserializedWithOptions
         };
     }
 }
-
