@@ -10,7 +10,7 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
-**On Windows, you need to run NNS as an administrator.**
+**On Windows, you need to be in Developer Mode OR you need to run NNS as an administrator.**
 
 **IF YOU ARE ON A VERSION BEFORE 0.9.8** 
 
