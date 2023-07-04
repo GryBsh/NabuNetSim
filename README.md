@@ -75,7 +75,7 @@ A PC can potentially serve hundreds.
 
 ### Windows
 
-On Windows, `nss.exe` needs to run as an administrator.
+On Windows, you need to enable Developer Mode OR `nss.exe` needs to run as an administrator.
 Once upon a time Microsoft decided this was necessary to use symlinks.
 
 ### Configuration
