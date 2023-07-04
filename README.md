@@ -10,6 +10,8 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
+**On Windows, you need to run NNS as an administrator.**
+
 **IF YOU ARE ON A VERSION BEFORE 0.9.8** 
 
  Many of the sources/settings previously in the config file have been moved to packages, and many settings are moved or removed. Drop in the default settings files, and then make your changes.
