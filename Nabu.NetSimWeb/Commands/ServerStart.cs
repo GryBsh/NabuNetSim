@@ -29,8 +29,8 @@ namespace Nabu.NetSimWeb;
 
 public class ServerStartSettings : CommandSettings
 {
-    [CommandOption("-p|--new-process")]
-    public bool NewProcess { get; set; }
+    //[CommandOption("-p|--new-process")]
+    //public bool NewProcess { get; set; }
 
     [CommandOption("-s|--headless")]
     public bool NoUI { get; set; }
@@ -171,9 +171,10 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, ServerStartSettings settings)
     {
         var args = context.Remaining.Raw.ToArray();
-        if (settings.NewProcess)
-            return Spawn(args);
-        else if (settings.NoUI)
+        //if (settings.NewProcess)
+        //    return Spawn(args);
+        //else
+        if (settings.NoUI)
             return await Headless(Settings, args);
         return WebServer(Settings, args);
     }

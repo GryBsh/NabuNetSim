@@ -76,7 +76,7 @@ A PC can potentially serve hundreds.
 ### Windows
 
 On Windows, you need to enable Developer Mode OR `nss.exe` needs to run as an administrator.
-Once upon a time Microsoft decided this was necessary to use symlinks.
+Once upon a time Microsoft decided this was necessary to use symlinks. Use the `start.cmd` file to launch NNS, and it take care of it.
 
 ### Configuration
 

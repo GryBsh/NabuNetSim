@@ -8,7 +8,7 @@
     <AssemblyName>nns</AssemblyName>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <Platforms>AnyCPU</Platforms>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationManifest></ApplicationManifest>
     <!--<ApplicationManifest>app.manifest</ApplicationManifest>-->
   </PropertyGroup>
 
