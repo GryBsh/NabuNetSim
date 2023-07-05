@@ -10,7 +10,7 @@ public static class Emulator
     public const int Build = 9;
     public const int Major = 0;
     public const int Minor = 9;
-    public const int Release = 1;
+    public const int Release = 3;
     public static readonly string Id = $"NABU NetSim v{Version}";
     public static readonly string Version = $"{Major}.{Minor}.{Build}-{Branch}{Release}";
 }
