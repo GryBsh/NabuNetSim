@@ -10,8 +10,6 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
-**On Windows, you need to be in Developer Mode OR you need to run NNS as an administrator.**
-
 **IF YOU ARE ON A VERSION BEFORE 0.9.8** 
 
  Many of the sources/settings previously in the config file have been moved to packages, and many settings are moved or removed. Drop in the default settings files, and then make your changes.
@@ -73,11 +71,6 @@ A PC can potentially serve hundreds.
 
 ## Basics
 
-### Windows
-
-On Windows, you need to enable Developer Mode OR `nss.exe` needs to run as an administrator.
-Once upon a time Microsoft decided this was necessary to use symlinks. Use the `start.cmd` file to launch NNS, and it take care of it.
-
 ### Configuration
 
 ```json
@@ -105,7 +98,7 @@ Once upon a time Microsoft decided this was necessary to use symlinks. Use the `
           "Source": "1984 Cycle 1", // <-- You change the inital source name here
           //"Program": "NAME" // <-- You can specify the initial program to load here
           "State": "Stop" // <-- You can specify the initial state of the adaptor here, Stop or Run.
-        }
+        } // You can add as many serial adapters as you have connected.
       ],
       "TCP": [
         {

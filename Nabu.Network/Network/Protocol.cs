@@ -6,26 +6,30 @@ namespace Nabu.Network;
 
 public abstract class Protocol : NabuService, IProtocol, IDisposable
 {
-    //public AdaptorSettings Settings { get; private set; }
-    public Stream Stream { get; private set; } = Stream.Null;
-
-    public BinaryReader Reader { get; private set; }
-    public BinaryWriter Writer { get; private set; }
-    public abstract byte Version { get; }
-    public abstract byte[] Commands { get; }
-    public bool Attached => Stream != Stream.Null;
-
-    private int SendDelay = 0;
     private bool disposedValue;
 
+    private int SendDelay = 0;
+
     public Protocol(
-        ILog logger,
-        AdaptorSettings? settings = null
-    ) : base(logger, settings ?? new NullAdaptorSettings())
+            ILog logger,
+            AdaptorSettings? settings = null
+        ) : base(logger, settings ?? new NullAdaptorSettings())
     {
         Reader = new BinaryReader(Stream, Encoding.ASCII);
         Writer = new BinaryWriter(Stream, Encoding.ASCII);
     }
+
+    public bool Attached => Stream != Stream.Null;
+
+    public abstract byte[] Commands { get; }
+
+    public BinaryReader Reader { get; private set; }
+
+    //public AdaptorSettings Settings { get; private set; }
+    public Stream Stream { get; private set; } = Stream.Null;
+
+    public abstract byte Version { get; }
+    public BinaryWriter Writer { get; private set; }
 
     #region Send / Receive
 
@@ -44,15 +48,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         return b;
     }
 
-    public async Task<Memory<byte>> RecvAsync(int length)
-    {
-        var buffer = new Memory<byte>(new byte[length]);
-        await Stream.ReadAsync(buffer);
-        return buffer;
-    }
-
-    public async Task<byte> RecvAsync() => (await RecvAsync(1)).Span[0];
-
     /// <summary>
     ///     Receives a byte and returns if it was the expected byte
     ///     and the actual byte received.
@@ -66,12 +61,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         if (!good) Warning($"NA: {Format(expected)} != {Format(read)}");
         return (good, read);
     }
-
-    public int RecvInt() => NabuLib.ToInt(Reader.ReadBytes(4));
-
-    public short RecvShort() => NabuLib.ToShort(Reader.ReadBytes(2));
-
-    public string RecvString() => Reader.ReadString();
 
     /// <summary>
     ///     Receives the specified bytes.
@@ -101,25 +90,20 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         return (good, read);
     }
 
-    /// <summary>
-    ///     Logs the current transfer rate
-    /// </summary>
-    /// <param name="start">The start time</param>
-    /// <param name="stop">The end time</param>
-    /// <param name="length">The number of bytes transfered</param>
-    protected void TransferRate(DateTime start, DateTime stop, int length)
+    public async Task<Memory<byte>> RecvAsync(int length)
     {
-        var byteLength = 11;
-        var elapsed = stop - start;
-        var rate = (byteLength * length - length) / (elapsed.TotalMilliseconds / 1000) / 1000;
-        var unit = "kb/s";
-        if (rate > 1000)
-        {
-            rate /= 1000;
-            unit = "mb/s";
-        }
-        Log($"NPC: Transfer Rate: {rate:0.00} {unit} in {elapsed.TotalSeconds:0.00} seconds");
+        var buffer = new Memory<byte>(new byte[length]);
+        await Stream.ReadAsync(buffer);
+        return buffer;
     }
+
+    public async Task<byte> RecvAsync() => (await RecvAsync(1)).Span[0];
+
+    public int RecvInt() => NabuLib.ToInt(Reader.ReadBytes(4));
+
+    public short RecvShort() => NabuLib.ToShort(Reader.ReadBytes(2));
+
+    public string RecvString() => Reader.ReadString();
 
     /// <summary>
     ///     Sends bytes to the NABU PC / Emulator.
@@ -169,23 +153,29 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         Debug($"NA: SENT: {bytes.Length} bytes");
     }
 
+    /// <summary>
+    ///     Logs the current transfer rate
+    /// </summary>
+    /// <param name="start">The start time</param>
+    /// <param name="stop">The end time</param>
+    /// <param name="length">The number of bytes transfered</param>
+    protected void TransferRate(DateTime start, DateTime stop, int length)
+    {
+        var byteLength = 11;
+        var elapsed = stop - start;
+        var rate = (byteLength * length - length) / (elapsed.TotalMilliseconds / 1000) / 1000;
+        var unit = "kb/s";
+        if (rate > 1000)
+        {
+            rate /= 1000;
+            unit = "mb/s";
+        }
+        Log($"NPC: Transfer Rate: {rate:0.00} {unit} in {elapsed.TotalSeconds:0.00} seconds");
+    }
+
     #endregion Send / Receive
 
     #region Framed Protocols
-
-    public void SendFramed(params byte[] buffer)
-    {
-        var length = (short)buffer.Length;
-        var frame = NabuLib.Frame(NabuLib.FromShort(length), buffer);
-        Send(frame.ToArray());
-    }
-
-    public void SendFramed(byte header, params Memory<byte>[] buffer)
-    {
-        var head = new byte[] { header };
-        var frame = NabuLib.Frame(head, buffer);
-        SendFramed(frame.ToArray());
-    }
 
     public (short, byte[]) ReadFrame()
     {
@@ -203,6 +193,20 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         }
         var buffer = Recv(length);
         return (length, buffer);
+    }
+
+    public void SendFramed(params byte[] buffer)
+    {
+        var length = (short)buffer.Length;
+        var frame = NabuLib.Frame(NabuLib.FromShort(length), buffer);
+        Send(frame.ToArray());
+    }
+
+    public void SendFramed(byte header, params Memory<byte>[] buffer)
+    {
+        var head = new byte[] { header };
+        var frame = NabuLib.Frame(head, buffer);
+        SendFramed(frame.ToArray());
     }
 
     #endregion Framed Protocols
@@ -224,7 +228,21 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         return true;
     }
 
-    protected abstract Task Handle(byte unhandled, CancellationToken cancel);
+    public virtual void Detach()
+    {
+        Reset();
+        Adaptor = new NullAdaptorSettings();
+        Stream = Stream.Null;
+        Reader = new BinaryReader(Stream);
+        Writer = new BinaryWriter(Stream);
+    }
+
+    public void Dispose()
+    {
+        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
+        Dispose(disposing: true);
+        GC.SuppressFinalize(this);
+    }
 
     public async Task<bool> HandleMessage(byte incoming, CancellationToken cancel)
     {
@@ -244,14 +262,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         }
     }
 
-    public virtual void Detach()
-    {
-        Adaptor = new NullAdaptorSettings();
-        Stream = Stream.Null;
-        Reader = new BinaryReader(Stream);
-        Writer = new BinaryWriter(Stream);
-    }
-
     public virtual void Reset()
     { }
 
@@ -266,7 +276,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         {
             if (disposing)
             {
-                Reset();
                 Detach();
             }
 
@@ -276,19 +285,14 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
         }
     }
 
+    protected abstract Task Handle(byte unhandled, CancellationToken cancel);
+
     // // TODO: override finalizer only if 'Dispose(bool disposing)' has code to free unmanaged resources
     // ~Protocol()
     // {
     //     // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
     //     Dispose(disposing: false);
     // }
-
-    public void Dispose()
-    {
-        // Do not change this code. Put cleanup code in 'Dispose(bool disposing)' method
-        Dispose(disposing: true);
-        GC.SuppressFinalize(this);
-    }
 
     #endregion IProtocol
 }

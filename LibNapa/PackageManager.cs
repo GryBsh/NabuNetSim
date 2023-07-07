@@ -191,7 +191,7 @@ public class PackageManager : IPackageManager
         }
         catch (Exception ex)
         {
-            Log.WriteError(string.Empty, ex);
+            Log.WriteError(ex.Message);
         }
         return false;
     }

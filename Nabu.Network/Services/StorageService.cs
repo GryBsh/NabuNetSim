@@ -1,4 +1,6 @@
-﻿using Napa;
+﻿using Microsoft.Extensions.Options;
+using Napa;
+using System.Runtime.InteropServices;
 using YamlDotNet.Serialization;
 
 namespace Nabu.Services
@@ -26,6 +28,8 @@ namespace Nabu.Services
 
     public class StorageService
     {
+        private const string AdaptorFolderPrefix = "-";
+        private const string COMPortName = "COM";
         private readonly SemaphoreSlim Lock = new SemaphoreSlim(1);
         private readonly ILog Logger;
 
@@ -36,29 +40,72 @@ namespace Nabu.Services
         }
 
         public Settings Settings { get; }
+
+        private static bool IsAtLeastWin10Build14972 =>
+                IsWindows &&
+                (Environment.OSVersion.Version.Major == 10 && Environment.OSVersion.Version.Build >= 14972) ||
+                Environment.OSVersion.Version.Major >= 11;
+
+        private static bool IsWindows => Environment.OSVersion.Platform == PlatformID.Win32NT;
         private bool MigratedToIsolatedStorage { get; set; } = false;
 
         public void AttachStorage(AdaptorSettings settings, string name)
         {
             var root = new DirectoryInfo(Settings.StoragePath);
-            if (!Path.Exists(root.FullName)) return;
-
-            settings.StoragePath = Path.Combine(root.FullName, name);
+            if (!Path.Exists(root.FullName))
+            {
+                root = Directory.CreateDirectory(Settings.StoragePath);
+            }
 
             var source = SourceFolder(root.FullName);
-
-            MigratedToIsolatedStorage = Path.Exists(source);
+            var sourceExists = Path.Exists(source);
+            var foldersWithLegacyNames = root.GetDirectories().Where(d => d.FullName != source).Where(d => !d.Name.StartsWith(AdaptorFolderPrefix));
+            MigratedToIsolatedStorage = sourceExists && !foldersWithLegacyNames.Any();
             if (!MigratedToIsolatedStorage)
             {
-                Logger.WriteWarning("Migrating items from Storage root to File Source");
-                UpdatePath(source, root.FullName, SearchOption.TopDirectoryOnly, StorageUpdateType.Move);
+                Logger.Write("Migrating items from Storage root to File Source");
+                if (!sourceExists) UpdatePath(source, root.FullName, SearchOption.TopDirectoryOnly, StorageUpdateType.Move);
+
+                foreach (var folder in foldersWithLegacyNames)
+                {
+                    var newName = folder switch
+                    {
+                        _ when folder.Name.StartsWith(COMPortName) => folder.Name.Replace(COMPortName, AdaptorFolderName(COMPortName)),
+                        _ => AdaptorFolderName(folder.Name)
+                    };
+
+                    var newPath = Path.Join(folder.Parent!.FullName, newName);
+                    Logger.Write($"Migrating {folder} to {newPath}");
+                    Directory.Move(folder.FullName, newPath);
+                }
                 MigratedToIsolatedStorage = true;
             }
+
+            settings.StoragePath = Path.Combine(root.FullName, AdaptorFolderName(name));           
 
             if (!Path.Exists(settings.StoragePath))
                 Directory.CreateDirectory(settings.StoragePath);
 
+            CleanUpLinks(settings.StoragePath, SearchOption.AllDirectories);
             UpdateStoragePath(settings, source, SearchOption.AllDirectories);
+        }
+
+        void CleanUpLinks(string path, SearchOption options)
+        {
+            var files = new DirectoryInfo(path).GetFiles("*", options);
+            foreach (var file in files)
+            {
+                if (NabuLib.IsSymLink(file.FullName))
+                {
+                    var target = NabuLib.ResolveLink(file.FullName);
+                    if (!Path.Exists(target))
+                    {
+                        Logger.WriteWarning($"Deleting, missing target {file.Name}");
+                        File.Delete(file.FullName);
+                        continue;
+                    }
+                }
+            }
         }
 
         public void UpdatePath(string destination, string source, SearchOption options, StorageUpdateType type, IList<StorageOptions>? special = null, string[]? excludePaths = null, bool force = false)
@@ -66,6 +113,7 @@ namespace Nabu.Services
             lock (Lock)
             {
                 var sourceFolder = new DirectoryInfo(source);
+                CleanUpLinks(source, options);
                 IEnumerable<FileInfo> files = sourceFolder.GetFiles("*", options);
                 if (excludePaths is not null)
                 {
@@ -126,23 +174,16 @@ namespace Nabu.Services
 
                 foreach (var file in files)
                 {
-                    if (NabuLib.IsSymLink(file.FullName))
-                    {
-                        if (!Path.Exists(NabuLib.ResolveLink(file.FullName)))
-                        {
-                            Logger.WriteWarning($"Deleting, missing target {file.Name}");
-                            File.Delete(file.FullName);
-                            continue;
-                        }
-                    }
 
                     var filePath = Path.GetRelativePath(sourceFolder.FullName, file.FullName);
+                    var isSymLink = NabuLib.IsSymLink(file.FullName);
                     var updateType = type switch
                     {
-                        StorageUpdateType.Mirror =>
-                            NabuLib.IsSymLink(file.FullName) ?
-                                StorageUpdateType.SymLink :
-                                StorageUpdateType.Copy,
+                        StorageUpdateType.Mirror or StorageUpdateType.SymLink when isSymLink && IsWindows && !IsAtLeastWin10Build14972 => StorageUpdateType.Copy,
+                        StorageUpdateType.Mirror when isSymLink => StorageUpdateType.SymLink,
+                        StorageUpdateType.Mirror => StorageUpdateType.Copy,
+                        StorageUpdateType.SymLink when !IsAtLeastWin10Build14972 =>
+                            StorageUpdateType.Copy,
                         _ => type
                     };
 
@@ -240,6 +281,8 @@ namespace Nabu.Services
 
         public void UpdateStoragePath(AdaptorSettings settings, string source, SearchOption options)
             => UpdatePath(settings.StoragePath, source, options, StorageUpdateType.Mirror);
+
+        private static string AdaptorFolderName(string name) => $"{AdaptorFolderPrefix}.{name}";
 
         private string SourceFolder(string path)
         {

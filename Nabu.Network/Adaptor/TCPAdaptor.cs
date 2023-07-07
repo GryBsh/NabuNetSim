@@ -107,7 +107,6 @@ public class TCPAdaptor
             var name = $"{socket.RemoteEndPoint}";
 
             Connections.Remove(name, out var _);
-            foreach (var protocol in protocols) { protocol.Detach(); }
         }, stopping);
     }
 }

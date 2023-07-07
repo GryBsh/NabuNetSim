@@ -71,7 +71,6 @@ public partial class RetroNetProtocol : Protocol
 
     public override void Detach()
     {
-        Reset();
         ShutdownTCPServer();
         base.Detach();
     }
