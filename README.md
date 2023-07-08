@@ -91,6 +91,9 @@ A PC can potentially serve hundreds.
     // from the TCP adaptor summary on the Home page.
     //"EmulatorPath": "/path/to/emulator/start.script",
 
+    // On Windows, if you have Developer Mode enabled, you can enable symlinks here.
+    //"EnableSymLinks": false
+    
     "Adaptors": {
       "Serial": [
         {

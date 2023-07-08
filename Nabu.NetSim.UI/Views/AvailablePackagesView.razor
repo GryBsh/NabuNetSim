@@ -11,7 +11,7 @@
         <ListGroupItem @key=context>
             <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
                 <Div Class="hstack gap-3">
-                    <Button Type="ButtonType.Button" class="btn btn-success" title="Install" onclick="@(() => ViewModel.StagePackage(context.Id))">
+                    <Button Type="ButtonType.Button" Disabled=@ViewModel.InstallDisabled class="btn btn-success" title="Install" onclick="@(() => ViewModel.StartStaging(context.Id))">
                         <Icon Name="@IconName.FolderPlus" />
                     </Button>
                     <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
@@ -29,6 +29,30 @@
         </ListGroupItem>
     </Virtualize>
 </ListGroup>
+<Container Class="sticky-bottom top" Style="padding-bottom: 10px" Visibility="ViewModel.WarningVisible ? Visibility.Visible : Visibility.Invisible">
+    <Row>
+        <Column>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100" Height="Height.Auto" VerticalAlignment="VerticalAlignment.Middle">
+                <Div TextOverflow="TextOverflow.Wrap">
+                    Stop all adaptors, disconnect all clients, and install package?
+                </Div>
+                <Div Width="Width.Is50">
+                    <Span data-bs-toggle="tooltip" title="Confirm">
+                        <Button class="btn btn-success" Clicked="@ViewModel.Install" >
+                            <Icon Name="IconName.Check" />
+                        </Button>
+                    </Span>
+
+                    <Span data-bs-toggle="tooltip" title="Reject">
+                        <Button class="btn btn-danger" Clicked="@ViewModel.EndStaging">
+                            <Icon Name="IconName.Times" />
+                        </Button>
+                    </Span>
+                </Div>
+           </Div>
+        </Column>
+    </Row>
+ </Container>
 
 @code {
     protected override void OnInitialized()

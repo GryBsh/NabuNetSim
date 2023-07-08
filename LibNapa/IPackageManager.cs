@@ -15,7 +15,7 @@ public interface IPackageManager
 
     Task<bool> Create(string path, string destination);
 
-    Task<FoundPackage> Install(string path);
+    Task<FoundPackage> Install(string path, bool force = false);
 
     Task<FoundPackage> Open(string folder, string? name = null);
 

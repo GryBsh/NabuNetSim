@@ -7,6 +7,8 @@ public class MemoryCache<T>
     public IEnumerable<string> Keys => Cached.Keys;
     private ConcurrentDictionary<string, CacheItem<T>> Cached { get; } = new();
 
+    public T? this[string key] => Get(key);
+
     public CacheItem<T>? Cache(string key, T value, DateTime? timestamp = null)
     {
         timestamp ??= DateTime.Now;
@@ -34,6 +36,12 @@ public class MemoryCache<T>
             return newItem is not null ? newItem.Value : default;
         }
         return item is not null ? item.Value : default;
+    }
+
+    public T? Get(string key)
+    {
+        var found = Cached.TryGetValue(key, out var item);
+        return found ? item!.Value : default;
     }
 
     public DateTime LastCached(string key)

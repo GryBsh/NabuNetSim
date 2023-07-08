@@ -1,20 +1,19 @@
-﻿const enabled = [];
+﻿const tooltips
+    = [];
+const tooltipOptions = {
+    trigger: "hover",
+    delay: {
+        show: 750,
+        hide: 0
+    }
+};
 function enableTooltips() {
-    const tooltipOptions = {
-        trigger: "hover",
-        delay: {
-            show: 750,
-            hide: 0
-        }
-    };
-
     function enable() {
-        var elements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-
-        [].slice.call(elements).forEach((e) => {
-            if (enabled.indexOf(e) === -1) {
+        var elements = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        elements.forEach((e) => {
+            if (tooltips.indexOf(e) === -1) {
                 new bootstrap.Tooltip(e, tooltipOptions);
-                enabled.push(e);
+                tooltips.push(e);
             }
         });
     }

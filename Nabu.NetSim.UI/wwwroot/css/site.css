@@ -107,13 +107,6 @@ i {
     padding: 10px;
 }
 
-.modal {
-    min-width: 50%;
-    max-width: 50%;
-    margin-left: 25%;
-    color: white;
-}
-
 .log-frame {
     overflow-wrap: break-word;
     word-wrap: break-word;
@@ -269,10 +262,8 @@ i {
 }
 
 .logo {
-    margin-left: auto;
-    margin-right: auto;
-    padding-bottom: 10px;
-    width: 150px;
+    margin: auto;
+    width: 100%;
 }
 
 .border-left {

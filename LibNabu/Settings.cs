@@ -14,6 +14,8 @@ public class Settings
         // Which then causes duplication in the UI.
     };
 
+    public bool EnableSymLinks { get; set; } = true;
+
     //public string StoragePath { get; set; } = "./Files";
     public AdaptorCollection Adaptors { get; set; } = new();
 

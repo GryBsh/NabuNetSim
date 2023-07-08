@@ -13,7 +13,8 @@ namespace Nabu.NetSim.UI.ViewModels
 {
     public class FolderListViewModel : ReactiveObject, IActivatableViewModel
     {
-        public FolderListViewModel(FilesViewModel files, Settings settings) {
+        public FolderListViewModel(FilesViewModel files, Settings settings)
+        {
             Files = files;
             Settings = settings;
 
@@ -31,21 +32,22 @@ namespace Nabu.NetSim.UI.ViewModels
             UpdateList();
         }
 
+        public ViewModelActivator Activator { get; } = new();
         public FilesViewModel Files { get; }
+        public IEnumerable<DirectoryModel> Folders { get; set; } = Array.Empty<DirectoryModel>();
         public Settings Settings { get; }
 
-        public ViewModelActivator Activator { get; } = new();
+        public string FolderName(string port) => port.Split(Path.DirectorySeparatorChar)[^1].Split(':')[0];
 
-        public IEnumerable<DirectoryModel> Folders { get; set; } = Array.Empty<DirectoryModel>();
-        public void UpdateList()
+        public void ShowLogs()
         {
-            Folders = Directory.GetDirectories(Settings.StoragePath)
-                               .Select(d => new DirectoryModel { Name = Path.GetFileName(d), Path = d })
-                               .Where(d => d.Name is not StorageNames.SourceFolder);
-            this.RaisePropertyChanged(nameof(Folders));
+            Files.SetRootDirectory(null, Path.Join(AppDomain.CurrentDomain.BaseDirectory, "logs"));
         }
 
-        public string FolderName(string port) => port.Split(Path.DirectorySeparatorChar)[^1].Split(':')[0];
+        public void ShowPrograms()
+        {
+            Files.SetRootDirectory(null, Settings.LocalProgramPath);
+        }
 
         public void ShowStorage(string name)
         {
@@ -53,13 +55,12 @@ namespace Nabu.NetSim.UI.ViewModels
             Files.SetRootDirectory(null, Path.Combine(Settings.StoragePath, name));
         }
 
-        public void ShowPrograms()
+        public void UpdateList()
         {
-            Files.SetRootDirectory(null, Settings.LocalProgramPath);
-        }
-        public void ShowLogs()
-        {
-            Files.SetRootDirectory(null, Path.Join(AppDomain.CurrentDomain.BaseDirectory, "logs"));
+            Folders = Directory.GetDirectories(Settings.StoragePath)
+                               .Select(d => new DirectoryModel { Name = Path.GetFileName(d), Path = d })
+                               .Where(d => d.Name is not StorageNames.SourceFolder);
+            this.RaisePropertyChanged(nameof(Folders));
         }
     }
 }

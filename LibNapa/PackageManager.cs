@@ -62,7 +62,7 @@ public class PackageManager : IPackageManager
         return true;
     }
 
-    public async Task<FoundPackage> Install(string path)
+    public async Task<FoundPackage> Install(string path, bool force = false)
     {
         var pkgPath = Path.GetDirectoryName(path) ?? string.Empty;
         var name = Path.GetFileNameWithoutExtension(path);
@@ -272,13 +272,20 @@ public class PackageManager : IPackageManager
     {
         var isJson = Path.GetExtension(uri) is JSONFileExtension;
         var http = NabuLib.IsHttp(uri) ? Http : null;
-
-        var result = isJson switch
+        try
         {
-            true => await DeserializeJson<SourcePackage[]>(uri),
-            false => await Yaml.Deserialize<SourcePackage>(uri, Cache, http)
-        };
-        return result;
+            var result = isJson switch
+            {
+                true => await DeserializeJson<SourcePackage[]>(uri),
+                false => await Yaml.Deserialize<SourcePackage>(uri, Cache, http)
+            };
+            return result;
+
+        } catch (Exception ex) {
+            Log.WriteVerbose(ex.Message);
+        }
+
+        return Array.Empty<SourcePackage>();
     }
 
     private bool IsHigher(string higher, string lower)
