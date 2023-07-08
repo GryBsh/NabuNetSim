@@ -53,47 +53,47 @@ namespace Nabu.Services
 
         public void AttachStorage(AdaptorSettings settings, string name)
         {
-            Task.Run(() =>
+            //Task.Run(() =>
+            //{
+            var root = new DirectoryInfo(Settings.StoragePath);
+            if (!Path.Exists(root.FullName))
             {
-                var root = new DirectoryInfo(Settings.StoragePath);
-                if (!Path.Exists(root.FullName))
-                {
-                    root = Directory.CreateDirectory(Settings.StoragePath);
-                }
+                root = Directory.CreateDirectory(Settings.StoragePath);
+            }
 
-                var source = SourceFolder(root.FullName);
-                var sourceExists = Path.Exists(source);
-                var foldersWithLegacyNames = root.GetDirectories().Where(d => d.FullName != source).Where(d => !d.Name.StartsWith(AdaptorFolderPrefix));
-                MigratedToIsolatedStorage = sourceExists && !foldersWithLegacyNames.Any();
-                if (!MigratedToIsolatedStorage)
-                {
-                    Logger.Write("Migrating items from Storage root to File Source");
-                    if (!sourceExists) UpdatePath(source, root.FullName, SearchOption.TopDirectoryOnly, StorageUpdateType.Move);
+            var source = SourceFolder(root.FullName);
+            var sourceExists = Path.Exists(source);
+            var foldersWithLegacyNames = root.GetDirectories().Where(d => d.FullName != source).Where(d => !d.Name.StartsWith(AdaptorFolderPrefix));
+            MigratedToIsolatedStorage = sourceExists && !foldersWithLegacyNames.Any();
+            if (!MigratedToIsolatedStorage)
+            {
+                Logger.Write("Migrating items from Storage root to File Source");
+                if (!sourceExists) UpdatePath(source, root.FullName, SearchOption.TopDirectoryOnly, StorageUpdateType.Move);
 
-                    foreach (var folder in foldersWithLegacyNames)
+                foreach (var folder in foldersWithLegacyNames)
+                {
+                    var newName = folder.Name switch
                     {
-                        var newName = folder.Name switch
-                        {
-                            string n when n.StartsWith(COMPortName) => n.Replace(COMPortName, AdaptorFolderName(COMPortName)),
-                            string n when n.StartsWith(OldAdaptorFolderPrefix) => n.Replace(OldAdaptorFolderPrefix, AdaptorFolderPrefix),
-                            _ => AdaptorFolderName(folder.Name)
-                        };
+                        string n when n.StartsWith(COMPortName) => n.Replace(COMPortName, AdaptorFolderName(COMPortName)),
+                        string n when n.StartsWith(OldAdaptorFolderPrefix) => n.Replace(OldAdaptorFolderPrefix, AdaptorFolderPrefix),
+                        _ => AdaptorFolderName(folder.Name)
+                    };
 
-                        var newPath = Path.Join(folder.Parent!.FullName, newName);
-                        Logger.Write($"Migrating {folder} to {newPath}");
-                        Directory.Move(folder.FullName, newPath);
-                    }
-                    MigratedToIsolatedStorage = true;
+                    var newPath = Path.Join(folder.Parent!.FullName, newName);
+                    Logger.Write($"Migrating {folder} to {newPath}");
+                    Directory.Move(folder.FullName, newPath);
                 }
+                MigratedToIsolatedStorage = true;
+            }
 
-                settings.StoragePath = Path.Combine(root.FullName, AdaptorFolderName(name));
+            settings.StoragePath = Path.Combine(root.FullName, AdaptorFolderName(name));
 
-                if (!Path.Exists(settings.StoragePath))
-                    Directory.CreateDirectory(settings.StoragePath);
+            if (!Path.Exists(settings.StoragePath))
+                Directory.CreateDirectory(settings.StoragePath);
 
-                CleanUpLinks(settings.StoragePath, SearchOption.AllDirectories);
-                UpdateStoragePath(settings, source, SearchOption.AllDirectories);
-            });
+            CleanUpLinks(settings.StoragePath, SearchOption.AllDirectories);
+            UpdateStoragePath(settings, source, SearchOption.AllDirectories);
+            //});
         }
 
         public void UpdatePath(string destination, string source, SearchOption options, StorageUpdateType type, IList<StorageOptions>? special = null, string[]? excludePaths = null, bool force = false)
@@ -233,38 +233,38 @@ namespace Nabu.Services
 
         public void UpdateStorageFromPackages(IPackageManager packages)
         {
-            Task.Run(() =>
+            //Task.Run(() =>
+            //{
+            if (!Path.Exists(Settings.LocalProgramPath))
+                Directory.CreateDirectory(Settings.LocalProgramPath);
+
+            var storage = SourceFolder(Settings.StoragePath);
+            foreach (var package in packages.Installed.ToArray())
             {
-                if (!Path.Exists(Settings.LocalProgramPath))
-                    Directory.CreateDirectory(Settings.LocalProgramPath);
+                var packageStorage = Path.Combine(package.Path, PackageFeatures.Storage);
+                var hasStorage = Path.Exists(packageStorage);
 
-                var storage = SourceFolder(Settings.StoragePath);
-                foreach (var package in packages.Installed.ToArray())
+                if (!hasStorage) continue;
+
+                if (package.Storage is not null)
                 {
-                    var packageStorage = Path.Combine(package.Path, PackageFeatures.Storage);
-                    var hasStorage = Path.Exists(packageStorage);
-
-                    if (!hasStorage) continue;
-
-                    if (package.Storage is not null)
+                    var overrides = new List<StorageOptions>();
+                    foreach (var item in package.Storage)
                     {
-                        var overrides = new List<StorageOptions>();
-                        foreach (var item in package.Storage)
-                        {
-                            overrides.Add(
-                                new(
-                                    NabuLib.PlatformPath(item.Path),
-                                    item.Name is not null ? NabuLib.PlatformPath(item.Name) : string.Empty,
-                                    item.Option<StorageUpdateType>(StorageOption.UpdateType)
-                                )
-                            );
-                        }
-                        UpdatePath(storage, packageStorage, SearchOption.AllDirectories, StorageUpdateType.SymLink, overrides);
+                        overrides.Add(
+                            new(
+                                NabuLib.PlatformPath(item.Path),
+                                item.Name is not null ? NabuLib.PlatformPath(item.Name) : string.Empty,
+                                item.Option<StorageUpdateType>(StorageOption.UpdateType)
+                            )
+                        );
                     }
-                    else
-                        UpdatePath(storage, packageStorage, SearchOption.AllDirectories, StorageUpdateType.SymLink);
+                    UpdatePath(storage, packageStorage, SearchOption.AllDirectories, StorageUpdateType.SymLink, overrides);
                 }
-            });
+                else
+                    UpdatePath(storage, packageStorage, SearchOption.AllDirectories, StorageUpdateType.SymLink);
+            }
+            //});
         }
 
         public void UpdateStoragePath(AdaptorSettings settings, string source, SearchOption options)

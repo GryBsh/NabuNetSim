@@ -51,6 +51,9 @@ namespace Nabu.NetSim.UI.ViewModels
         {
             if (PendingId is null) return;
             HideWarning();
+            NeedRestart.AddRange(Settings.Adaptors.Serial.Where(s => s.Running));
+            NeedRestart.AddRange(Settings.Adaptors.TCP.Where(t => t.Running));
+            NeedRestart.ForEach(t => t.State = ServiceShould.Stop);
 
             Packages.InstallQueue.Enqueue(PendingId);
             await Packages.Refresh(true);
@@ -71,9 +74,7 @@ namespace Nabu.NetSim.UI.ViewModels
             WarningVisible = true;
             this.RaisePropertyChanged(nameof(InstallDisabled));
             this.RaisePropertyChanged(nameof(WarningVisible));
-            NeedRestart.AddRange(Settings.Adaptors.Serial.Where(s => s.Running));
-            NeedRestart.AddRange(Settings.Adaptors.TCP.Where(t => t.Running));
-            NeedRestart.ForEach(t => t.State = ServiceShould.Stop);
+            
         }
 
         private void AvailablePackages_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

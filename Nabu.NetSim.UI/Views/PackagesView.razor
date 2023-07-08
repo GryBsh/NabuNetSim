@@ -14,7 +14,7 @@
                         <Button Type="ButtonType.Button" 
                                 Class="btn btn-warning" 
                                 Disabled=@ViewModel.IsDisabled(context.Id)
-                                onclick="@(() => ViewModel.StageUninstallPackage(context.Id))">
+                                onclick="@(() => ViewModel.StartStaging(context.Id))">
                             <Icon Name="@IconName.Delete" />
                         </Button>
                     </Span>
@@ -33,6 +33,30 @@
         </ListGroupItem>
     </Virtualize>
 </ListGroup>
+<Container Class="sticky-bottom top" Style="padding-bottom: 10px" Visibility="ViewModel.WarningVisible ? Visibility.Visible : Visibility.Invisible">
+    <Row>
+        <Column>
+            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100" Height="Height.Auto" VerticalAlignment="VerticalAlignment.Middle">
+                <Div TextOverflow="TextOverflow.Wrap">
+                    Uninstallation will disconnect all clients and restart all adaptors, proceed?
+                </Div>
+                <Div Width="Width.Is50">
+                    <Span data-bs-toggle="tooltip" title="Confirm">
+                        <Button class="btn btn-success" Clicked="@ViewModel.Uninstall">
+                            <Icon Name="IconName.Check" />
+                        </Button>
+                    </Span>
+
+                    <Span data-bs-toggle="tooltip" title="Reject">
+                        <Button class="btn btn-danger" Clicked="@ViewModel.EndStaging">
+                            <Icon Name="IconName.Times" />
+                        </Button>
+                    </Span>
+                </Div>
+            </Div>
+        </Column>
+    </Row>
+</Container>
 
 
 

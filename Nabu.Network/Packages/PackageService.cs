@@ -31,10 +31,10 @@ namespace Nabu.Packages
             Packages.Installed.CollectionChanged += InstalledChanged;
 
             Packages.PreservedPackages.Add("nns-bundle-classic-nabu-cycles");
-            Packages.PreservedPackages.Add("nns-bundle-ishkurcpm");
-            Packages.PreservedPackages.Add("nns-bundle-nabuca");
-            Packages.PreservedPackages.Add("nns-bundle-nabunetworkcom");
-            Packages.PreservedPackages.Add("nns-bundle-productiondave-nabugames");
+            //Packages.PreservedPackages.Add("nns-bundle-ishkurcpm");
+            //Packages.PreservedPackages.Add("nns-bundle-nabuca");
+            //Packages.PreservedPackages.Add("nns-bundle-nabunetworkcom");
+            //Packages.PreservedPackages.Add("nns-bundle-productiondave-nabugames");
 
             Task.Run(async () =>
             {
