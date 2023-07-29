@@ -18,11 +18,7 @@
                     @context.Port
                 </Heading>
                 <Div Class="hstack">
-                    <Span data-bs-toggle="tooltip" title="Start Emulator">
-                        <Button Type="ButtonType.Button" Class="btn-primary" Visibility=@ViewModel.RunVisibility(context) Disabled=@(!ViewModel.RunAvailable(context)) onclick="@(() => ViewModel.RunEmulator(context))" >
-                            <Icon Name="IconName.Running"/>
-                        </Button>
-                    </Span>
+                    <EmulatorButtonView Adaptor="@context" />
                     <Button Type=@ButtonType.Button Visibility=@(ViewModel?.AdaptorStatus(context) != "Running" ? Visibility.Visible : Visibility.Invisible) class="btn btn-success" onclick="@(() => ViewModel?.ToggleAdaptor(context))" data-bs-toggle="tooltip" title="Start Adaptor">
                         <Icon Name="IconName.Play"  />
                     </Button>
@@ -33,7 +29,7 @@
             </Div>
             <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
                 <Icon IconSize="@IconSize.Large" Name="IconName.Folder" />
-                @context.Source/@(!string.IsNullOrWhiteSpace(context.Program) ? context.Program : "Main")
+                @context.Source@(!string.IsNullOrWhiteSpace(context.Program) ? $"/{context.Program}" : string.Empty)
             </Paragraph>
         </ListGroupItem>
     </Repeater>

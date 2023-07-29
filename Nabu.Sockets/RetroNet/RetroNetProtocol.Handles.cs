@@ -6,8 +6,8 @@ public partial class RetroNetProtocol : Protocol
 {
     private async Task FileOpen(CancellationToken cancel)
     {
-        var filename = RecvString();
-        var flags = (FileOpenFlags)NabuLib.ToShort(Reader.ReadBytes(2));
+        var filename = ReadString();
+        var flags = (FileOpenFlags)NabuLib.ToUShort(Reader.ReadBytes(2));
         var handle = Reader.ReadByte();
 
         await FileOpen(filename, flags, handle, cancel);
@@ -42,7 +42,7 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleClose(CancellationToken cancel)
     {
-        var handle = Recv();
+        var handle = Read();
         await Slots[handle].Close(cancel);
         Log($"Close:{handle}");
         Slots.Remove(handle);
@@ -50,9 +50,9 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleRead(CancellationToken cancel)
     {
-        var handle = Recv();
-        var offset = RecvInt();
-        var length = RecvShort();
+        var handle = Read();
+        var offset = ReadInt();
+        var length = ReadShort();
         var bytes = await Slots[handle].Read(offset, length, cancel);
         Log($"Read:{handle}: O:{offset} L:{length}");
         WriteBuffer(bytes);
@@ -60,7 +60,7 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleSize(CancellationToken cancel)
     {
-        var handle = Recv();
+        var handle = Read();
         var size = await Slots[handle].Size(cancel);
         Log($"Size:{handle} {size}");
         Writer.Write(size);
@@ -69,7 +69,7 @@ public partial class RetroNetProtocol : Protocol
     private async Task FileHandleSeek(CancellationToken cancel)
     {
         var handle = Reader.ReadByte();
-        var offset = RecvInt();
+        var offset = ReadInt();
         var seekOption = (FileSeekFlags)Reader.ReadByte();
         Log($"Seek: {handle}: O:{offset} {Enum.GetName(seekOption)}");
         Writer.Write(
@@ -81,8 +81,8 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleReadSequence(CancellationToken cancel)
     {
-        var handle = Recv();
-        var length = RecvShort();
+        var handle = Read();
+        var length = ReadShort();
         var bytes = await Slots[handle].ReadSequence(length, cancel);
         Log($"SeqRead:{handle}: O:{Slots[handle].Position} L:{length}");
         WriteBuffer(bytes);
@@ -91,7 +91,7 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleDetails(CancellationToken cancel)
     {
-        var handle = Recv();
+        var handle = Read();
         var file = await Slots[handle].Details(cancel);
         Log($"Details:{handle}");
 
@@ -104,25 +104,25 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleTruncate(CancellationToken cancel)
     {
-        var handle = Recv();
+        var handle = Read();
         await Slots[handle].Empty(cancel);
         Log($"Truncated:{handle}");
     }
 
     private async Task FileHandleDelete(CancellationToken cancel)
     {
-        var handle = Recv();
-        var offset = RecvInt();
-        var length = RecvShort();
+        var handle = Read();
+        var offset = ReadInt();
+        var length = ReadShort();
         Log($"Delete:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Delete(offset, length, cancel);
     }
 
     private async Task FileHandleInsert(CancellationToken cancel)
     {
-        var handle = Recv();
-        var offset = RecvInt();
-        var length = RecvShort();
+        var handle = Read();
+        var offset = ReadInt();
+        var length = ReadShort();
         var data = Reader.ReadBytes(length);
         Log($"Insert:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Insert(offset, data, cancel);
@@ -130,8 +130,8 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleAppend(CancellationToken cancel)
     {
-        var handle = Recv();
-        var length = RecvShort();
+        var handle = Read();
+        var length = ReadShort();
         var bytes = Reader.ReadBytes(length);
         Log($"Append:{handle}: L:{length}");
         await Slots[handle].Append(bytes, cancel);
@@ -139,9 +139,9 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileHandleReplace(CancellationToken cancel)
     {
-        var handle = Recv();
-        var offset = RecvInt();
-        var length = RecvShort();
+        var handle = Read();
+        var offset = ReadInt();
+        var length = ReadShort();
         var data = Reader.ReadBytes(length);
         Log($"Replace:{handle}: O:{offset}  L:{length}");
         await Slots[handle].Replace(offset, data, cancel);

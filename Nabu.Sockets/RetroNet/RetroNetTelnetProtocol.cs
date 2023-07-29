@@ -15,11 +15,11 @@ public class RetroNetTelnetProtocol : Protocol
 
     public override byte Version => 0x01;
 
-    private void Write(string message) => Send(NabuLib.FromASCII(message).ToArray());
+    private void Write(string message) => Write(NabuLib.FromASCII(message).ToArray());
 
     private void WriteLine(string? message = null) => Write($"{message}\n");
 
-    private char[] Read() => Encoding.ASCII.GetChars(Recv(1));
+    private char[] Read() => Encoding.ASCII.GetChars(Read(1));
 
     private byte[] FromCharacters(params char[] chr) => Encoding.ASCII.GetBytes(chr);
 
@@ -35,7 +35,7 @@ public class RetroNetTelnetProtocol : Protocol
                 if (!string.IsNullOrEmpty(line))
                 {
                     line = new(line.AsSpan()[..^1].ToArray());
-                    Send((byte)incoming[0]);
+                    Write((byte)incoming[0]);
                 }
                 continue;
             }
@@ -45,8 +45,8 @@ public class RetroNetTelnetProtocol : Protocol
                 if (echoOff is false)
                 {
                     if (replacement is not null)
-                        Send(FromCharacters(replacement.Value));
-                    else Send((byte)incoming[0]);
+                        Write(FromCharacters(replacement.Value));
+                    else Write((byte)incoming[0]);
                 }
             }
         }

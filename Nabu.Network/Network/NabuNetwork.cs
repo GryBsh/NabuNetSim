@@ -2,6 +2,7 @@
 using Nabu.Services;
 using Napa;
 using System.Collections.Concurrent;
+using System.Data;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
 using System.Xml;
@@ -10,8 +11,10 @@ namespace Nabu.Network;
 
 public partial class NabuNetwork : NabuBase, INabuNetwork
 {
+    public const string HeadlessSourceName = "headless";
+
     public NabuNetwork(
-        ILog<NabuNetwork> logger,
+            ILog<NabuNetwork> logger,
         Settings settings,
         HttpClient http,
         IFileCache cache,
@@ -170,11 +173,12 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         Log($"Type: {program.ImageType}, Size: {bytes.Length}, Path: {path}");
 
         PakCache[(settings, source, pak)] = bytes;
+
         return (type, bytes);
     }
 
     public ProgramSource? Source(AdaptorSettings settings)
-                            => Source(settings.Source);
+        => Source(settings.Source);
 
     public ProgramSource? Source(string name)
         => Sources.Get(name);
@@ -253,6 +257,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
         foreach (var source in Sources.All())
         {
+            if (source is null)
+                continue;
+
             var isRemote = IsWebSource(source.Path);
 
             var checkRemote = refresh.HasFlag(RefreshType.Remote);
@@ -304,11 +311,14 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             }
             else if (checkLocal && source.SourceType is SourceType.Local)
             {
-                if (Directory.Exists(source.Path) is false) return;
+                if (!Path.Exists(source.Path)) continue;
+
                 var programs = new List<NabuProgram>();
                 source.SourceType = SourceType.Local;
 
-                var files = Directory.GetFiles(source.Path);
+                var files = Directory.Exists(source.Path) ?
+                                Directory.GetFiles(source.Path) :
+                                new[] { source.Path };
 
                 var (supported, menuPak, type) = ContainsPak(files);
 
@@ -327,9 +337,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                     files = files.Except(new[] { menuPak }).ToArray();
                 }
 
-                files = files.Where(
-                    f => Path.GetExtension(f) is Constants.NabuExtension
-                ).ToArray();
+                files = files.Where(IsNabu).ToArray();
 
                 foreach (var file in files)
                 {
@@ -349,7 +357,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             }
             else if (checkLocal && source.SourceType is SourceType.Package)
             {
-                var package = installedPackages.FirstOrDefault(p => p.Name == source.Name);
+                var package = installedPackages.FirstOrDefault(p => p.Name.Is(source.Name));
                 if (package is null ||
                     package.Manifest is null)
                     continue;
@@ -360,7 +368,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                     select new NabuProgram(
                         program.Name ?? program.Path,
                         program.Name ?? program.Path,
-                        package.Name,
+                        source.Name,
                         NabuLib.IsHttp(program.Path) ?
                             program.Path :
                             Path.Combine(PackageFeatures.Programs, program.Path),
@@ -454,6 +462,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
             var name = cycleNode["Name"]?.InnerText ?? "Unnamed Program";
             var url = cycleNode["Url"]?.InnerText ?? string.Empty;
+            url = url.Replace("loader.nabu", "000002.nabu");
 
             progs.Add(new(
                 name,
@@ -512,3 +521,5 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
     #endregion Http Location
 }
+
+public record SourceListResult(bool Handled, NabuProgram[] Programs);

@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.Options;
 using Napa;
 using System.Runtime.InteropServices;
 using YamlDotNet.Serialization;
@@ -35,13 +36,15 @@ namespace Nabu.Services
         private readonly SemaphoreSlim Lock = new SemaphoreSlim(1);
         private readonly ILog Logger;
 
-        public StorageService(ILog<StorageService> console, Settings settings)
+        public StorageService(ILog<StorageService> console, Settings settings, ISourceService sources)
         {
             Logger = console;
             Settings = settings;
+            Sources = sources;
         }
 
         public Settings Settings { get; }
+        public ISourceService Sources { get; }
 
         private static bool IsAtLeastWin10Build14972 =>
                 IsWindows &&
@@ -167,12 +170,12 @@ namespace Nabu.Services
                 foreach (var file in files)
                 {
                     var filePath = Path.GetRelativePath(sourceFolder.FullName, file.FullName);
-                    var sourceIsLink = Settings.EnableSymLinks && NabuLib.IsSymLink(file.FullName);
-
-                    var updateType = type switch
+                    var sourceIsLink = NabuLib.IsSymLink(file.FullName);
+                    StorageUpdateType updateType = StorageUpdateType.None;
+                    updateType = type switch
                     {
-                        StorageUpdateType.Mirror when sourceIsLink && !Settings.EnableSymLinks || (IsWindows && !IsAtLeastWin10Build14972) => StorageUpdateType.Copy,
-                        StorageUpdateType.Mirror when sourceIsLink && Settings.EnableSymLinks => StorageUpdateType.SymLink,
+                        StorageUpdateType.Mirror when !Settings.EnableSymLinks || (IsWindows && !IsAtLeastWin10Build14972) => StorageUpdateType.Copy,
+                        StorageUpdateType.Mirror when Settings.EnableSymLinks && sourceIsLink => StorageUpdateType.SymLink,
                         StorageUpdateType.Mirror => StorageUpdateType.Copy,
                         StorageUpdateType.SymLink when !Settings.EnableSymLinks || (IsWindows && !IsAtLeastWin10Build14972) => StorageUpdateType.Copy,
                         _ => type
@@ -180,12 +183,20 @@ namespace Nabu.Services
 
                     if (special is not null)
                     {
-                        var storageOptions = special.FirstOrDefault(o => o.Path == filePath);
+                        bool match(string pattern, string path)
+                        {
+                            Matcher matcher = new();
+                            matcher.AddInclude(pattern);
+                            return matcher.Match(path).HasMatches;
+                        }
+
+                        //var storageOptions = special.FirstOrDefault(o => o.Path == filePath);
+                        var storageOptions = special.FirstOrDefault(o => match(o.Path, filePath));
                         if (storageOptions is not null)
                         {
-                            updateType = storageOptions.UpdateType is StorageUpdateType.None ?
-                                         updateType :
-                                         storageOptions.UpdateType;
+                            updateType = storageOptions.UpdateType is StorageUpdateType.SymLink && !Settings.EnableSymLinks ?
+                                            StorageUpdateType.Copy :
+                                            storageOptions.UpdateType;
 
                             filePath = string.IsNullOrWhiteSpace(storageOptions.Name) ?
                                        filePath :
@@ -194,15 +205,21 @@ namespace Nabu.Services
                     }
 
                     var newPath = Path.Combine(destination, filePath);
-                    var newIsLink = Settings.EnableSymLinks && NabuLib.IsSymLink(newPath);
+                    var newPathExists = Path.Exists(newPath);
+                    var newIsLink = newPathExists && NabuLib.IsSymLink(newPath);
                     var newLastModified = Path.Exists(newPath) ?
                                             new FileInfo(newPath).LastWriteTime :
                                             DateTime.MinValue;
 
-                    //var shouldForce = false; // sourceIsLink && !newIsLink && updateType is StorageUpdateType.SymLink;
+                    var shouldForce = (!newIsLink && updateType is StorageUpdateType.SymLink) ||
+                                      (newIsLink && updateType is StorageUpdateType.Copy) ||
+                                      (newIsLink && updateType is StorageUpdateType.Move);
 
-                    if (force || newLastModified < file.LastWriteTime)
+                    if (force || shouldForce || file.LastWriteTime > newLastModified)
                     {
+                        if (newPathExists)
+                            File.Delete(newPath);
+
                         var outDir = Path.GetDirectoryName(newPath);
 
                         if (!string.IsNullOrWhiteSpace(outDir) && !Path.Exists(outDir))
@@ -220,9 +237,6 @@ namespace Nabu.Services
                         }
                         else if (updateType is StorageUpdateType.SymLink)
                         {
-                            if (File.Exists(newPath))
-                                File.Delete(newPath);
-
                             File.CreateSymbolicLink(newPath, file.FullName);
                             Logger.Write($"SymLinked: {filePath} to {destinationName}");
                         }

@@ -26,6 +26,7 @@ public class TCPAdaptor
         var logger = serviceProvider.GetRequiredService<ILog<TCPAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
         var packages = serviceProvider.GetRequiredService<PackageService>();
+        var sources = serviceProvider.GetRequiredService<ISourceService>();
         var socket = NabuLib.Socket(true, settings.SendBufferSize, settings.ReceiveBufferSize);
 
         if (!int.TryParse(settings.Port, out int port))
@@ -61,8 +62,7 @@ public class TCPAdaptor
                 };
 
                 //await packages.UpdateInstalled();
-                storage.UpdateStorageFromPackages(packages.Packages);
-                storage.AttachStorage(clientSettings, clientIP);
+                EmulatedAdaptor.InitializeAdaptor(clientSettings, sources, storage, packages, clientIP);
 
                 var protocols = serviceProvider.GetServices<IProtocol>();
 

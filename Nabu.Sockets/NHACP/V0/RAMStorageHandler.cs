@@ -4,11 +4,9 @@ namespace Nabu.Network.NHACP.V0;
 
 public class RAMStorageHandler : IStorageHandler
 {
+    protected byte[] Buffer = Array.Empty<byte>();
     protected ILog Logger;
     protected AdaptorSettings Settings;
-    protected byte[] Buffer = Array.Empty<byte>();
-
-    private Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
 
     public RAMStorageHandler(ILog logger, AdaptorSettings settings)
     {
@@ -16,20 +14,17 @@ public class RAMStorageHandler : IStorageHandler
         Settings = settings;
     }
 
-    public virtual Task<(bool, string, int)> Open(short flags, string uri)
+    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
     {
-        try
-        {
-            Buffer = new byte[0x100000];
-            return Task((true, string.Empty, Buffer.Length));
-        }
-        catch (Exception ex)
-        {
-            return Task((false, ex.Message, 0));
-        }
+        throw new NotImplementedException();
     }
 
-    public Task<(bool, string, Memory<byte>)> Get(int offset, short length)
+    public void End()
+    {
+        Buffer = Array.Empty<byte>();
+    }
+
+    public Task<(bool, string, Memory<byte>)> Get(int offset, ushort length)
     {
         try
         {
@@ -39,6 +34,19 @@ public class RAMStorageHandler : IStorageHandler
         catch (Exception ex)
         {
             return Task((false, ex.Message, new Memory<byte>(Array.Empty<byte>())));
+        }
+    }
+
+    public virtual Task<(bool, string, int)> Open(ushort flags, string uri)
+    {
+        try
+        {
+            Buffer = new byte[0x100000];
+            return Task((true, string.Empty, Buffer.Length));
+        }
+        catch (Exception ex)
+        {
+            return Task((false, ex.Message, 0));
         }
     }
 
@@ -62,13 +70,5 @@ public class RAMStorageHandler : IStorageHandler
         }
     }
 
-    public void End()
-    {
-        Buffer = Array.Empty<byte>();
-    }
-
-    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
-    {
-        throw new NotImplementedException();
-    }
+    private Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
 }

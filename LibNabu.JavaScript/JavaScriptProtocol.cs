@@ -1,46 +1,43 @@
 ﻿using Microsoft.ClearScript;
+using Microsoft.ClearScript.JavaScript;
 using Microsoft.ClearScript.V8;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Nabu.Network;
 using Nabu.Services;
+using System.Runtime.InteropServices.JavaScript;
 
 namespace Nabu.JavaScript;
 
 public class JavaScriptProtocol : PluginProtocol
 {
-    public JavaScriptProtocol(ILog logger) : base(logger)
+    public JavaScriptProtocol(ILog logger, ProtocolSettings protocol) : base(logger, protocol)
     {
-    }
-
-    private byte version = 0x01;
-    public override byte Version => version;
-
-    private byte[] commands = Array.Empty<byte>();
-    public override byte[] Commands => commands;
-
-    public override void Activate(ProtocolSettings settings)
-    {
-        base.Activate(settings);
-        commands = settings.Commands ?? commands;
     }
 
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
-        if (Protocol is null || !Path.Exists(Protocol.Path)) return;
+        if (Protocol is null || !Path.Exists(Protocol.Path))
+            return;
 
-        var proxy = new ProxyProtocol(Logger);
-        proxy.Attach(Adaptor, Stream);
-        string source = await File.ReadAllTextAsync(Protocol.Path, cancel);
         try
         {
             using var engine = new V8ScriptEngine();
-            var global = new
-            {
-                incoming = unhandled,
-                adaptor = proxy,
-                logger = Logger
-            };
-            engine.AddHostObject("global", HostItemFlags.GlobalMembers, global);
-            engine.Execute(source);
+            var proxy = new JSAdaptorProxy(this, engine);
+            string source = await File.ReadAllTextAsync(Protocol.Path, cancel);
+            engine.DocumentSettings.AccessFlags = DocumentAccessFlags.EnableFileLoading;
+
+            engine.AddHostObject("_host_command", HostItemFlags.GlobalMembers, unhandled);
+            engine.AddHostObject("_host_adaptor", HostItemFlags.GlobalMembers, proxy);
+            engine.AddHostObject("_host_logger", HostItemFlags.GlobalMembers, Logger);
+
+            engine.Execute(
+                new DocumentInfo
+                {
+                    Category = ModuleCategory.Standard
+                },
+                source
+            );
         }
         catch (Exception ex)
         {

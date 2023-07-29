@@ -1,0 +1,12 @@
+﻿@inherits ReactiveInjectableComponentBase<EmulatorButtonViewModel>
+
+<Span data-bs-toggle="tooltip" title="Start Emulator">
+    <Button Type="ButtonType.Button" Class="btn-primary" Visibility=@ViewModel.RunVisibility(Adaptor) Disabled=@(!ViewModel.RunAvailable(Adaptor)) onclick="@(() => ViewModel.RunEmulator(Adaptor))">
+        <Icon Name="IconName.Running" />
+    </Button>
+</Span>
+
+@code {
+    [Parameter]
+    public AdaptorSettings Adaptor { get; set; }
+}

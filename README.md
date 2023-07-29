@@ -38,6 +38,7 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 - > Hybrid IskurCPM support, allows physical disk drives
 - > RetroNet TCP Client/Server Support
   - > Telnet/RetroNet Chat/etc are working.
+  - > Mutiple clients can now open servers, the port number will be visible in Adapter Settings
 - > Revamped Web UI Log Viewer, with pagination and search
   - > This does mean higher memory usage, but it's worth it.
 - > JavaScript support has switched from Jint to ClearScript V8.
@@ -49,7 +50,6 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
 - > RetroNet support is experimental.
-- > Only one client may open and use the RetroNet TCP Server at a time, because RetroNet was designed that way.
 - > NHACP support is experimental.
 - > JavaScript support is experimental.
 - > I'm 100% sure there are more.

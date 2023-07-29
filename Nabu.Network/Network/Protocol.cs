@@ -4,7 +4,7 @@ using System.Text;
 
 namespace Nabu.Network;
 
-public abstract class Protocol : NabuService, IProtocol, IDisposable
+public abstract class Protocol : NabuService, IProtocol, IDisposable, IAdaptorProxy
 {
     private bool disposedValue;
 
@@ -24,12 +24,18 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     public abstract byte[] Commands { get; }
 
     public BinaryReader Reader { get; private set; }
-
-    //public AdaptorSettings Settings { get; private set; }
     public Stream Stream { get; private set; } = Stream.Null;
-
     public abstract byte Version { get; }
     public BinaryWriter Writer { get; private set; }
+
+    #region Values
+
+    protected byte Byte(int number)
+    {
+        return (byte)number;
+    }
+
+    #endregion Values
 
     #region Send / Receive
 
@@ -37,10 +43,24 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     // for all communication with the NABU PC / Emulator
 
     /// <summary>
+    ///     Receives a byte and returns if it was the expected byte
+    ///     and the actual byte received.
+    /// </summary>
+    /// <param name="expected">The expected byte</param>
+    /// <returns>If it was the expected byte and the actual byte received</returns>
+    public virtual AdaptorResult<byte> Read(byte expected)
+    {
+        var read = Read();
+        var good = read == expected;
+        if (!good) Warning($"NA: {Format(expected)} != {Format(read)}");
+        return new(good, read);
+    }
+
+    /// <summary>
     ///     Receive 1 byte.
     /// </summary>
     /// <returns>The received byte</returns>
-    public byte Recv()
+    public virtual byte Read()
     {
         var b = Reader.ReadByte();
         Trace($"NA: RCVD: {Format(b)}");
@@ -49,25 +69,11 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     }
 
     /// <summary>
-    ///     Receives a byte and returns if it was the expected byte
-    ///     and the actual byte received.
-    /// </summary>
-    /// <param name="expected">The expected byte</param>
-    /// <returns>If it was the expected byte and the actual byte received</returns>
-    public (bool, byte) Recv(byte expected)
-    {
-        var read = Recv();
-        var good = read == expected;
-        if (!good) Warning($"NA: {Format(expected)} != {Format(read)}");
-        return (good, read);
-    }
-
-    /// <summary>
     ///     Receives the specified bytes.
     /// </summary>
     /// <param name="length"></param>
     /// <returns></returns>
-    public byte[] Recv(int length)
+    public virtual byte[] Read(int length)
     {
         var buffer = Reader.ReadBytes(length);
         Trace($"NA: RCVD: {FormatSeparated(buffer)}");
@@ -82,28 +88,42 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     /// </summary>
     /// <param name="expected">The bytes expected to be received</param>
     /// <returns>If the expected bytes were received and the bytes actually received</returns>
-    public (bool, byte[]) Recv(params byte[] expected)
+    public virtual AdaptorResult<byte[]> Read(params byte[] expected)
     {
-        var read = Recv(expected.Length);
+        var read = Read(expected.Length);
         var good = expected.SequenceEqual(read);
         if (!good) Warning($"NA: {FormatSeparated(expected)} != {FormatSeparated(read)}");
-        return (good, read);
+        return new(good, read);
     }
 
-    public async Task<Memory<byte>> RecvAsync(int length)
+    public virtual async Task<Memory<byte>> ReadAsync(int length)
     {
         var buffer = new Memory<byte>(new byte[length]);
         await Stream.ReadAsync(buffer);
         return buffer;
     }
 
-    public async Task<byte> RecvAsync() => (await RecvAsync(1)).Span[0];
+    public virtual async Task<byte> ReadAsync() => (await ReadAsync(1)).Span[0];
 
-    public int RecvInt() => NabuLib.ToInt(Reader.ReadBytes(4));
+    public virtual int ReadInt() => NabuLib.ToInt(Read(4));
 
-    public short RecvShort() => NabuLib.ToShort(Reader.ReadBytes(2));
+    public virtual ushort ReadShort() => NabuLib.ToUShort(Read(2));
 
-    public string RecvString() => Reader.ReadString();
+    /// <summary>
+    ///     Provides a method to send data to the NABU PC / Emulator
+    ///     at a reduced speed.
+    /// </summary>
+    /// <param name="bytes">The bytes to send</param>
+    public void SlowerSend(params byte[] bytes)
+    {
+        Trace($"NA: SEND: {FormatSeparated(bytes)}");
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            Writer.Write(bytes[i]);
+            Thread.SpinWait(SendDelay);
+        }
+        Debug($"NA: SENT: {bytes.Length} bytes");
+    }
 
     /// <summary>
     ///     Sends bytes to the NABU PC / Emulator.
@@ -117,7 +137,7 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     ///     <ref>System.IO.Stream</ref>'s buffer.
     /// </remarks>
     /// <param name="bytes">The bytes to send</param>
-    public void Send(params byte[] bytes)
+    public virtual void Write(params byte[] bytes)
     {
         Trace($"NA: SEND: {FormatSeparated(bytes)}");
 
@@ -138,22 +158,6 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     }
 
     /// <summary>
-    ///     Provides a method to send data to the NABU PC / Emulator
-    ///     at a reduced speed.
-    /// </summary>
-    /// <param name="bytes">The bytes to send</param>
-    public void SlowerSend(params byte[] bytes)
-    {
-        Trace($"NA: SEND: {FormatSeparated(bytes)}");
-        for (int i = 0; i < bytes.Length; i++)
-        {
-            Writer.Write(bytes[i]);
-            Thread.SpinWait(SendDelay);
-        }
-        Debug($"NA: SENT: {bytes.Length} bytes");
-    }
-
-    /// <summary>
     ///     Logs the current transfer rate
     /// </summary>
     /// <param name="start">The start time</param>
@@ -161,9 +165,14 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
     /// <param name="length">The number of bytes transfered</param>
     protected void TransferRate(DateTime start, DateTime stop, int length)
     {
-        var byteLength = 11;
+        // The RS422 connection has 1 start and 2 stop bits
+        var byteLength = Adaptor is SerialAdaptorSettings ? 11 : 8;
         var elapsed = stop - start;
-        var rate = (byteLength * length - length) / (elapsed.TotalMilliseconds / 1000) / 1000;
+
+        // ND: I have no idea why I had `- length` in here...
+        //var rate = (byteLength * length - length) / (elapsed.TotalMilliseconds / 1000) / 1000;
+        var rate = byteLength * length / (elapsed.TotalMilliseconds / 1000) / 1000;
+
         var unit = "kb/s";
         if (rate > 1000)
         {
@@ -177,36 +186,36 @@ public abstract class Protocol : NabuService, IProtocol, IDisposable
 
     #region Framed Protocols
 
-    public (short, byte[]) ReadFrame()
+    public AdaptorFrame ReadFrame()
     {
-        var ln = Recv(2);
-        var length = NabuLib.ToShort(ln);
+        //var ln = Read(2);
+        var length = ReadShort();
         if (0 > length)
         {
             Warning($"NabuNet message detected in frame, aborting.");
-            return (0, Array.Empty<byte>());
+            return new(0, Array.Empty<byte>());
         }
         else if (length is 0)
         {
             Warning($"0 length frame, aborting.");
-            return (0, Array.Empty<byte>());
+            return new(0, Array.Empty<byte>());
         }
-        var buffer = Recv(length);
-        return (length, buffer);
+        var buffer = Read(length);
+        return new(length, buffer);
     }
 
-    public void SendFramed(params byte[] buffer)
+    public void WriteFrame(params byte[] buffer)
     {
-        var length = (short)buffer.Length;
-        var frame = NabuLib.Frame(NabuLib.FromShort(length), buffer);
-        Send(frame.ToArray());
+        var length = (ushort)buffer.Length;
+        var frame = NabuLib.Frame(NabuLib.FromUShort(length), buffer);
+        Write(frame.ToArray());
     }
 
-    public void SendFramed(byte header, params Memory<byte>[] buffer)
+    public void WriteFrame(byte header, params Memory<byte>[] buffer)
     {
         var head = new byte[] { header };
         var frame = NabuLib.Frame(head, buffer);
-        SendFramed(frame.ToArray());
+        WriteFrame(frame.ToArray());
     }
 
     #endregion Framed Protocols

@@ -47,6 +47,30 @@
             </Select>
         </Paragraph>
     </ListGroupItem>
+    <ListGroupItem Visibility="@ViewModel.TCPServerVisible">
+        <HeaderView Heading="TCP Server" Icon="@IconName.Server" />
+    </ListGroupItem>
+    <ListGroupItem Visibility="@ViewModel.TCPServerVisible">
+        <Paragraph>
+            <Container>
+                <Row>
+                    <Column>Active:</Column>
+                    <Column>@ViewModel.Selected.TCPServerActive</Column>
+                </Row>
+                <Row Visibility="@ViewModel.TCPServerActive">
+                    <Column>Protocol:</Column>
+                    <Column>@ViewModel.Selected.TCPServerProtocol</Column>
+                </Row>
+                <Row Visibility="@ViewModel.TCPServerActive">
+                    <Column>Port:</Column>
+                    <Column>@ViewModel.Selected.TCPServerPort</Column>
+                </Row>
+            </Container>
+        </Paragraph>
+    </ListGroupItem>
+</ListGroup>
+
+<ListGroup Flush>
     <ListGroupItem>
         <Div Class="hstack">
             <Button Type="ButtonType.Button" 
@@ -57,11 +81,7 @@
                     Visibility="@ViewModel.BrowseVisible">
                 <Icon Name="IconName.FolderOpen" />
             </Button>
-            <Div data-bs-toggle="tooltip" title="Start Emulator">
-                <Button Type="ButtonType.Button" Class="btn-primary" Visibility=@ViewModel.RunVisibility Disabled=@(!ViewModel.RunAvailable) onclick="@(() => ViewModel.RunEmulator())" >
-                    <Icon Name="IconName.Running" />
-                </Button>
-            </Div>
+            <EmulatorButtonView Adaptor="@ViewModel.Selected" />
         </Div>
     </ListGroupItem>
 </ListGroup>

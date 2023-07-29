@@ -1,5 +1,7 @@
 ﻿using Nabu.Network;
+using Nabu.Packages;
 using Nabu.Services;
+using Napa;
 using System.Reactive.Linq;
 
 namespace Nabu.Adaptor;
@@ -9,36 +11,78 @@ namespace Nabu.Adaptor;
 /// </summary>
 public class EmulatedAdaptor : NabuBase
 {
+    private readonly ClassicNabuProtocol NabuNet;
+    private readonly BinaryReader Reader;
     private readonly AdaptorSettings Settings;
     private readonly Stream Stream;
-    private readonly BinaryReader Reader;
-    private readonly ClassicNabuProtocol NabuNet;
-
-    //readonly ACPProtocol ACP;
-    private IEnumerable<IProtocol> Protocols { get; }
 
     public EmulatedAdaptor(
-        AdaptorSettings settings,
-        ClassicNabuProtocol nabuNet,
-        IEnumerable<IProtocol> protocols,
-        ILog logger,
-        Stream stream,
-        string? label = null
+            AdaptorSettings settings,
+            ClassicNabuProtocol nabuNet,
+            IEnumerable<IProtocol> protocols,
+            ILog logger,
+            Stream stream,
+            string? label = null
 
-    ) : base(logger, label)
+        ) : base(logger, label)
     {
         Settings = settings;
         NabuNet = nabuNet;
         Protocols = protocols;
         Stream = stream;
         Reader = new BinaryReader(stream);
+        AttachProtocols();
+    }
 
+    public bool IsRunning { get; protected set; }
+
+    //readonly ACPProtocol ACP;
+    private IEnumerable<IProtocol> Protocols { get; }
+
+    /// <summary>
+    ///
+    /// </summary>
+    /// <param name="settings"></param>
+    /// <param name="sources"></param>
+    public static void InitializeAdaptor(
+        AdaptorSettings settings,
+        ISourceService sources,
+        StorageService storage,
+        PackageService packages,
+        string name
+    )
+    {
+        storage.UpdateStorageFromPackages(packages.Packages);
+        storage.AttachStorage(settings, name);
+        if (settings.Headless)
+        {
+            var packageId = settings.HeadlessSource;
+
+            var source = packageId switch
+            {
+                null => (from s in sources.All()
+                         where s.HeadlessMenu
+                         select s).FirstOrDefault(),
+                _ => (from s in sources.All()
+                      where s.SourcePackage is not null &&
+                          s.SourcePackage.Is(packageId)
+                      where s.HeadlessMenu
+                      select s).FirstOrDefault()
+            };
+
+            if (source != null)
+            {
+                settings.Source = source.Name;
+            }
+        }
+    }
+
+    private void AttachProtocols()
+    {
         NabuNet.Attach(Settings, Stream);
         foreach (var protocol in Protocols)
             protocol.Attach(Settings, Stream);
     }
-
-    public bool IsRunning { get; protected set; }
 
     #region Adaptor Loop
 

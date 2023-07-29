@@ -78,7 +78,7 @@ public class PackageManager : IPackageManager
         if (Directory.Exists(destinationFolder))
         {
             //var (oldPath, package, _) = await Open(destinationFolder);
-            var package = Installed.FirstOrDefault(i => NabuLib.InsensitiveEqual(i.Id, newPackage.Id));
+            var package = Installed.FirstOrDefault(i => i.Id.Is(newPackage.Id));
             if (package is null)
                 Directory.Delete(destinationFolder, true);
             else
@@ -133,7 +133,7 @@ public class PackageManager : IPackageManager
                await LoadManifestFrom(folder, name);
     }
 
-    public async Task Refresh(bool silent = false)
+    public async Task Refresh(bool silent = false, bool localOnly = false)
     {
         if (!silent)
             Log.Write("Refreshing Packages");
@@ -142,8 +142,8 @@ public class PackageManager : IPackageManager
             return;
 
         await RefreshLock.WaitAsync();
-        await UpdateInstalled();
-        //await UpdateAvailable();
+        var installed = await UpdateInstalled();
+        await UpdateAvailable(installed);
         RefreshLock.Release();
     }
 
@@ -179,7 +179,7 @@ public class PackageManager : IPackageManager
             Log.WriteWarning($"Uninstalling {PackageLogName(package)}  {package.Version}");
             Directory.Delete(path, true);
 
-            var installed = Installed.FirstOrDefault(i => NabuLib.InsensitiveEqual(i.Id, package.Id));
+            var installed = Installed.FirstOrDefault(i => i.Id.Is(package.Id));
             if (installed != null)
             {
                 Installed.Remove(installed);
@@ -280,8 +280,9 @@ public class PackageManager : IPackageManager
                 false => await Yaml.Deserialize<SourcePackage>(uri, Cache, http)
             };
             return result;
-
-        } catch (Exception ex) {
+        }
+        catch (Exception ex)
+        {
             Log.WriteVerbose(ex.Message);
         }
 
@@ -438,12 +439,12 @@ public class PackageManager : IPackageManager
             let versions = from v in new[] { p.Version, i.Version } orderby v descending select v
             let highest = versions.First()
             where p.Version == highest
-            where queued.Any(i => NabuLib.InsensitiveEqual(i, p.Id)) is false
+            where queued.Any(i => i.Is(p.Id)) is false
             select p
         );
         result.AddRange(
             from p in SourcePackages
-            where installed.Any(i => NabuLib.InsensitiveEqual(i.Id, p.Id)) is false
+            where installed.Any(i => i.Id.Is(p.Id)) is false
             select p
         );
 
@@ -460,7 +461,7 @@ public class PackageManager : IPackageManager
     ///     - Refresh Installed Package List
     /// </summary>
     /// <returns></returns>
-    private async Task UpdateInstalled(bool locked = false)
+    private async Task<IEnumerable<InstalledPackage>> UpdateInstalled(bool locked = false)
     {
         //if (locked)
         //    await UpdateLock.WaitAsync();
@@ -518,7 +519,7 @@ public class PackageManager : IPackageManager
         }
 
         Installed.SetRange(result);
-        await UpdateAvailable(result);
+        return result;
         //if (locked)
         //    UpdateLock.Release();
     }

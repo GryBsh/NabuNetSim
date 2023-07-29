@@ -22,6 +22,7 @@ public class TCPClientAdaptor
         var logger = serviceProvider.GetRequiredService<ILog<TCPAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
         var packages = serviceProvider.GetRequiredService<PackageService>();
+        var sources = serviceProvider.GetRequiredService<ISourceService>();
         //socket.LingerState = new LingerOption(false, 0);
 
         var parts = settings.Port.Split(':');
@@ -40,8 +41,7 @@ public class TCPClientAdaptor
             var clientIP = socket.RemoteEndPoint!.ToString()!.Split(':')[0];
             try
             {
-                storage.UpdateStorageFromPackages(packages.Packages);
-                storage.AttachStorage(settings, clientIP);
+                EmulatedAdaptor.InitializeAdaptor(settings, sources, storage, packages, clientIP);
                 socket.Connect(hostname, port);
             }
             catch (Exception ex)

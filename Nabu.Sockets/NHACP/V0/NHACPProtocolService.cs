@@ -6,9 +6,6 @@ public class NHACPProtocolService : INHACPProtocolService
 {
     private ILog Logger;
     private AdaptorSettings Settings;
-    private Dictionary<byte, IStorageHandler> StorageSlots { get; } = new();
-
-    private Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
 
     public NHACPProtocolService(ILog logger, AdaptorSettings settings)
     {
@@ -16,14 +13,11 @@ public class NHACPProtocolService : INHACPProtocolService
         Settings = settings;
     }
 
-    private byte NextIndex()
+    private Dictionary<byte, IStorageHandler> StorageSlots { get; } = new();
+
+    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
     {
-        for (int i = 0x00; i < 0xFF; i++)
-        {
-            if (StorageSlots.ContainsKey((byte)i)) continue;
-            return (byte)i;
-        }
-        return 0xFF;
+        throw new NotImplementedException();
     }
 
     public Task<(bool, string, string)> DateTime()
@@ -36,7 +30,29 @@ public class NHACPProtocolService : INHACPProtocolService
         ));
     }
 
-    public async Task<(bool, string, byte, int)> Open(byte index, short flags, string uri)
+    public void End()
+    {
+        foreach (var key in StorageSlots.Keys)
+        {
+            StorageSlots[key].End();
+        }
+        StorageSlots.Clear();
+    }
+
+    public Task<(bool, string, Memory<byte>)> Get(byte index, int offset, ushort length)
+    {
+        try
+        {
+            var handler = StorageSlots[index];
+            return handler.Get(offset, length);
+        }
+        catch (Exception ex)
+        {
+            return Task((false, ex.Message, new Memory<byte>(Array.Empty<byte>())));
+        }
+    }
+
+    public async Task<(bool, string, byte, int)> Open(byte index, ushort flags, string uri)
     {
         if (index is 0xFF)
         {
@@ -67,19 +83,6 @@ public class NHACPProtocolService : INHACPProtocolService
         }
     }
 
-    public Task<(bool, string, Memory<byte>)> Get(byte index, int offset, short length)
-    {
-        try
-        {
-            var handler = StorageSlots[index];
-            return handler.Get(offset, length);
-        }
-        catch (Exception ex)
-        {
-            return Task((false, ex.Message, new Memory<byte>(Array.Empty<byte>())));
-        }
-    }
-
     public Task<(bool, string)> Put(byte index, int offset, Memory<byte> buffer)
     {
         try
@@ -93,17 +96,15 @@ public class NHACPProtocolService : INHACPProtocolService
         }
     }
 
-    public Task<(bool, string, byte, byte[])> Command(byte index, byte command, byte[] data)
+    private byte NextIndex()
     {
-        throw new NotImplementedException();
+        for (int i = 0x00; i < 0xFF; i++)
+        {
+            if (StorageSlots.ContainsKey((byte)i)) continue;
+            return (byte)i;
+        }
+        return 0xFF;
     }
 
-    public void End()
-    {
-        foreach (var key in StorageSlots.Keys)
-        {
-            StorageSlots[key].End();
-        }
-        StorageSlots.Clear();
-    }
+    private Task<T> Task<T>(T item) => System.Threading.Tasks.Task.FromResult(item);
 }

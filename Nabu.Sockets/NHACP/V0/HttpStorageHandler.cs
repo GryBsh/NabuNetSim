@@ -9,7 +9,7 @@ public class HttpStorageHandler : RAMStorageHandler
     {
     }
 
-    public override async Task<(bool, string, int)> Open(short flags, string uri)
+    public override async Task<(bool, string, int)> Open(ushort flags, string uri)
     {
         try
         {

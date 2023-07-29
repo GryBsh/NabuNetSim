@@ -4,9 +4,6 @@ namespace Nabu.Network.NHACP.V0;
 
 public class NHACPProtocol : Protocol
 {
-    private INabuNetwork NabuNet { get; }
-    private NHACPProtocolService Storage { get; }
-
     public NHACPProtocol(ILog<NHACPProtocol> logger, INabuNetwork nabuNet) : base(logger)
     {
         Storage = new(Logger, Adaptor);
@@ -14,43 +11,45 @@ public class NHACPProtocol : Protocol
     }
 
     public override byte[] Commands { get; } = new byte[] { 0xAF };
-    public override byte Version => 0x01;
+    public override byte Version => 0x00;
+    private INabuNetwork NabuNet { get; }
+    private NHACPProtocolService Storage { get; }
 
     #region ACP Frames / Messages
 
-    private void StorageStarted()
+    private void DataBuffer(Memory<byte> buffer)
     {
-        SendFramed(
-            0x80,
-            NabuLib.FromShort(Version),
-            NabuLib.ToSizedASCII(Emulator.Id).ToArray()
+        WriteFrame(
+            0x84,
+            NabuLib.FromUShort((ushort)buffer.Length),
+            buffer.ToArray()
         );
     }
 
-    private void StorageError(short code, string message)
+    private void StorageError(ushort code, string message)
     {
-        SendFramed(
+        WriteFrame(
             0x82,
-            NabuLib.FromShort(code),
+            NabuLib.FromUShort(code),
             NabuLib.ToSizedASCII(message).ToArray()
         );
     }
 
-    private void StorageLoaded(short index, int length)
+    private void StorageLoaded(ushort index, int length)
     {
-        SendFramed(
+        WriteFrame(
             0x83,
-            NabuLib.FromShort(index),
+            NabuLib.FromUShort(index),
             NabuLib.FromInt(length)
         );
     }
 
-    private void DataBuffer(Memory<byte> buffer)
+    private void StorageStarted()
     {
-        SendFramed(
-            0x84,
-            NabuLib.FromShort((short)buffer.Length),
-            buffer.ToArray()
+        WriteFrame(
+            0x80,
+            NabuLib.FromUShort(Version),
+            NabuLib.ToSizedASCII(Emulator.Id).ToArray()
         );
     }
 
@@ -65,33 +64,18 @@ public class NHACPProtocol : Protocol
 
     #endregion Helpers
 
-    #region ACP Operations
+    #region NHACP Operations
 
-    private async Task Open(Memory<byte> buffer)
+    private async Task DateTime(Memory<byte> none)
     {
-        Log($"NPC: Open");
-        try
-        {
-            (int i, byte index) = NabuLib.Pop(buffer, 0);
-            (i, short flags) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-            (i, byte uriLength) = NabuLib.Pop(buffer, i);
-            (i, string uri) = NabuLib.Slice(buffer, i, uriLength, NabuLib.ToASCII);
-            OnPacketSliced(i, buffer.Length);
-
-            var (success, error, slot, length) = await Storage.Open(index, flags, uri);
-            if (success)
-            {
-                Log($"NA: Loading into slot {index}: {uri}");
-                StorageLoaded(slot, length);
-            }
-            else
-                Log($"NA: Loading into slot {index}: {uri} failed: {error}");
-            StorageError((short)length, error);
-        }
-        catch (Exception ex)
-        {
-            StorageError(500, ex.Message);
-        }
+        Log($"NPC: DateTime");
+        var (_, date, time) = await Storage.DateTime();
+        WriteFrame(
+            0x85,
+            NabuLib.ToSizedASCII(date).ToArray(),
+            NabuLib.ToSizedASCII(time).ToArray()
+        );
+        Log($"NA: DataTime Send");
     }
 
     private async Task Get(Memory<byte> buffer)
@@ -101,7 +85,7 @@ public class NHACPProtocol : Protocol
         {
             (int i, byte index) = NabuLib.Pop(buffer, 0);
             (i, int offset) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
-            (i, short length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
+            (i, ushort length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
             OnPacketSliced(i, buffer.Length);
 
             var (success, error, data) = await Storage.Get(index, offset, length);
@@ -118,6 +102,33 @@ public class NHACPProtocol : Protocol
         }
     }
 
+    private async Task Open(Memory<byte> buffer)
+    {
+        Log($"NPC: Open");
+        try
+        {
+            (int i, byte index) = NabuLib.Pop(buffer, 0);
+            (i, ushort flags) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+            (i, byte uriLength) = NabuLib.Pop(buffer, i);
+            (i, string uri) = NabuLib.Slice(buffer, i, uriLength, NabuLib.ToASCII);
+            OnPacketSliced(i, buffer.Length);
+
+            var (success, error, slot, length) = await Storage.Open(index, flags, uri);
+            if (success)
+            {
+                Log($"NA: Loading into slot {index}: {uri}");
+                StorageLoaded(slot, length);
+            }
+            else
+                Log($"NA: Loading into slot {index}: {uri} failed: {error}");
+            StorageError((ushort)length, error);
+        }
+        catch (Exception ex)
+        {
+            StorageError(500, ex.Message);
+        }
+    }
+
     private async Task Put(Memory<byte> buffer)
     {
         Log($"NPC: Put");
@@ -125,7 +136,7 @@ public class NHACPProtocol : Protocol
         {
             (int i, byte index) = NabuLib.Pop(buffer, 0);
             (i, int offset) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
-            (i, short length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
+            (i, ushort length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
             (i, var data) = NabuLib.Slice(buffer, i, length);
             OnPacketSliced(i, buffer.Length);
 
@@ -133,7 +144,7 @@ public class NHACPProtocol : Protocol
             if (success)
             {
                 Log($"Put into slot {index}: OK");
-                SendFramed(0x81); // OK
+                WriteFrame(0x81); // OK
             }
             else
                 StorageError(500, error);
@@ -144,29 +155,18 @@ public class NHACPProtocol : Protocol
         }
     }
 
-    private async Task DateTime(Memory<byte> none)
+    #endregion NHACP Operations
+
+    public override void Detach()
     {
-        Log($"NPC: DateTime");
-        var (_, date, time) = await Storage.DateTime();
-        SendFramed(
-            0x85,
-            NabuLib.ToSizedASCII(date).ToArray(),
-            NabuLib.ToSizedASCII(time).ToArray()
-        );
-        Log($"NA: DataTime Send");
+        Storage.End();
+        base.Detach();
     }
 
-    #endregion ACP Operations
-
-    protected virtual Dictionary<byte, Func<Memory<byte>, Task>> PrepareHandlers()
+    public override bool ShouldAccept(byte unhandled)
     {
-        return new()
-        {
-            { 0x01, Open },
-            { 0x02, Get },
-            { 0x03, Put },
-            { 0x04, DateTime }
-        };
+        return base.ShouldAccept(unhandled) &&
+               NabuNet.Source(Adaptor)?.EnableRetroNet is false;
     }
 
     protected override async Task Handle(byte command, CancellationToken cancel)
@@ -211,15 +211,14 @@ public class NHACPProtocol : Protocol
         return;
     }
 
-    public override void Detach()
+    protected virtual Dictionary<byte, Func<Memory<byte>, Task>> PrepareHandlers()
     {
-        Storage.End();
-        base.Detach();
-    }
-
-    public override bool ShouldAccept(byte unhandled)
-    {
-        return base.ShouldAccept(unhandled) &&
-               NabuNet.Source(Adaptor)?.EnableRetroNet is false;
+        return new()
+        {
+            { 0x01, Open },
+            { 0x02, Get },
+            { 0x03, Put },
+            { 0x04, DateTime }
+        };
     }
 }

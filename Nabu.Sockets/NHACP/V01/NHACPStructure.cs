@@ -46,7 +46,7 @@ public static class NHACPStructure
 
         return NabuLib.Concat<byte>(
             DateTime(lastWrite).ToArray(),
-            NabuLib.FromShort((short)flags),
+            NabuLib.FromUShort((ushort)flags),
             NabuLib.FromInt(length),
             NabuLib.ToSizedASCII(name).ToArray()
         );

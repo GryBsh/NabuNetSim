@@ -8,6 +8,8 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
     {
     }
 
+    public int Position { get; protected set; } = 0;
+
     //public FileInfo? FileHandle { get; set; }
     private string Filename { get; set; } = string.Empty;
 
@@ -24,7 +26,7 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
         return Task.CompletedTask;
     }
 
-    public async Task Delete(int offset, short length, CancellationToken cancel)
+    public async Task Delete(int offset, ushort length, CancellationToken cancel)
     {
         using var stream = Stream();
         await stream.WriteAsync(NabuLib.Delete(Content(), offset, length).ToArray());
@@ -56,6 +58,65 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
         return Task.CompletedTask;
     }
 
+    public Task<bool> Open(string filename, FileOpenFlags flags, CancellationToken cancel)
+    {
+        Flags = flags;
+        Filename = filename;
+        return Task.FromResult(true);
+    }
+
+    public async Task<Memory<byte>> Read(int offset, ushort readLength, CancellationToken cancel)
+    {
+        var bytes = new Memory<byte>(new byte[readLength]);
+        using var reader = Stream();
+        reader.Seek(offset, SeekOrigin.Begin);
+        await reader.ReadAsync(bytes, cancel);
+        return bytes;
+    }
+
+    public async Task<Memory<byte>> ReadSequence(ushort readLength, CancellationToken cancel)
+    {
+        var end = Position + readLength;
+        var length = new FileInfo(Filename).Length;
+        if (end > length)
+        {
+            end = (int)length;
+            readLength = (ushort)(length - Position);
+        }
+        if (Position >= length)
+        {
+            return Array.Empty<byte>();
+        }
+        //Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
+        var bytes = await Read(Position, readLength, cancel);
+        Position += readLength;
+        return bytes;
+    }
+
+    public Task Replace(int offset, Memory<byte> data, CancellationToken cancel)
+    {
+        using var stream = Stream();
+        stream.Write(NabuLib.Replace(Content(), offset, data).ToArray());
+        return Task.CompletedTask;
+    }
+
+    public Task<int> Seek(int offset, FileSeekFlags flags, CancellationToken cancel)
+    {
+        Position = flags switch
+        {
+            FileSeekFlags.FromCurrent => Position + offset,
+            FileSeekFlags.FromBeginning => offset,
+            FileSeekFlags.FromEnd => (int)new FileInfo(Filename).Length - offset,
+            _ => offset
+        };
+        return Task.FromResult(Position);
+    }
+
+    public Task<int> Size(CancellationToken cancel)
+    {
+        return Task.FromResult((int)new FileInfo(Filename).Length);
+    }
+
     private Memory<byte> Content()
     {
         using var stream = Stream();
@@ -73,66 +134,5 @@ public class RetroNetFileHandle : NabuService, IRetroNetFileHandle
             FileShare.ReadWrite
         );
         return stream;
-    }
-
-    public Task<bool> Open(string filename, FileOpenFlags flags, CancellationToken cancel)
-    {
-        Flags = flags;
-        Filename = filename;
-        return Task.FromResult(true);
-    }
-
-    public async Task<Memory<byte>> Read(int offset, short readLength, CancellationToken cancel)
-    {
-        var bytes = new Memory<byte>(new byte[readLength]);
-        using var reader = Stream();
-        reader.Seek(offset, SeekOrigin.Begin);
-        await reader.ReadAsync(bytes, cancel);
-        return bytes;
-    }
-
-    public Task Replace(int offset, Memory<byte> data, CancellationToken cancel)
-    {
-        using var stream = Stream();
-        stream.Write(NabuLib.Replace(Content(), offset, data).ToArray());
-        return Task.CompletedTask;
-    }
-
-    public Task<int> Size(CancellationToken cancel)
-    {
-        return Task.FromResult((int)new FileInfo(Filename).Length);
-    }
-
-    public int Position { get; protected set; } = 0;
-
-    public async Task<Memory<byte>> ReadSequence(short readLength, CancellationToken cancel)
-    {
-        var end = Position + readLength;
-        var length = new FileInfo(Filename).Length;
-        if (end > length)
-        {
-            end = (int)length;
-            readLength = (short)(length - Position);
-        }
-        if (Position >= length)
-        {
-            return Array.Empty<byte>();
-        }
-        //Log($"ReadSeq: S:{Position}, L:{readLength}, E:{end}");
-        var bytes = await Read(Position, readLength, cancel);
-        Position += readLength;
-        return bytes;
-    }
-
-    public Task<int> Seek(int offset, FileSeekFlags flags, CancellationToken cancel)
-    {
-        Position = flags switch
-        {
-            FileSeekFlags.FromCurrent => Position + offset,
-            FileSeekFlags.FromBeginning => offset,
-            FileSeekFlags.FromEnd => (int)new FileInfo(Filename).Length - offset,
-            _ => offset
-        };
-        return Task.FromResult(Position);
     }
 }

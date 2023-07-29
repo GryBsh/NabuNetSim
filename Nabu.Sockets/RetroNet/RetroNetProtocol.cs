@@ -1,6 +1,7 @@
 using Nabu.Services;
 using System.Reactive.Linq;
 using System.Text.RegularExpressions;
+using YamlDotNet.Serialization;
 
 namespace Nabu.Network.RetroNet;
 
@@ -64,7 +65,6 @@ public partial class RetroNetProtocol : Protocol
 
     public override bool Attach(AdaptorSettings settings, Stream stream)
     {
-        Listener(settings);
         Http = new(HttpClient, Logger, FileCache, Global, settings);
         return base.Attach(settings, stream);
     }
@@ -82,12 +82,14 @@ public partial class RetroNetProtocol : Protocol
             var cancel = CancellationToken.None;
             if (Slots.Count > 0)
             {
-                foreach (var b in Slots.Keys) Slots[b].Close(cancel);
+                foreach (var b in Slots.Keys)
+                    Slots[b].Close(cancel);
                 Slots.Clear();
             }
 
             base.Reset();
         }
+        ShutdownTCPServer();
     }
 
     public override bool ShouldAccept(byte unhandled)
@@ -96,6 +98,9 @@ public partial class RetroNetProtocol : Protocol
         var source = NabuNet.Source(Adaptor);
         var enabled = source?.EnableRetroNet is true;
 
+        //if (source?.TCPServerPort is not null or 0)
+        //    Listener(Adaptor);
+
         return command && enabled;
     }
 
@@ -103,6 +108,8 @@ public partial class RetroNetProtocol : Protocol
     {
         try
         {
+            Listener(Adaptor);
+
             switch (unhandled)
             {
                 case RetroNetCommands.FileOpen:
@@ -236,16 +243,16 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileCopy(CancellationToken cancel)
     {
-        var source = RecvString();
-        var destination = RecvString();
-        var flags = (CopyMoveFlags)Recv();
+        var source = ReadString();
+        var destination = ReadString();
+        var flags = (CopyMoveFlags)Read();
         Log($"Copy: {source} -> {destination}");
         await FileHandler(source).Copy(source, destination, flags);
     }
 
     private async Task FileDelete(CancellationToken cancel)
     {
-        var filename = RecvString();
+        var filename = ReadString();
         await FileHandler(filename).Delete(filename);
         Log($"Deleted: {filename}");
     }
@@ -261,7 +268,7 @@ public partial class RetroNetProtocol : Protocol
 
     private Task FileIndexStat(CancellationToken cancel)
     {
-        var index = RecvShort();
+        var index = ReadShort();
         var file = CurrentList![index];
         Log($"List Details: {index}");
         Writer.Write(file);
@@ -270,9 +277,9 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileList(CancellationToken cancel)
     {
-        var path = RecvString();
-        var wildcard = RecvString();
-        var flags = (FileListFlags)Recv();
+        var path = ReadString();
+        var wildcard = ReadString();
+        var flags = (FileListFlags)Read();
         Log($"List: {path}\\{wildcard}");
         CurrentList = (await FileHandler(path).List(path, wildcard, flags)).ToArray();
         Writer.Write((short)CurrentList.Length);
@@ -280,16 +287,16 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileMove(CancellationToken cancel)
     {
-        var source = RecvString();
-        var destination = RecvString();
-        var flags = (CopyMoveFlags)Recv();
+        var source = ReadString();
+        var destination = ReadString();
+        var flags = (CopyMoveFlags)Read();
         Log($"Move: {source} -> {destination}");
         await FileHandler(source).Move(source, destination, flags);
     }
 
     private async Task FileSize(CancellationToken cancel)
     {
-        var filename = RecvString();
+        var filename = ReadString();
         //var handle = NextIndex();
         //await FileOpen(filename, FileOpenFlags.ReadOnly, handle, cancel);
         Log($"Size: {filename}");
@@ -300,7 +307,7 @@ public partial class RetroNetProtocol : Protocol
 
     private async Task FileStat(CancellationToken cancel)
     {
-        var filename = RecvString();
+        var filename = ReadString();
         var details = await FileHandler(filename).FileDetails(filename);
         Log($"Details: {filename}");
         Writer.Write(details);
@@ -316,9 +323,11 @@ public partial class RetroNetProtocol : Protocol
         return 0xFF;
     }
 
+    private string ReadString() => Reader.ReadString();
+
     private void WriteBuffer(Memory<byte> bytes)
     {
-        Writer.Write(NabuLib.FromShort((short)bytes.Length));
+        Writer.Write(NabuLib.FromUShort((ushort)bytes.Length));
         Writer.Write(bytes.ToArray());
     }
 }

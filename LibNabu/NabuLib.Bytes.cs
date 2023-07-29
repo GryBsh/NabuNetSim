@@ -5,21 +5,56 @@ namespace Nabu;
 public static partial class NabuLib
 {
     /// <summary>
-    ///     Converts s little-endian 32 bit integer
-    ///     in bytes to Int
+    ///     Creates a String in X02 format from the given byte
     /// </summary>
-    /// <param name="span"></param>
+    /// <param name="b"></param>
     /// <returns></returns>
-    public static int ToInt(Memory<byte> buffer)
+    public static string Format(byte b) => $"{b:X02}";
+
+    /// <summary>
+    ///     Creates a String of bytes in X02 format.
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
+    public static string Format(params byte[] bytes)
     {
-        var span = SetLength<byte>(4, buffer, 0x00).Span;
-        int r = 0;
-        r |= span[0] << 0;
-        r |= span[1] << 8;
-        r |= span[2] << 16;
-        r |= span[3] << 24;
-        return r;
+        var parts = bytes.Select(b => Format(b)).ToArray();
+        return string.Join(string.Empty, parts);
     }
+
+    /// <summary>
+    ///     Creates a seperated String of bytes in X02 format
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
+    public static string FormatSeperated(params byte[] bytes)
+    {
+        var parts = bytes.Select(b => Format(b)).ToArray();
+        return string.Join('|', parts);
+    }
+
+    /// <summary>
+    ///     Creates a String in X06 format from the given Int
+    ///     (3 hextets)
+    /// </summary>
+    /// <param name="bytes"></param>
+    /// <returns></returns>
+    public static string FormatTriple(int bytes) => $"{bytes:X06}";
+
+    // <summary>
+    ///     Converts  a String
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <returns></returns>
+    public static Memory<byte> FromASCII(string buffer)
+        => Encoding.ASCII.GetBytes(buffer);
+
+    /// <summary>
+    ///     Converts a Boolean into a byte
+    /// </summary>
+    /// <param name="value"></param>
+    /// <returns></returns>
+    public static byte FromBool(bool value) => (byte)(value ? 0x01 : 0x00);
 
     /// <summary>
     ///     Converts an Int to a little-endian
@@ -38,32 +73,42 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Converts a little-endian 16 bit integer
-    ///     in bytes to Short
-    /// </summary>
-    /// <param name="buffer"></param>
-    /// <returns></returns>
-    public static short ToShort(Memory<byte> buffer)
-    {
-        var span = SetLength<byte>(2, buffer, 0x00).Span;
-        int r = 0;
-        r |= span[0] << 0;
-        r |= span[1] << 8;
-        return (short)r;
-    }
-
-    /// <summary>
     ///     Converts an Short to a little-endian
     ///     16 bit integer in bytes
     /// </summary>
     /// <param name="number"></param>
     /// <returns></returns>
-    public static byte[] FromShort(short number)
+    public static byte[] FromUShort(ushort number)
     {
         var buffer = new byte[2];
         buffer[0] = (byte)(number >> 0 & 0xFF);
         buffer[1] = (byte)(number >> 8 & 0xFF);
         return buffer;
+    }
+
+    /// <summary>
+    ///     Converts ASCII bytes to a String
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <returns></returns>
+    public static string ToASCII(Memory<byte> buffer)
+        => Encoding.ASCII.GetString(buffer.ToArray());
+
+    /// <summary>
+    ///     Converts s little-endian 32 bit integer
+    ///     in bytes to Int
+    /// </summary>
+    /// <param name="span"></param>
+    /// <returns></returns>
+    public static int ToInt(Memory<byte> buffer)
+    {
+        var span = SetLength<byte>(4, buffer, 0x00).Span;
+        int r = 0;
+        r |= span[0] << 0;
+        r |= span[1] << 8;
+        r |= span[2] << 16;
+        r |= span[3] << 24;
+        return r;
     }
 
     /// <summary>
@@ -97,62 +142,17 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Converts ASCII bytes to a String
+    ///     Converts a little-endian 16 bit integer
+    ///     in bytes to Short
     /// </summary>
     /// <param name="buffer"></param>
     /// <returns></returns>
-    public static string ToASCII(Memory<byte> buffer)
-        => Encoding.ASCII.GetString(buffer.ToArray());
-
-    // <summary>
-    ///     Converts  a String
-    /// </summary>
-    /// <param name="buffer"></param>
-    /// <returns></returns>
-    public static Memory<byte> FromASCII(string buffer)
-        => Encoding.ASCII.GetBytes(buffer);
-
-    /// <summary>
-    ///     Converts a Boolean into a byte
-    /// </summary>
-    /// <param name="value"></param>
-    /// <returns></returns>
-    public static byte FromBool(bool value) => (byte)(value ? 0x01 : 0x00);
-
-    /// <summary>
-    ///     Creates a String in X02 format from the given byte
-    /// </summary>
-    /// <param name="b"></param>
-    /// <returns></returns>
-    public static string Format(byte b) => $"{b:X02}";
-
-    /// <summary>
-    ///     Creates a String in X06 format from the given Int
-    ///     (3 hextets)
-    /// </summary>
-    /// <param name="bytes"></param>
-    /// <returns></returns>
-    public static string FormatTriple(int bytes) => $"{bytes:X06}";
-
-    /// <summary>
-    ///     Creates a seperated String of bytes in X02 format
-    /// </summary>
-    /// <param name="bytes"></param>
-    /// <returns></returns>
-    public static string FormatSeperated(params byte[] bytes)
+    public static ushort ToUShort(Memory<byte> buffer)
     {
-        var parts = bytes.Select(b => Format(b)).ToArray();
-        return string.Join('|', parts);
-    }
-
-    /// <summary>
-    ///     Creates a String of bytes in X02 format.
-    /// </summary>
-    /// <param name="bytes"></param>
-    /// <returns></returns>
-    public static string Format(params byte[] bytes)
-    {
-        var parts = bytes.Select(b => Format(b)).ToArray();
-        return string.Join(string.Empty, parts);
+        var span = SetLength<byte>(2, buffer, 0x00).Span;
+        int r = 0;
+        r |= span[0] << 0;
+        r |= span[1] << 8;
+        return (ushort)r;
     }
 }

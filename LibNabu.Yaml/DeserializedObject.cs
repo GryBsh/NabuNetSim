@@ -112,7 +112,7 @@ public abstract record DeserializedObject : ReactiveRecord
     protected T? FromValue<T>(object? value)
     {
         value = MapValue(value);
-        value = value switch
+        object? result = value switch
         {
             null => default,
             T desired => desired,
@@ -122,9 +122,10 @@ public abstract record DeserializedObject : ReactiveRecord
             IDictionary<string, object?> dict and not DeserializedDictionary<object?> => new DeserializedDictionary<object?>(dict),
             string e when typeof(T).IsEnum && Enum.TryParse(typeof(T), e, true, out var p) => (T?)p,
             string parsed when CanParse<T>(parsed) is var (canParse, parser) && canParse => parser.Invoke(parsed),
+            _ when value.GetType().IsAssignableTo(typeof(T)) => (T)value,
             _ => default
         };
 
-        return (T?)value;
+        return (T?)result;
     }
 }

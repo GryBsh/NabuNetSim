@@ -8,11 +8,18 @@ public abstract record AdaptorSettings
     public string Source { get; set; } = string.Empty;
     public string? Program { get; set; }
     public string StoragePath { get; set; } = string.Empty;
-    public short AdapterChannel { get; set; } = 0x0001;
+    public ushort AdapterChannel { get; set; } = 0x0001;
     public bool Running { get; set; }
     public bool EnableCopyOnSymLinkWrite { get; set; } = false;
     public Dictionary<string, string> StorageRedirects { get; set; } = new();
     public ServiceShould State { get; set; }
+    public bool TCPServerActive { get; set; } = false;
+    public int TCPServerPort { get; set; } = 0;
+    public string TCPServerProtocol { get; set; } = string.Empty;
+    public string? ReturnToSource { get; set; }
+    public string? ReturnToProgram { get; set; }
+    public bool Headless { get; set; } = false;
+    public string? HeadlessSource { get; set; }
 }
 
 public record NullAdaptorSettings : AdaptorSettings

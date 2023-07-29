@@ -19,8 +19,4 @@
     <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="NabuNetwork\" />
-  </ItemGroup>
-
 </Project>

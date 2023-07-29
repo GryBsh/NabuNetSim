@@ -24,8 +24,26 @@ using System.Diagnostics;
 using Microsoft.Extensions.Logging.Configuration;
 using System.IO;
 using Nabu.Packages;
+using Nabu.JavaScript;
+using Nabu.Network.NabuNetworkCom;
 
 namespace Nabu.NetSimWeb;
+
+public class ProtocolFailedToLoad : Protocol
+{
+    public ProtocolFailedToLoad(ILog logger, AdaptorSettings? settings = null) : base(logger, settings)
+    {
+    }
+
+    public override byte[] Commands { get; } = Array.Empty<byte>();
+
+    public override byte Version { get; } = 0;
+
+    protected override Task Handle(byte unhandled, CancellationToken cancel)
+    {
+        return Task.CompletedTask;
+    }
+}
 
 public class ServerStartSettings : CommandSettings
 {
@@ -38,6 +56,8 @@ public class ServerStartSettings : CommandSettings
 
 public class ServerStart : AsyncCommand<ServerStartSettings>
 {
+    private const string HeadlessSource = "nns-bundle-nabunetworkcom";
+
     public ServerStart(Settings settings)
     {
         Settings = settings;
@@ -71,6 +91,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         services.AddTransient<IProtocol, NHACPProtocol>();
         services.AddTransient<IProtocol, NHACPV01Protocol>();
         services.AddTransient<IProtocol, RetroNetProtocol>();
+        services.AddTransient<IProtocol, HeadlessProtocol>();
 
         services.AddSingleton(typeof(ILog<>), typeof(ConsoleLog<>));
         services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
@@ -84,12 +105,45 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
             Path = settings.LocalProgramPath
         });
 
+        var factories = new IProtocolFactory[]
+        {
+            new JavaScriptFactory()
+        };
+
+        foreach (var factory in factories)
+        {
+            services.AddSingleton(factory);
+        }
+
+        foreach (var protocol in settings.Protocols)
+        {
+            if (factories.FirstOrDefault(f => f.Type == protocol.Type) is IProtocolFactory factory)
+            {
+                services.AddTransient(
+                    sp =>
+                    {
+                        var logger = sp.GetRequiredService<ILog<PluginProtocol>>();
+                        return factory.CreateProtocol(sp, logger, protocol);
+                    }
+                );
+            }
+        }
+
         return services;
     }
 
     public static async Task<int> Headless(Settings settings, string[] args)
     {
         var builder = Host.CreateDefaultBuilder(args);
+
+        if (settings.DisableHeadless is false)
+        {
+            foreach (var adaptor in settings.Adaptors.Serial.Concat<AdaptorSettings>(settings.Adaptors.TCP))
+            {
+                adaptor.Headless = true;
+                adaptor.HeadlessSource ??= HeadlessSource;
+            }
+        }
 
         await builder.ConfigureServices(
             (context, services) =>
@@ -140,6 +194,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         services.AddScoped<FolderListViewModel>();
         services.AddScoped<AvailablePackagesViewModel>();
         services.AddScoped<HeadlineViewModel>();
+        services.AddScoped<EmulatorButtonViewModel>();
 
         services.AddRazorPages();
         services.AddServerSideBlazor();

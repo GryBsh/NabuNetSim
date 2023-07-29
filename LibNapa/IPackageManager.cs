@@ -19,7 +19,7 @@ public interface IPackageManager
 
     Task<FoundPackage> Open(string folder, string? name = null);
 
-    public Task Refresh(bool silent = false);
+    public Task Refresh(bool silent = false, bool localOnly = false);
 
     Task Uninstall(string id);
 

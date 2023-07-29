@@ -11,22 +11,40 @@ namespace Nabu.Services
 {
     public record RunningProcess(CancellationToken Cancellation)
     {
-
     }
 
     public class ProcessService : DisposableBase
     {
-        ConcurrentDictionary<CancellationTokenSource, Process> Running { get; } = new();
-
-        public ProcessService() {
+        public ProcessService()
+        {
             Disposables.Add(
                 Observable.Interval(TimeSpan.FromSeconds(10))
                           .Subscribe(_ => RefreshState())
             );
         }
 
+        public ConcurrentDictionary<CancellationTokenSource, Process> Running { get; } = new();
+        private SemaphoreSlim UpdateLock { get; } = new(1, 1);
+
+        public CancellationTokenSource? IsRunning(string path)
+        {
+            if (Running.FirstOrDefault(p => p.Value.StartInfo.FileName == path)
+                    is KeyValuePair<CancellationTokenSource, Process> existing &&
+                    existing.Key is not null
+            )
+            {
+                return existing.Key;
+            }
+            return null;
+        }
+
         public CancellationToken Start(string path, bool hidden = false, string[]? verb = null)
         {
+            if (IsRunning(path) is CancellationTokenSource source and not null)
+            {
+                return source.Token;
+            }
+
             var directory = Path.GetDirectoryName(path);
 
             var process = Process.Start(
@@ -39,8 +57,8 @@ namespace Nabu.Services
                     UseShellExecute = true
                 }
             );
-            
-            if (process is null) 
+
+            if (process is null)
                 return new(true);
 
             var tokenSource = new CancellationTokenSource();
@@ -48,9 +66,7 @@ namespace Nabu.Services
             return tokenSource.Token;
         }
 
-        SemaphoreSlim UpdateLock { get; } = new(1, 1);
-
-        void RefreshState()
+        private void RefreshState()
         {
             lock (UpdateLock)
             {

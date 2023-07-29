@@ -48,8 +48,8 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
                 Observable.Interval(TimeSpan.FromSeconds(10))
                 .Subscribe(_ =>
                 {
-                    this.RaisePropertyChanged(nameof(RunAvailable));
                     this.RaisePropertyChanged(nameof(BrowseVisible));
+                    this.RaisePropertyChanged(nameof(Selected));
                 }).DisposeWith(disposables);
             }
         );
@@ -80,10 +80,10 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
         {
             if (Selected is null or NullAdaptorSettings) return false;
             var programs = Network.Programs(Selected);
-            var hasMultipleImages = programs.Count() > 1;
+            var hasImages = programs.Count() > 1;
             var exploitEnabled = Network.Source(Selected)?.EnableExploitLoader is true;
             var isNotPakCycle = !programs.Any(p => p.Name == Constants.CycleMenuPak);
-            return hasMultipleImages && (exploitEnabled || isNotPakCycle);
+            return hasImages && (exploitEnabled || isNotPakCycle);
         }
     }
 
@@ -91,17 +91,15 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
     public HomeViewModel Home { get; }
 
     public ObservableCollection<AvailableImage> Images { get; } = new ObservableCollection<AvailableImage>();
+
     public bool IsClient => Selected is TCPAdaptorSettings t && t.Connection;
+
     public INabuNetwork Network { get; }
 
     public ProcessService Process { get; }
 
-    public bool RunAvailable
-        =>  ShouldRun &&
-            Selected.Running &&
-            (EmulatorProcess is null || EmulatorProcess.Value.IsCancellationRequested);
-
     public Visibility RunVisibility => ShouldRun ? Visibility.Visible : Visibility.Invisible;
+
     public AdaptorSettings Selected { get; set; } = new NullAdaptorSettings();
 
     public ICollection<SerialAdaptorSettings> Serial
@@ -110,8 +108,18 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
     }
 
     public Settings Settings { get; }
+
     public bool ShouldRun => (Selected is TCPAdaptorSettings t && !t.Connection && Settings.EmulatorPath != string.Empty);
-    public string[] SourceNames => Sources.All().Select(f => f.Name).ToArray();
+
+    public string[] SourceNames
+        => Sources.All().Where(
+                f =>
+                {
+                    return f.Name != "headless" && (!Settings.DisableHeadless || !f.HeadlessMenu);
+                }
+            ).Select(f => f.Name)
+            .ToArray();
+
     public SourceService Sources { get; }
 
     public ICollection<TCPAdaptorSettings> TCP
@@ -119,7 +127,16 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
         get => Settings.Adaptors.TCP;
     }
 
-    private CancellationToken? EmulatorProcess { get; set; }
+    public Visibility TCPServerActive =>
+        Selected.TCPServerActive ?
+            Visibility.Visible
+            : Visibility.Invisible;
+
+    public Visibility TCPServerVisible =>
+            Network.Source(Selected)?.EnableRetroNetTCPServer is true &&
+            (Selected is not TCPAdaptorSettings tcp || tcp.Connection) ?
+            Visibility.Visible :
+            Visibility.Invisible;
 
     public IconName AdaptorButtonIcon(AdaptorSettings settings)
     {
@@ -139,14 +156,6 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
             ServiceShould.Run => "Stop Adaptor",
             _ => "Start Adaptor"
         };
-    }
-
-    public void RunEmulator()
-    {
-        if (!RunAvailable)
-            return;
-
-        EmulatorProcess = Process.Start(Settings.EmulatorPath);
     }
 
     public void SetFilesPath(string path)

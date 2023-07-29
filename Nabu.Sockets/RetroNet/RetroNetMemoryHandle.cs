@@ -12,27 +12,18 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         Filename = CachePath = cachePath;
     }
 
-    protected string? CachePath { get; }
+    public string? Filename { get; set; }
+    public int Position { get; protected set; } = 0;
     protected Memory<byte> Buffer { get; set; } = new(Array.Empty<byte>());
-    protected FileOpenFlags Flags { get; set; }
+    protected string? CachePath { get; }
     protected DateTime Created { get; set; } = DateTime.Now;
+    protected FileOpenFlags Flags { get; set; }
     protected DateTime Modified { get; set; } = DateTime.Now;
 
-    public string? Filename { get; set; }
-
-    public virtual Task<bool> Open(string filename, FileOpenFlags flags, CancellationToken cancel)
+    public Task Append(Memory<byte> data, CancellationToken cancel)
     {
-        Flags = flags;
-        try
-        {
-            Created = DateTime.Now;
-            Filename ??= filename;
-            return Task.FromResult(true);
-        }
-        catch
-        {
-            return Task.FromResult(false);
-        }
+        Buffer = NabuLib.Append(Buffer, data).ToArray();
+        return Task.CompletedTask;
     }
 
     public Task Close(CancellationToken cancel)
@@ -41,8 +32,11 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         return Task.CompletedTask;
     }
 
-    public Task<int> Size(CancellationToken cancel)
-        => Task.FromResult(Buffer.Length);
+    public Task Delete(int offset, ushort length, CancellationToken cancel)
+    {
+        Buffer = NabuLib.Delete(Buffer, offset, length).ToArray();
+        return Task.CompletedTask;
+    }
 
     public virtual Task<FileDetails> Details(CancellationToken cancel)
     {
@@ -70,14 +64,9 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         );
     }
 
-    public Task<Memory<byte>> Read(int offset, short readLength, CancellationToken cancel)
+    public Task Empty(CancellationToken cancel)
     {
-        return Task.FromResult(Buffer[offset..(offset + readLength)]);
-    }
-
-    public Task Append(Memory<byte> data, CancellationToken cancel)
-    {
-        Buffer = NabuLib.Append(Buffer, data).ToArray();
+        Buffer = Array.Empty<byte>();
         return Task.CompletedTask;
     }
 
@@ -87,33 +76,33 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         return Task.CompletedTask;
     }
 
-    public Task Delete(int offset, short length, CancellationToken cancel)
+    public virtual Task<bool> Open(string filename, FileOpenFlags flags, CancellationToken cancel)
     {
-        Buffer = NabuLib.Delete(Buffer, offset, length).ToArray();
-        return Task.CompletedTask;
+        Flags = flags;
+        try
+        {
+            Created = DateTime.Now;
+            Filename ??= filename;
+            return Task.FromResult(true);
+        }
+        catch
+        {
+            return Task.FromResult(false);
+        }
     }
 
-    public Task Empty(CancellationToken cancel)
+    public Task<Memory<byte>> Read(int offset, ushort readLength, CancellationToken cancel)
     {
-        Buffer = Array.Empty<byte>();
-        return Task.CompletedTask;
+        return Task.FromResult(Buffer[offset..(offset + readLength)]);
     }
 
-    public Task Replace(int offset, Memory<byte> data, CancellationToken cancel)
-    {
-        Buffer = NabuLib.Replace(Buffer, offset, data).ToArray();
-        return Task.CompletedTask;
-    }
-
-    public int Position { get; protected set; } = 0;
-
-    public Task<Memory<byte>> ReadSequence(short readLength, CancellationToken cancel)
+    public Task<Memory<byte>> ReadSequence(ushort readLength, CancellationToken cancel)
     {
         var end = Position + readLength;
         if (end > Buffer.Length)
         {
             end = Buffer.Length;
-            readLength = (short)(Buffer.Length - Position);
+            readLength = (ushort)(Buffer.Length - Position);
         }
         if (Position >= Buffer.Length)
         {
@@ -122,6 +111,12 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         Memory<byte> bytes = Buffer[Position..end];
         Position += readLength;
         return Task.FromResult(bytes);
+    }
+
+    public Task Replace(int offset, Memory<byte> data, CancellationToken cancel)
+    {
+        Buffer = NabuLib.Replace(Buffer, offset, data).ToArray();
+        return Task.CompletedTask;
     }
 
     public Task<int> Seek(int offset, FileSeekFlags flags, CancellationToken cancel)
@@ -135,4 +130,7 @@ public class RetroNetMemoryHandle : NabuService, IRetroNetFileHandle
         };
         return Task.FromResult(Position);
     }
+
+    public Task<int> Size(CancellationToken cancel)
+                        => Task.FromResult(Buffer.Length);
 }

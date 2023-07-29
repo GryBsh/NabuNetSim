@@ -24,7 +24,14 @@
                 </Div>
                 <Small TextAlignment="TextAlignment.End">
                     <Div>@context.Version</Div>
-                    <Div>by @context.Author</Div>
+                    @if (!string.IsNullOrWhiteSpace(context.Url))
+                    {
+                        <Div>by <a href="@context.Url" target="_blank">@context.Author</a></Div>
+                    }
+                    else
+                    {
+                        <Div>by @context.Author</Div>
+                    }
                 </Small>
             </Div>
             <Paragraph Margin="Margin.Is1.FromBottom">

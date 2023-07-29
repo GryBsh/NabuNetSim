@@ -1,6 +1,7 @@
 ﻿using Nabu.Messages;
 using Nabu.Services;
 using System.Reactive.Linq;
+using YamlDotNet.Serialization;
 
 namespace Nabu.Network;
 
@@ -17,7 +18,7 @@ public class ClassicNabuProtocol : Protocol
         Adaptor = new NullAdaptorSettings();
     }
 
-    public short Channel { get; set; }
+    public ushort Channel { get; set; }
     public bool ChannelKnown => Channel is > 0 and < 0x100;
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     public override byte Version => 0x84;
@@ -26,28 +27,28 @@ public class ClassicNabuProtocol : Protocol
 
     #region NabuNet Responses
 
-    private void Ack() => Send(Message.ACK);
+    private void Ack() => Write(Message.ACK);
 
     private void Authorized()
     {
-        Send(ServiceStatus.Authorized);               //Prolog
-        Recv(Message.ACK);
+        Write(ServiceStatus.Authorized);               //Prolog
+        Read(Message.ACK);
     }
 
-    private void Confirmed() => Send(StateMessage.Confirmed);
+    private void Confirmed() => Write(StateMessage.Confirmed);
 
-    private void Finished() => Send(Message.Finished);
+    private void Finished() => Write(Message.Finished);
 
     private void StatusResult(byte value)
     {
-        Send(value);
+        Write(value);
         Finished();
     }
 
     private void Unauthorized()
     {
-        Send(ServiceStatus.Unauthorized);
-        Recv(Message.ACK);
+        Write(ServiceStatus.Unauthorized);
+        Read(Message.ACK);
     }
 
     //Epilog
@@ -61,7 +62,7 @@ public class ClassicNabuProtocol : Protocol
     /// </summary>
     private void ChannelChange()
     {
-        short data = NabuLib.ToShort(Recv(2));
+        ushort data = NabuLib.ToUShort(Read(2));
         if (data is > 0 and < 0x100)
         {
             Channel = data;
@@ -80,7 +81,7 @@ public class ClassicNabuProtocol : Protocol
     /// </summary>
     private void GetStatus()
     {
-        short data = NabuLib.ToShort(Recv(1));
+        ushort data = NabuLib.ToUShort(Read(1));
 
         switch (data)
         {
@@ -123,8 +124,8 @@ public class ClassicNabuProtocol : Protocol
     /// <returns>A Task to await fetching the program image from disk/http</returns>
     private async Task SegmentRequest()
     {
-        short segment = Recv();
-        int pak = NabuLib.ToInt(Recv(3));
+        short segment = Read();
+        int pak = NabuLib.ToInt(Read(3));
 
         // Anything packet except the time packet...
         if (pak is not Message.TimePak && Started is null)
@@ -173,7 +174,7 @@ public class ClassicNabuProtocol : Protocol
 
     private void SetStatus()
     {
-        byte[] status = Recv(2);
+        byte[] status = Read(2);
         switch (status[0])
         {
             case Status.None:
@@ -232,7 +233,7 @@ public class ClassicNabuProtocol : Protocol
         var output = EscapeBytes(buffer);
         Debug($"NA: Sending Packet, {buffer.Length} bytes");
 
-        Send(output.ToArray());
+        Write(output.ToArray());
         Finished();        //Epilog
 
         if (last)
@@ -246,6 +247,13 @@ public class ClassicNabuProtocol : Protocol
             //NabuLib.EndSafeNoGC();
             TransferRate(Started.Value, finished, totalLength);
             Started = null;
+            if (Adaptor.ReturnToProgram is not null)
+            {
+                Adaptor.Source = Adaptor.ReturnToSource!;
+                Adaptor.Program = Adaptor.ReturnToProgram;
+                Adaptor.ReturnToSource = null;
+                Adaptor.ReturnToProgram = null;
+            }
         }
     }
 

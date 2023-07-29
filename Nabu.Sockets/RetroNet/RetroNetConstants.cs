@@ -46,4 +46,7 @@ public static class RetroNetCommands
 
     public const byte Printer = 0xDA;
     public const byte PunchOut = 0xDB;
+
+    public const byte BuildDrive = 0xDE;
+    public const byte ExpandDrive = 0xDF;
 }

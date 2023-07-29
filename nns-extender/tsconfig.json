@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "outDir": "./bin",
+    "module": "ES6",
+    "target": "es6",
+    "lib": ["es6"],
+    "sourceMap": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}

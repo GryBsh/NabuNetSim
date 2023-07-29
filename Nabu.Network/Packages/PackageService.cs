@@ -60,8 +60,10 @@ namespace Nabu.Packages
                 EnableExploitLoader = package.FeatureEnabled(AdaptorFeatures.ExploitLoader),
                 EnableRetroNet = package.FeatureEnabled(AdaptorFeatures.RetroNet),
                 EnableRetroNetTCPServer = package.FeatureEnabled(AdaptorFeatures.RetroNetServer),
+                TCPServerPort = (int)package.Option<long>(PackageOptions.ServerPort),
                 Path = package.Path,
-                SourceType = SourceType.Package
+                SourceType = SourceType.Package,
+                SourcePackage = package.Id
             };
             return source;
         }
@@ -76,15 +78,20 @@ namespace Nabu.Packages
                 _ => pak.Path
             };
 
+            var headless = pak.Option<bool>(AdaptorFeatures.HeadlessMenu);
+
             var source = new ProgramSource()
             {
-                Name = pak.Name ?? pak.Path,
+                Name = pak.Name ?? Path.GetFileNameWithoutExtension(pak.Path),
                 EnableExploitLoader = pak.Option<bool>(AdaptorFeatures.ExploitLoader) || package.FeatureEnabled(AdaptorFeatures.ExploitLoader),
                 EnableRetroNet = pak.Option<bool>(AdaptorFeatures.RetroNet) || package.FeatureEnabled(AdaptorFeatures.RetroNet),
                 EnableRetroNetTCPServer = pak.Option<bool>(AdaptorFeatures.RetroNetServer) || package.FeatureEnabled(AdaptorFeatures.RetroNetServer),
+                HeadlessMenu = pak.Option<bool>(AdaptorFeatures.HeadlessMenu),
                 Path = path,
-                SourceType = isRemotePak ? SourceType.Remote : SourceType.Local
+                SourceType = isRemotePak ? SourceType.Remote : SourceType.Local,
+                SourcePackage = package.Id
             };
+
             return source;
         }
 

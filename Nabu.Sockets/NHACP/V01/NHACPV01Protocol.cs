@@ -8,9 +8,23 @@ namespace Nabu.Network.NHACP.V01;
 
 public partial class NHACPV01Protocol : Protocol
 {
-    private HttpClient HttpClient;
+    private ushort CurrentVersion = 0;
     private IFileCache FileCache;
-    private Dictionary<byte, NHACPV01Session> Sessions { get; }
+    private HttpClient HttpClient;
+    private NHACPOptions Options = NHACPOptions.None;
+
+    public NHACPV01Protocol(ILog<NHACPV01Protocol> logger, HttpClient http, IFileCache fileCache, Settings settings) : base(logger)
+    {
+        Sessions = new();
+        HttpClient = http;
+        FileCache = fileCache;
+        Settings = settings;
+    }
+
+    public override byte[] Commands => new byte[] { 0x8F };
+    public bool SendCRC { get; private set; }
+    public Settings Settings { get; }
+    public override byte Version { get; } = 0x01;
 
     private Dictionary<NHACPError, string> ErrorMessages { get; } = new()
     {
@@ -33,224 +47,16 @@ public partial class NHACPV01Protocol : Protocol
         [NHACPError.NotADirectory] = "Not a Directory"
     };
 
-    public NHACPV01Protocol(ILog<NHACPV01Protocol> logger, HttpClient http, IFileCache fileCache, Settings settings) : base(logger)
-    {
-        Sessions = new();
-        HttpClient = http;
-        FileCache = fileCache;
-        Settings = settings;
-    }
-
-    private byte NextIndex(byte sessionId)
-    {
-        for (int i = 0x00; i < 0xFF; i++)
-        {
-            if (Sessions[sessionId].TryGetValue((byte)i, out _)) continue;
-            return (byte)i;
-        }
-        return 0xFF;
-    }
-
-    private byte[] ErrorResult(byte sessionId, Exception ex, [CallerMemberName] string source = "Unknown", [CallerLineNumber] long line = 0)
-    {
-        string errorMessage(NHACPError error)
-            => $"{ErrorMessages[error]} at {source}:{line}";
-
-        var (code, error) = ex switch
-        {
-            FileNotFoundException => (NHACPError.NotFound, errorMessage(NHACPError.NotFound)),
-            UnauthorizedAccessException => (NHACPError.AccessDenied, errorMessage(NHACPError.AccessDenied)),
-            SecurityException => (NHACPError.AccessDenied, errorMessage(NHACPError.AccessDenied)),
-            IOException => (NHACPError.IOError, errorMessage(NHACPError.IOError)),
-            _ => (NHACPError.Undefined, errorMessage(NHACPError.Undefined))
-        };
-        Logger.WriteError(string.Empty, ex);
-        return ErrorResult(sessionId, code, string.IsNullOrWhiteSpace(ex.Message) ? error : ex.Message);
-    }
-
-    private byte[] ErrorResult(byte sessionId, NHACPError code, string error)
-    {
-        Sessions[sessionId].LastError = code;
-        Sessions[sessionId].LastErrorMessage = error;
-        Error($"{sessionId} Error: {code}: {error}");
-        return NHACPMessage.Error(code, error).ToArray();
-    }
-
-    private byte[] Hello(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, acp) = NabuLib.Slice(buffer, 1, 3, NabuLib.ToASCII);
-            (i, var version) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-            (i, var options) = NabuLib.Slice(buffer, i, 2, o => (NHACPOptions)NabuLib.ToShort(o));
-            Log($"Starting session: {sessionId} v{version}, Options: {options}");
-
-            var isMagic = acp is NHACPMessage.Magic;
-            var supportedVersion = NHACPMessage.SupportedVersions.Contains(version);
-            var validSessionId = sessionId is 0xFF or 0x00;
-            if (!isMagic || !supportedVersion || !validSessionId)
-            {
-                Error("Invalid Start Request");
-                return ErrorResult(sessionId, NHACPError.InvalidRequest, "Open request is invalid");
-            }
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-
-        if (Sessions.TryGetValue(sessionId, out var session))
-        {
-            try { session.Dispose(); } catch { }
-        }
-
-        Sessions[sessionId] = new();
-
-        SendCRC = Options.HasFlag(NHACPOptions.CRC8);
-        Log("Started");
-        return NHACPMessage.NHACPStarted(sessionId, CurrentVersion, Emulator.Id).ToArray();
-    }
-
-    public async Task<byte[]> StorageOpen(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, index)  = NabuLib.Pop(buffer, 1);
-            (i, var flags)  = NabuLib.Slice(buffer, i, 2, o => (OpenFlags)NabuLib.ToShort(o));
-            (i, var length) = NabuLib.Pop(buffer, i);
-            (i, var uri)    = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
-            if (index is 0xFF) index = NextIndex(sessionId);
-
-            Log($"{sessionId} Open: {index}, Flags: {flags}, Uri: {uri} ({length} bytes)");
-
-            var (isSymLink, path) = uri switch
-            {
-                _ when NabuLib.IsHttp(uri) => (false, NabuLib.Uri(Adaptor, uri)),
-                _ when Memory().IsMatch(uri) => (false, NabuLib.Uri(Adaptor, uri)),
-                _ => NabuLib.PathInfo(Adaptor, uri)
-            };
-
-            Sessions[sessionId][index] = path switch
-            {
-                _ when NabuLib.IsHttp(path)
-                            => new HttpStorageHandler(Logger, Adaptor, HttpClient, FileCache, Settings),
-                _ when path.StartsWith("0x")
-                            => new RAMStorageHandler(Logger, Adaptor),
-                _ => new FileStorageHandler(Logger, Adaptor, isSymLink, uri)
-            };
-
-            var (success, error, size, code) = await Sessions[sessionId][index].Open(flags, path);
-
-            if (success) return NHACPMessage.StorageLoaded(index, size).ToArray();
-            return ErrorResult(sessionId, code, error);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
-
-    public async Task<byte[]> StorageGet(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var offset) = NabuLib.Pop(buffer, i);
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-
-            Log($"{sessionId} GET: {index}, Offset: {offset}, Length: {length}");
-            if (!Sessions[sessionId].ContainsKey(index))
-            {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
-            }
-            var (success, error, data, code) = await Sessions[sessionId][index].Get(offset, length, true);
-
-            if (success) return NHACPMessage.Buffer(data).ToArray();
-            return ErrorResult(sessionId, code, error);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
-
-    public async Task<byte[]> StoragePut(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var offset) = NabuLib.Pop(buffer, i);
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-            (i, var data) = NabuLib.Slice(buffer, i, length);
-
-            Log($"{sessionId} PUT: {index}, Offset: {offset}, Length: {length}");
-            if (!Sessions[sessionId].TryGetValue(index, out var session))
-            {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
-            }
-            var (success, error, code) = await session.Put(offset, data);
-
-            if (success) return NHACPMessage.OK().ToArray();
-
-            return ErrorResult(sessionId, code, error);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
+    private Dictionary<byte, NHACPV01Session> Sessions { get; }
 
     public static Memory<byte> StorageDateTime(byte[]? none)
         => NHACPStructure.DateTime(DateTime.Now);
-
-    public byte[] StorageClose(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (_, index) = NabuLib.Pop(buffer, 1);
-            if (Sessions[sessionId].TryGetValue(index, out var session))
-            {
-                Log($"{sessionId} CLOSE: {index}");
-                session.Close();
-            }
-            else
-            {
-                Warning($"{sessionId} CLOSE: {index}: Not Open");
-            }
-
-            return Array.Empty<byte>();
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
 
     public byte[] ErrorDetails(byte sessionId, Memory<byte> buffer)
     {
         try
         {
-            var (i, code) = NabuLib.Slice(buffer, 1, 2, c => (NHACPError)NabuLib.ToShort(c));
+            var (i, code) = NabuLib.Slice(buffer, 1, 2, c => (NHACPError)NabuLib.ToUShort(c));
             (i, var maxLength) = NabuLib.Pop(buffer, i);
             Log($"{sessionId} ErrDetail: Code: {code}, MaxLength: {maxLength}");
 
@@ -269,48 +75,19 @@ public partial class NHACPV01Protocol : Protocol
         }
     }
 
-    public async Task<byte[]> StorageGetBlock(byte sessionId, Memory<byte> buffer)
+    public byte[] FileGetInfo(byte sessionId, Memory<byte> buffer)
     {
         try
         {
             var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var block) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-            Log($"{sessionId} BGET: {index}, Block: {block}, Length: {length}, Offset: {block * length}");
+            Log($"{sessionId} INFO: {index}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
                 return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
             }
-            var (success, error, data, code) = await Sessions[sessionId][index].Get(block * length, length);
-            if (success) return NHACPMessage.Buffer(data).ToArray();
-            return ErrorResult(sessionId, code, error);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
 
-    public async Task<byte[]> StoragePutBlock(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var block) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-            (i, var data) = NabuLib.Slice(buffer, i, length);
-            Log($"{sessionId} BPUT: {index}, Block: {block}, Length: {length}");
-            if (!Sessions[sessionId].ContainsKey(index))
-            {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
-            }
-            var (success, error, code) = await Sessions[sessionId][index].Put(block * length, data);
-
-            if (success) return NHACPMessage.OK().ToArray();
+            var (success, path, error, code) = Sessions[sessionId][index].Info();
+            if (success) return NHACPStructure.FileInfo(path).ToArray();
             return ErrorResult(sessionId, code, error);
         }
         catch (IndexOutOfRangeException)
@@ -328,8 +105,8 @@ public partial class NHACPV01Protocol : Protocol
         try
         {
             var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var flags) = NabuLib.Slice(buffer, i, 2, f => (StorageFlags)NabuLib.ToShort(f));
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
+            (i, var flags) = NabuLib.Slice(buffer, i, 2, f => (StorageFlags)NabuLib.ToUShort(f));
+            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
             Log($"{sessionId} READ: {index}, Flags: {flags}, Length: {length}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
@@ -358,38 +135,6 @@ public partial class NHACPV01Protocol : Protocol
         }
     }
 
-    public async Task<byte[]> FileWrite(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var flags) = NabuLib.Slice(buffer, i, 2, f => (StorageFlags)NabuLib.ToShort(f));
-            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
-            (i, var data) = NabuLib.Slice(buffer, i, length);
-            Log($"{sessionId} WRITE: {index}, Flags: {flags}, Length: {length}");
-            if (!Sessions[sessionId].ContainsKey(index))
-            {
-                return ErrorResult(
-                    sessionId,
-                    NHACPError.BadDescriptor,
-                    ErrorMessages[NHACPError.BadDescriptor]
-                );
-            }
-            var (success, error, code) = await Sessions[sessionId][index].Write(data);
-            if (success) return NHACPMessage.OK().ToArray();
-
-            return ErrorResult(sessionId, code, error);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
-
     public byte[] FileSeek(byte sessionId, Memory<byte> buffer)
     {
         try
@@ -405,31 +150,6 @@ public partial class NHACPV01Protocol : Protocol
             var (success, pos, error, code) = Sessions[sessionId][index].Seek(offset, origin);
             if (success) return NHACPMessage.Int(pos).ToArray();
 
-            return ErrorResult(sessionId, code, error);
-        }
-        catch (IndexOutOfRangeException)
-        {
-            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
-        }
-        catch (Exception ex)
-        {
-            return ErrorResult(sessionId, ex);
-        }
-    }
-
-    public byte[] FileGetInfo(byte sessionId, Memory<byte> buffer)
-    {
-        try
-        {
-            var (i, index) = NabuLib.Pop(buffer, 1);
-            Log($"{sessionId} INFO: {index}");
-            if (!Sessions[sessionId].ContainsKey(index))
-            {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
-            }
-
-            var (success, path, error, code) = Sessions[sessionId][index].Info();
-            if (success) return NHACPStructure.FileInfo(path).ToArray();
             return ErrorResult(sessionId, code, error);
         }
         catch (IndexOutOfRangeException)
@@ -467,19 +187,24 @@ public partial class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] ListDir(byte sessionId, Memory<byte> buffer)
+    public async Task<byte[]> FileWrite(byte sessionId, Memory<byte> buffer)
     {
         try
         {
             var (i, index) = NabuLib.Pop(buffer, 1);
-            (i, var length) = NabuLib.Pop(buffer, i);
-            (i, var pattern) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
-            Log($"{sessionId} LIST: {index}, Pattern: {pattern}");
+            (i, var flags) = NabuLib.Slice(buffer, i, 2, f => (StorageFlags)NabuLib.ToUShort(f));
+            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+            (i, var data) = NabuLib.Slice(buffer, i, length);
+            Log($"{sessionId} WRITE: {index}, Flags: {flags}, Length: {length}");
             if (!Sessions[sessionId].ContainsKey(index))
             {
-                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+                return ErrorResult(
+                    sessionId,
+                    NHACPError.BadDescriptor,
+                    ErrorMessages[NHACPError.BadDescriptor]
+                );
             }
-            var (success, error, code) = Sessions[sessionId][index].ListDir(pattern);
+            var (success, error, code) = await Sessions[sessionId][index].Write(data);
             if (success) return NHACPMessage.OK().ToArray();
 
             return ErrorResult(sessionId, code, error);
@@ -523,11 +248,75 @@ public partial class NHACPV01Protocol : Protocol
         }
     }
 
+    public byte[] Goodbye(byte sessionId)
+    {
+        if (Sessions.TryGetValue(sessionId, out NHACPV01Session? value))
+        {
+            value?.Dispose();
+            Sessions.Remove(sessionId);
+        }
+        return Array.Empty<byte>();
+    }
+
+    public byte[] ListDir(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, index) = NabuLib.Pop(buffer, 1);
+            (i, var length) = NabuLib.Pop(buffer, i);
+            (i, var pattern) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
+            Log($"{sessionId} LIST: {index}, Pattern: {pattern}");
+            if (!Sessions[sessionId].ContainsKey(index))
+            {
+                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+            }
+            var (success, error, code) = Sessions[sessionId][index].ListDir(pattern);
+            if (success) return NHACPMessage.OK().ToArray();
+
+            return ErrorResult(sessionId, code, error);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+    }
+
+    public byte[] MakeDir(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, length) = NabuLib.Slice(buffer, 0, 2, NabuLib.ToUShort);
+            (i, var uri) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
+            uri = NabuLib.FilePath(Adaptor, uri);
+            try
+            {
+                Directory.CreateDirectory(uri);
+                return NHACPMessage.OK().ToArray();
+            }
+            catch (Exception ex)
+            {
+                return ErrorResult(sessionId, ex);
+            }
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+    }
+
     public byte[] Remove(byte sessionId, Memory<byte> buffer)
     {
         try
         {
-            var (i, flags) = NabuLib.Slice(buffer, 1, 2, f => (RemoveFlags)NabuLib.ToShort(f));
+            var (i, flags) = NabuLib.Slice(buffer, 1, 2, f => (RemoveFlags)NabuLib.ToUShort(f));
             (i, var length) = NabuLib.Pop(buffer, i);
             (i, var url) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
 
@@ -568,9 +357,9 @@ public partial class NHACPV01Protocol : Protocol
     {
         try
         {
-            var (i, length) = NabuLib.Slice(buffer, 1, 2, NabuLib.ToShort);
+            var (i, length) = NabuLib.Slice(buffer, 1, 2, NabuLib.ToUShort);
             (i, var oldUrl) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
-            (i, length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToShort);
+            (i, length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
             (i, var newUrl) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
 
             oldUrl = NabuLib.FilePath(Adaptor, oldUrl);
@@ -603,22 +392,31 @@ public partial class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] MakeDir(byte sessionId, Memory<byte> buffer)
+    public override void Reset()
+    {
+        foreach (var session in Sessions.Values)
+        {
+            session.Dispose();
+        }
+        Sessions.Clear();
+    }
+
+    public byte[] StorageClose(byte sessionId, Memory<byte> buffer)
     {
         try
         {
-            var (i, length) = NabuLib.Slice(buffer, 0, 2, NabuLib.ToShort);
-            (i, var uri) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
-            uri = NabuLib.FilePath(Adaptor, uri);
-            try
+            var (_, index) = NabuLib.Pop(buffer, 1);
+            if (Sessions[sessionId].TryGetValue(index, out var session))
             {
-                Directory.CreateDirectory(uri);
-                return NHACPMessage.OK().ToArray();
+                Log($"{sessionId} CLOSE: {index}");
+                session.Close();
             }
-            catch (Exception ex)
+            else
             {
-                return ErrorResult(sessionId, ex);
+                Warning($"{sessionId} CLOSE: {index}: Not Open");
             }
+
+            return Array.Empty<byte>();
         }
         catch (IndexOutOfRangeException)
         {
@@ -630,28 +428,164 @@ public partial class NHACPV01Protocol : Protocol
         }
     }
 
-    public byte[] Goodbye(byte sessionId)
+    public async Task<byte[]> StorageGet(byte sessionId, Memory<byte> buffer)
     {
-        if (Sessions.TryGetValue(sessionId, out NHACPV01Session? value))
+        try
         {
-            value?.Dispose();
-            Sessions.Remove(sessionId);
+            var (i, index) = NabuLib.Pop(buffer, 1);
+            (i, var offset) = NabuLib.Pop(buffer, i);
+            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+
+            Log($"{sessionId} GET: {index}, Offset: {offset}, Length: {length}");
+            if (!Sessions[sessionId].ContainsKey(index))
+            {
+                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+            }
+            var (success, error, data, code) = await Sessions[sessionId][index].Get(offset, length, true);
+
+            if (success) return NHACPMessage.Buffer(data).ToArray();
+            return ErrorResult(sessionId, code, error);
         }
-        return Array.Empty<byte>();
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
     }
 
-    public override byte Version { get; } = 0x01;
-    public override byte[] Commands => new byte[] { 0x8F };
+    public async Task<byte[]> StorageGetBlock(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, index) = NabuLib.Pop(buffer, 1);
+            (i, var block) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
+            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+            Log($"{sessionId} BGET: {index}, Block: {block}, Length: {length}, Offset: {block * length}");
+            if (!Sessions[sessionId].ContainsKey(index))
+            {
+                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+            }
+            var (success, error, data, code) = await Sessions[sessionId][index].Get(block * length, length);
+            if (success) return NHACPMessage.Buffer(data).ToArray();
+            return ErrorResult(sessionId, code, error);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+    }
 
-    private NHACPOptions Options = NHACPOptions.None;
-    private short CurrentVersion = 0;
+    public async Task<byte[]> StorageOpen(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, index) = NabuLib.Pop(buffer, 1);
+            (i, var flags) = NabuLib.Slice(buffer, i, 2, o => (OpenFlags)NabuLib.ToUShort(o));
+            (i, var length) = NabuLib.Pop(buffer, i);
+            (i, var uri) = NabuLib.Slice(buffer, i, length, NHACPStructure.String);
+            if (index is 0xFF) index = NextIndex(sessionId);
 
-    public bool SendCRC { get; private set; }
-    public Settings Settings { get; }
+            Log($"{sessionId} Open: {index}, Flags: {flags}, Uri: {uri} ({length} bytes)");
+
+            var (isSymLink, path) = uri switch
+            {
+                _ when NabuLib.IsHttp(uri) => (false, NabuLib.Uri(Adaptor, uri)),
+                _ when Memory().IsMatch(uri) => (false, NabuLib.Uri(Adaptor, uri)),
+                _ => NabuLib.PathInfo(Adaptor, uri)
+            };
+
+            Sessions[sessionId][index] = path switch
+            {
+                _ when NabuLib.IsHttp(path)
+                            => new HttpStorageHandler(Logger, Adaptor, HttpClient, FileCache, Settings),
+                _ when path.StartsWith("0x")
+                            => new RAMStorageHandler(Logger, Adaptor),
+                _ => new FileStorageHandler(Logger, Adaptor, isSymLink, uri)
+            };
+
+            var (success, error, size, code) = await Sessions[sessionId][index].Open(flags, path);
+
+            if (success) return NHACPMessage.StorageLoaded(index, size).ToArray();
+            return ErrorResult(sessionId, code, error);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+    }
+
+    public async Task<byte[]> StoragePut(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, index) = NabuLib.Pop(buffer, 1);
+            (i, var offset) = NabuLib.Pop(buffer, i);
+            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+            (i, var data) = NabuLib.Slice(buffer, i, length);
+
+            Log($"{sessionId} PUT: {index}, Offset: {offset}, Length: {length}");
+            if (!Sessions[sessionId].TryGetValue(index, out var session))
+            {
+                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+            }
+            var (success, error, code) = await session.Put(offset, data);
+
+            if (success) return NHACPMessage.OK().ToArray();
+
+            return ErrorResult(sessionId, code, error);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+    }
+
+    public async Task<byte[]> StoragePutBlock(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, index) = NabuLib.Pop(buffer, 1);
+            (i, var block) = NabuLib.Slice(buffer, i, 4, NabuLib.ToInt);
+            (i, var length) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+            (i, var data) = NabuLib.Slice(buffer, i, length);
+            Log($"{sessionId} BPUT: {index}, Block: {block}, Length: {length}");
+            if (!Sessions[sessionId].ContainsKey(index))
+            {
+                return ErrorResult(sessionId, NHACPError.BadDescriptor, ErrorMessages[NHACPError.BadDescriptor]);
+            }
+            var (success, error, code) = await Sessions[sessionId][index].Put(block * length, data);
+
+            if (success) return NHACPMessage.OK().ToArray();
+            return ErrorResult(sessionId, code, error);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+    }
 
     protected override async Task Handle(byte unhandled, CancellationToken cancel)
     {
-        var sessionId = Recv();
+        var sessionId = Read();
         var (_, buffer) = ReadFrame();
         var (_, command) = NabuLib.Pop(buffer, 0);
 
@@ -691,16 +625,7 @@ public partial class NHACPV01Protocol : Protocol
             result = newResult;
         }
 
-        SendFramed(result.ToArray());
-    }
-
-    public override void Reset()
-    {
-        foreach (var session in Sessions.Values)
-        {
-            session.Dispose();
-        }
-        Sessions.Clear();
+        WriteFrame(result.ToArray());
     }
 
     [GeneratedRegex("ftp://.*")]
@@ -708,4 +633,78 @@ public partial class NHACPV01Protocol : Protocol
 
     [GeneratedRegex("0xd*")]
     private static partial Regex Memory();
+
+    private byte[] ErrorResult(byte sessionId, Exception ex, [CallerMemberName] string source = "Unknown", [CallerLineNumber] long line = 0)
+    {
+        string errorMessage(NHACPError error)
+            => $"{ErrorMessages[error]} at {source}:{line}";
+
+        var (code, error) = ex switch
+        {
+            FileNotFoundException => (NHACPError.NotFound, errorMessage(NHACPError.NotFound)),
+            UnauthorizedAccessException => (NHACPError.AccessDenied, errorMessage(NHACPError.AccessDenied)),
+            SecurityException => (NHACPError.AccessDenied, errorMessage(NHACPError.AccessDenied)),
+            IOException => (NHACPError.IOError, errorMessage(NHACPError.IOError)),
+            _ => (NHACPError.Undefined, errorMessage(NHACPError.Undefined))
+        };
+        Logger.WriteError(string.Empty, ex);
+        return ErrorResult(sessionId, code, string.IsNullOrWhiteSpace(ex.Message) ? error : ex.Message);
+    }
+
+    private byte[] ErrorResult(byte sessionId, NHACPError code, string error)
+    {
+        Sessions[sessionId].LastError = code;
+        Sessions[sessionId].LastErrorMessage = error;
+        Error($"{sessionId} Error: {code}: {error}");
+        return NHACPMessage.Error(code, error).ToArray();
+    }
+
+    private byte[] Hello(byte sessionId, Memory<byte> buffer)
+    {
+        try
+        {
+            var (i, acp) = NabuLib.Slice(buffer, 1, 3, NabuLib.ToASCII);
+            (i, var version) = NabuLib.Slice(buffer, i, 2, NabuLib.ToUShort);
+            (i, var options) = NabuLib.Slice(buffer, i, 2, o => (NHACPOptions)NabuLib.ToUShort(o));
+            Log($"Starting session: {sessionId} v{version}, Options: {options}");
+
+            var isMagic = acp is NHACPMessage.Magic;
+            var supportedVersion = NHACPMessage.SupportedVersions.Contains(version);
+            var validSessionId = sessionId is 0xFF or 0x00;
+            if (!isMagic || !supportedVersion || !validSessionId)
+            {
+                Error("Invalid Start Request");
+                return ErrorResult(sessionId, NHACPError.InvalidRequest, "Open request is invalid");
+            }
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return ErrorResult(sessionId, NHACPError.InvalidRequest, ErrorMessages[NHACPError.InvalidRequest]);
+        }
+        catch (Exception ex)
+        {
+            return ErrorResult(sessionId, ex);
+        }
+
+        if (Sessions.TryGetValue(sessionId, out var session))
+        {
+            try { session.Dispose(); } catch { }
+        }
+
+        Sessions[sessionId] = new();
+
+        SendCRC = Options.HasFlag(NHACPOptions.CRC8);
+        Log("Started");
+        return NHACPMessage.NHACPStarted(sessionId, CurrentVersion, Emulator.Id).ToArray();
+    }
+
+    private byte NextIndex(byte sessionId)
+    {
+        for (int i = 0x00; i < 0xFF; i++)
+        {
+            if (Sessions[sessionId].TryGetValue((byte)i, out _)) continue;
+            return (byte)i;
+        }
+        return 0xFF;
+    }
 }

@@ -2,78 +2,62 @@
 using Nabu.Services;
 using ReactiveUI;
 using System.Diagnostics;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
 
-namespace Nabu.NetSim.UI.ViewModels
+namespace Nabu.NetSim.UI.ViewModels;
+
+public class AdaptorViewModel : ReactiveObject, IActivatableViewModel
 {
-    public class AdaptorViewModel : ReactiveObject
+    public AdaptorViewModel(HomeViewModel home, AdaptorSettingsViewModel menu, Settings settings, ProcessService process, ISimulation simulation)
     {
-        public AdaptorViewModel(HomeViewModel home, AdaptorSettingsViewModel menu, Settings settings, ProcessService process, ISimulation simulation)
+        Home = home;
+        Menu = menu;
+        Settings = settings;
+        Process = process;
+        Simulation = simulation;
+        this.WhenActivated(disposables =>
         {
-            Home = home;
-            Menu = menu;
-            Settings = settings;
-            Process = process;
-            Simulation = simulation;
-        }
+            Observable.Interval(TimeSpan.FromSeconds(10))
+               .Subscribe(_ =>
+               {
+                   this.RaisePropertyChanged("AdaptorStatus");
+               }).DisposeWith(disposables);
+        });
+    }
 
-        public HomeViewModel Home { get; }
-        public AdaptorSettingsViewModel Menu { get; }
-        public ProcessService Process { get; }
-        public Settings Settings { get; }
-        public ISimulation Simulation { get; }
-        private CancellationToken? EmulatorProcess { get; set; }
+    public ViewModelActivator Activator { get; } = new();
+    public HomeViewModel Home { get; }
+    public AdaptorSettingsViewModel Menu { get; }
+    public ProcessService Process { get; }
+    public Settings Settings { get; }
+    public ISimulation Simulation { get; }
 
-        public string AdaptorButtonText(AdaptorSettings settings)
+    public string AdaptorButtonText(AdaptorSettings settings)
+    {
+        return settings.State switch
         {
-            return settings.State switch
-            {
-                ServiceShould.Run => "Stop Adaptor",
-                _ => "Start Adaptor"
-            };
-        }
+            ServiceShould.Run => "Stop Adaptor",
+            _ => "Start Adaptor"
+        };
+    }
 
-        public string AdaptorStatus(AdaptorSettings settings)
+    public string AdaptorStatus(AdaptorSettings settings)
+    {
+        return settings.State switch
         {
-            return settings.State switch
-            {
-                ServiceShould.Run => "Running",
-                ServiceShould.Restart => "Stopping",
-                ServiceShould.Stop => "Stopped",
-                _ => "Unknown"
-            };
-        }
+            ServiceShould.Run => "Running",
+            ServiceShould.Restart => "Stopping",
+            ServiceShould.Stop => "Stopped",
+            _ => "Unknown"
+        };
+    }
 
-        public bool RunAvailable(AdaptorSettings context)
-            => ShouldRun(context) &&
-                context.Running &&
-                (EmulatorProcess is null || EmulatorProcess.Value.IsCancellationRequested);
-
-        public void RunEmulator(AdaptorSettings context)
-        {
-            if (!RunAvailable(context))
-                return;
-
-            EmulatorProcess = Process.Start(Settings.EmulatorPath);
-        }
-
-        public Visibility RunVisibility(AdaptorSettings context)
-        {
-            return ShouldRun(context) ? Visibility.Visible : Visibility.Invisible;
-        }
-
-        public bool ShouldRun(AdaptorSettings context)
-        {
-            return (context is TCPAdaptorSettings t && !t.Connection && Settings.EmulatorPath != string.Empty);
-        }
-
-        public void ToggleAdaptor(AdaptorSettings settings)
-        {
-            if (settings is TCPAdaptorSettings connection && connection.Connection)
-                connection.ListenTask?.Cancel();
-            else
-                Simulation?.ToggleAdaptor(settings);
-
-            this.RaisePropertyChanged(nameof(RunAvailable));
-        }
+    public void ToggleAdaptor(AdaptorSettings settings)
+    {
+        if (settings is TCPAdaptorSettings connection && connection.Connection)
+            connection.ListenTask?.Cancel();
+        else
+            Simulation?.ToggleAdaptor(settings);
     }
 }

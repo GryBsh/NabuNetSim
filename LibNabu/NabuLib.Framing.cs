@@ -11,6 +11,26 @@ public static partial class NabuLib
         return Concat(header, Concat(buffer));
     }
 
+    public static int GetFreePort(int start, int? count = null)
+    {
+        count ??= IPEndPoint.MaxPort - start;
+        var usedPorts = GetOpenPorts();
+        int unusedPort = default;
+        unusedPort = Enumerable.Range(start, count.Value)
+                               .FirstOrDefault(port => !usedPorts.Contains(port));
+        return unusedPort;
+    }
+
+    public static IEnumerable<int> GetOpenPorts()
+    {
+        IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
+        IPEndPoint[] tcpEndPoints = properties.GetActiveTcpListeners();
+        return tcpEndPoints.Select(p => p.Port).ToArray();
+    }
+
+    public static bool IsPortFree(int port)
+        => !GetOpenPorts().Contains(port);
+
     public static Socket Socket(bool noDelay = true, int sBufferSize = 8, int rBufferSize = 8)
     {
         var socket =
@@ -26,24 +46,5 @@ public static partial class NabuLib
                 LingerState = new LingerOption(false, 0)
             };
         return socket;
-    }
-
-    public static IEnumerable<int> GetOpenPorts()
-    {
-        IPGlobalProperties properties = IPGlobalProperties.GetIPGlobalProperties();
-        IPEndPoint[] tcpEndPoints = properties.GetActiveTcpListeners();
-        return tcpEndPoints.Select(p => p.Port).ToArray();
-    }
-
-    public static bool IsPortFree(int port)
-        => !GetOpenPorts().Contains(port);
-
-    public static int GetFreePort(int start, int? count = null)
-    {
-        count ??= IPEndPoint.MaxPort - start;
-        var usedPorts = GetOpenPorts();
-        int unusedPort = 0;
-        unusedPort = Enumerable.Range(start, count.Value).Where(port => !usedPorts.Contains(port)).FirstOrDefault();
-        return unusedPort;
     }
 }

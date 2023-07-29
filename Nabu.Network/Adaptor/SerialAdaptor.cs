@@ -22,6 +22,7 @@ public class SerialAdaptor
         var logger = serviceProvider.GetRequiredService<ILog<SerialAdaptor>>();
         var storage = serviceProvider.GetRequiredService<StorageService>();
         var packages = serviceProvider.GetRequiredService<PackageService>();
+        var sources = serviceProvider.GetRequiredService<ISourceService>();
 
         var serial = new SerialPort(
             settings.Port,
@@ -56,9 +57,7 @@ public class SerialAdaptor
         while (serial.IsOpen is false)
             try
             {
-                //await packages.UpdateInstalled();
-                storage.UpdateStorageFromPackages(packages.Packages);
-                storage.AttachStorage(settings, name);
+                EmulatedAdaptor.InitializeAdaptor(settings, sources, storage, packages, name);
                 serial.Open();
             }
             catch (UnauthorizedAccessException)
