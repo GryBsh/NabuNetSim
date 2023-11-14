@@ -357,7 +357,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             }
             else if (checkLocal && source.SourceType is SourceType.Package)
             {
-                var package = installedPackages.FirstOrDefault(p => p.Name.Is(source.Name));
+                var package = installedPackages.FirstOrDefault(p => p.Name.LowerEquals(source.Name));
                 if (package is null ||
                     package.Manifest is null)
                     continue;

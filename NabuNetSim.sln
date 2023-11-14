@@ -35,6 +35,8 @@ Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "nns-extender", "nns-extende
 EndProject
 Project("{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}") = "nns-example-plugin", "nns-example-plugin\nns-example-plugin.njsproj", "{E7048418-CEA6-4A1E-913B-45147DE63159}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gry.Hrdwr", "Gry.Hrdwr\Gry.Hrdwr.csproj", "{1F881408-7FA4-4A76-A746-C07D7A5F83FD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -139,6 +141,14 @@ Global
 		{E7048418-CEA6-4A1E-913B-45147DE63159}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E7048418-CEA6-4A1E-913B-45147DE63159}.Release|x64.ActiveCfg = Release|Any CPU
 		{E7048418-CEA6-4A1E-913B-45147DE63159}.Release|x64.Build.0 = Release|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Debug|x64.Build.0 = Debug|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Release|x64.ActiveCfg = Release|Any CPU
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD}.Release|x64.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -156,6 +166,7 @@ Global
 		{DD0912BF-F626-4C5A-883A-B2D4DD9175E8} = {6A50525C-39E9-4C83-9949-4858C0F7AF98}
 		{E3A27BFB-2540-4624-9091-F06A3E625686} = {7AED876F-A2DF-4ADD-8B9D-DE454DA2BC3C}
 		{E7048418-CEA6-4A1E-913B-45147DE63159} = {7AED876F-A2DF-4ADD-8B9D-DE454DA2BC3C}
+		{1F881408-7FA4-4A76-A746-C07D7A5F83FD} = {F72C1E7E-CFE7-45C0-B257-52FE1B7C98DF}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {0265F3CF-27B3-4E12-A7F6-5633D5C81694}

@@ -23,6 +23,7 @@ public class ClassicNabuProtocol : Protocol
     public override byte[] Commands { get; } = new byte[] { 0x83 };
     public override byte Version => 0x84;
     private INabuNetwork Network { get; }
+
     //AdaptorSettings Settings { get; set; } = new NullAdaptorSettings();
 
     #region NabuNet Responses
@@ -198,19 +199,16 @@ public class ClassicNabuProtocol : Protocol
     #region NabuNet Packets
 
     /// <summary>
-    ///     Escapes the Escape bytes in the packet with Escape.
+    ///     Escapes the Escapes with Escape.
     /// </summary>
     private static IEnumerable<byte> EscapeBytes(Memory<byte> sequence)
     {
         foreach (byte b in sequence.ToArray())
         {
-            if (b == Message.Escape)
-            {
+            if (b is Message.Escape)
                 yield return Message.Escape;
-                yield return b;
-            }
-            else
-                yield return b;
+            
+            yield return b;
         }
     }
 
@@ -247,8 +245,10 @@ public class ClassicNabuProtocol : Protocol
             //NabuLib.EndSafeNoGC();
             TransferRate(Started.Value, finished, totalLength);
             Started = null;
-            if (Adaptor.ReturnToProgram is not null)
-            {
+            var source = Network.Source(Adaptor);
+            if (Adaptor.ReturnToProgram is not null &&
+                (pak is not 1 || source?.EnableExploitLoader is false)
+            ){
                 Adaptor.Source = Adaptor.ReturnToSource!;
                 Adaptor.Program = Adaptor.ReturnToProgram;
                 Adaptor.ReturnToSource = null;

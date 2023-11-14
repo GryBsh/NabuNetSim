@@ -78,7 +78,7 @@ public class PackageManager : IPackageManager
         if (Directory.Exists(destinationFolder))
         {
             //var (oldPath, package, _) = await Open(destinationFolder);
-            var package = Installed.FirstOrDefault(i => i.Id.Is(newPackage.Id));
+            var package = Installed.FirstOrDefault(i => i.Id.LowerEquals(newPackage.Id));
             if (package is null)
                 Directory.Delete(destinationFolder, true);
             else
@@ -179,7 +179,7 @@ public class PackageManager : IPackageManager
             Log.WriteWarning($"Uninstalling {PackageLogName(package)}  {package.Version}");
             Directory.Delete(path, true);
 
-            var installed = Installed.FirstOrDefault(i => i.Id.Is(package.Id));
+            var installed = Installed.FirstOrDefault(i => i.Id.LowerEquals(package.Id));
             if (installed != null)
             {
                 Installed.Remove(installed);
@@ -439,12 +439,12 @@ public class PackageManager : IPackageManager
             let versions = from v in new[] { p.Version, i.Version } orderby v descending select v
             let highest = versions.First()
             where p.Version == highest
-            where queued.Any(i => i.Is(p.Id)) is false
+            where queued.Any(i => i.LowerEquals(p.Id)) is false
             select p
         );
         result.AddRange(
             from p in SourcePackages
-            where installed.Any(i => i.Id.Is(p.Id)) is false
+            where installed.Any(i => i.Id.LowerEquals(p.Id)) is false
             select p
         );
 

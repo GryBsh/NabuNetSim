@@ -19,7 +19,7 @@ public abstract class NabuBase
 
     protected static string Format(byte byt) => NabuLib.Format(byt);
 
-    protected static string FormatSeparated(params byte[] bytes) => NabuLib.FormatSeperated(bytes);
+    protected static string FormatSeparated(params byte[] bytes) => NabuLib.FormatSeparated('|', bytes);
 
     protected static string FormatTriple(int triple) => NabuLib.FormatTriple(triple);
 

@@ -73,6 +73,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
                 logging
                     .ClearProviders()
                     .AddNLog("nlog.config")
+                    .AddSystemdConsole()
         );
 
         services.AddSingleton<INabuNetwork, NabuNetwork>();
@@ -92,9 +93,10 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         services.AddTransient<IProtocol, NHACPV01Protocol>();
         services.AddTransient<IProtocol, RetroNetProtocol>();
         services.AddTransient<IProtocol, HeadlessProtocol>();
+        services.AddTransient<IProtocol, MenuProtocol>();
 
         services.AddSingleton(typeof(ILog<>), typeof(ConsoleLog<>));
-        services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
+        //services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
 
         services.AddSingleton<ISimulation, Simulation>()
                 .AddHostedService<Simulation>();
@@ -207,6 +209,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
             ).AddBootstrap5Components()
             .AddBootstrap5Providers()
             .AddFontAwesomeIcons();
+
         var app = builder.Build();
         if (!app.Environment.IsDevelopment())
         {
@@ -234,6 +237,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         return WebServer(Settings, args);
     }
 
+    /*
     private int Spawn(string[] args)
     {
         var directory = Path.GetDirectoryName(GetType().Assembly.Location);
@@ -259,4 +263,5 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         }
         return -1;
     }
+    */
 }
