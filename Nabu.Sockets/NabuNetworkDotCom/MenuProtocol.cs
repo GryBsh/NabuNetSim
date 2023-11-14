@@ -137,10 +137,7 @@ public class MenuProtocol : Protocol
             _ => sourceMenu()
         };
 
-        //ushort size = (ushort)(1 + menuItems.Length);
-        //Write(NabuLib.FromUShort2(size));
-        //Write((byte)count);
-        //Write(menuItems);
+
         WriteFrame(
             (byte)count,
             menuItems
