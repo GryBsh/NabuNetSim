@@ -39,13 +39,13 @@ public class SourceService : ISourceService
     {
         lock (SourcesLock)
         {
-            return Sources.FirstOrDefault(s => s.Name.Is(name));
+            return Sources.FirstOrDefault(s => s.Name.LowerEquals(name));
         }
     }
 
     public void Refresh(ProgramSource source)
     {
-        RemoveAll(s => s.Name.Is(source.Name));
+        RemoveAll(s => s.Name.LowerEquals(source.Name));
         lock (SourcesLock)
         {
             Sources.Add(source);

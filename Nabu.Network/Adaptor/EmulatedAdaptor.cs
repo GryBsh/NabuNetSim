@@ -65,7 +65,7 @@ public class EmulatedAdaptor : NabuBase
                          select s).FirstOrDefault(),
                 _ => (from s in sources.All()
                       where s.SourcePackage is not null &&
-                          s.SourcePackage.Is(packageId)
+                          s.SourcePackage.LowerEquals(packageId)
                       where s.HeadlessMenu
                       select s).FirstOrDefault()
             };

@@ -23,19 +23,18 @@ public static partial class NabuLib
     }
 
     /// <summary>
-    ///     Creates a seperated String of bytes in X02 format
+    ///     Creates a separated String of bytes in X02 format
     /// </summary>
     /// <param name="bytes"></param>
     /// <returns></returns>
-    public static string FormatSeperated(params byte[] bytes)
+    public static string FormatSeparated(char separator, params byte[] bytes)
     {
         var parts = bytes.Select(b => Format(b)).ToArray();
-        return string.Join('|', parts);
+        return string.Join(separator, parts);
     }
 
     /// <summary>
     ///     Creates a String in X06 format from the given Int
-    ///     (3 hextets)
     /// </summary>
     /// <param name="bytes"></param>
     /// <returns></returns>
@@ -83,6 +82,14 @@ public static partial class NabuLib
         var buffer = new byte[2];
         buffer[0] = (byte)(number >> 0 & 0xFF);
         buffer[1] = (byte)(number >> 8 & 0xFF);
+        return buffer;
+    }
+
+    public static byte[] FromUShort2(ushort number)
+    {
+        var buffer = new byte[2];
+        buffer[0] = (byte)(number >> 8 & 0xFF);
+        buffer[1] = (byte)(number >> 0 & 0xFF);
         return buffer;
     }
 

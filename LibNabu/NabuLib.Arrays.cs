@@ -53,6 +53,13 @@ public static partial class NabuLib
         return (next, buffer.Span[0]);
     }
 
+    /// <summary>
+    ///    Replaces the bytes at the provided offset with the provided data
+    /// </summary>
+    /// <param name="buffer"></param>
+    /// <param name="offset"></param>
+    /// <param name="data"></param>
+    /// <returns></returns>
     public static Memory<byte> Replace(Memory<byte> buffer, int offset, Memory<byte> data)
     {
         var size = offset + data.Length;
@@ -72,14 +79,15 @@ public static partial class NabuLib
     /// <param name="items"></param>
     /// <param name="fill"></param>
     /// <returns></returns>
-    public static Memory<T> SetLength<T>(int length, Memory<T> items, T fill)
+    public static Memory<T> SetLength<T>(int length, Memory<T> items, T? fill = default)
     {
         if (items.Length == length) return items;
 
         var result = new Memory<T>(new T[length]);
         length = length > items.Length ? items.Length : length;
         items[..length].CopyTo(result);
-        result[length..].Span.Fill(fill);
+        if (fill is not null) 
+            result[length..].Span.Fill(fill);
         return result;
     }
 

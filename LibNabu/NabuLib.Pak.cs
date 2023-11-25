@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Nabu;
 
@@ -35,4 +36,12 @@ public static partial class NabuLib
         var data = cipher.CreateDecryptor().TransformFinalBlock(pakData.ToArray(), 0, pakData.Length);
         return data;
     }
+
+    public static bool IsPakFile(string fileName)
+    {
+        return PakFileName().IsMatch(fileName);
+    }
+
+    [GeneratedRegex(@"^[\d]{6}$", RegexOptions.IgnoreCase, "en-US")]
+    public static partial Regex PakFileName();
 }

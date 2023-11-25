@@ -53,7 +53,7 @@ public static partial class NabuLib
         return (int)new FileInfo(path).Length;
     }
 
-    public static bool Is(this string path1, string path2)
+    public static bool LowerEquals(this string path1, string path2)
     {
         return path1.ToLowerInvariant() == path2.ToLowerInvariant();
     }
@@ -82,7 +82,7 @@ public static partial class NabuLib
     }
 
     public static Func<T, bool> Match<T>(Func<T, string> value, string desired)
-                                => s => Is(value(s), desired);
+                                => s => LowerEquals(value(s), desired);
 
     public static (bool, string) PathInfo(AdaptorSettings settings, string filePath)
     {

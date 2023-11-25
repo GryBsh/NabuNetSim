@@ -26,6 +26,7 @@ using System.IO;
 using Nabu.Packages;
 using Nabu.JavaScript;
 using Nabu.Network.NabuNetworkCom;
+using Autofac.Core;
 
 namespace Nabu.NetSimWeb;
 
@@ -50,14 +51,12 @@ public class ServerStartSettings : CommandSettings
     //[CommandOption("-p|--new-process")]
     //public bool NewProcess { get; set; }
 
-    [CommandOption("-s|--headless")]
-    public bool NoUI { get; set; }
+    [CommandOption("-s|--noui")]
+    public bool NoUI { get; set; } = true;
 }
 
 public class ServerStart : AsyncCommand<ServerStartSettings>
 {
-    private const string HeadlessSource = "nns-bundle-nabunetworkcom";
-
     public ServerStart(Settings settings)
     {
         Settings = settings;
@@ -92,6 +91,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         services.AddTransient<IProtocol, NHACPV01Protocol>();
         services.AddTransient<IProtocol, RetroNetProtocol>();
         services.AddTransient<IProtocol, HeadlessProtocol>();
+        services.AddTransient<IProtocol, MenuProtocol>();
 
         services.AddSingleton(typeof(ILog<>), typeof(ConsoleLog<>));
         services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
@@ -99,11 +99,8 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         services.AddSingleton<ISimulation, Simulation>()
                 .AddHostedService<Simulation>();
 
-        settings.Sources.Insert(0, new ProgramSource
-        {
-            Name = "Local NABU Files",
-            Path = settings.LocalProgramPath
-        });
+
+        
 
         var factories = new IProtocolFactory[]
         {
@@ -132,23 +129,31 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         return services;
     }
 
-    public static async Task<int> Headless(Settings settings, string[] args)
+    static void AddStaticSources(Settings settings)
     {
-        var builder = Host.CreateDefaultBuilder(args);
-
-        if (settings.DisableHeadless is false)
+        settings.Sources.Insert(0, new ProgramSource
         {
-            foreach (var adaptor in settings.Adaptors.Serial.Concat<AdaptorSettings>(settings.Adaptors.TCP))
-            {
-                adaptor.Headless = true;
-                adaptor.HeadlessSource ??= HeadlessSource;
-            }
-        }
+            Name = "Local NABU Files",
+            Path = settings.LocalProgramPath
+        });
+        
+    }
 
-        await builder.ConfigureServices(
+    public static async Task<int> Headless(Settings settings, string[] args)
+    {       
+        await Host.CreateDefaultBuilder(args).ConfigureServices(
             (context, services) =>
             {
                 context.Configuration.Bind("Settings", settings);
+                if (settings.DisableHeadless is false)
+                {
+                    foreach (var adaptor in settings.Adaptors.Serial.Concat<AdaptorSettings>(settings.Adaptors.TCP))
+                    {
+                        adaptor.Headless = true;
+                        adaptor.HeadlessSource = settings.HeadlessSource;
+                    }
+                }
+                AddStaticSources(settings);
                 services.AddSingleton(settings);
                 AddNabu(services, settings);
             }
@@ -163,6 +168,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         var builder = WebApplication.CreateBuilder(args);
 
         builder.Configuration.Bind("Settings", settings);
+        AddStaticSources(settings);
         builder.Services.AddSingleton(settings);
         var services = builder.Services;
         AddNabu(services, settings);
@@ -207,6 +213,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
             ).AddBootstrap5Components()
             .AddBootstrap5Providers()
             .AddFontAwesomeIcons();
+
         var app = builder.Build();
         if (!app.Environment.IsDevelopment())
         {
@@ -226,6 +233,9 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
     public override async Task<int> ExecuteAsync(CommandContext context, ServerStartSettings settings)
     {
         var args = context.Remaining.Raw.ToArray();
+
+        
+
         //if (settings.NewProcess)
         //    return Spawn(args);
         //else
@@ -234,6 +244,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         return WebServer(Settings, args);
     }
 
+    /*
     private int Spawn(string[] args)
     {
         var directory = Path.GetDirectoryName(GetType().Assembly.Location);
@@ -259,4 +270,5 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         }
         return -1;
     }
+    */
 }

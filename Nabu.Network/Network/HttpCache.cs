@@ -116,7 +116,7 @@ public class HttpCache : DisposableBase, IHttpCache
 
         if (shouldDownload && found)
         {
-            Logger.Write($"Downloading {uri}");
+            Logger.WriteVerbose($"Downloading {uri}");
             var str = await Http.GetStringAsync(uri);
 
             Logger.WriteVerbose($"Writing {str.Length} characters to {name} in cache");
@@ -153,12 +153,12 @@ public class HttpCache : DisposableBase, IHttpCache
         var head = await GetHead(uri);
         if (!pathExists)
         {
-            if (!head.IsSuccessStatusCode)
+            if (head?.IsSuccessStatusCode is false)
             {
                 return new(false, false, false, DateTime.MinValue); //No download, not found, no local
             }
             var length = 0;
-            if (head.Headers.TryGetValues("Content-Length", out var lengths))
+            if (head?.Headers.TryGetValues("Content-Length", out var lengths) is true)
                 length = int.Parse(lengths.First());
 
             return new(true, true, false, DateTime.MinValue, length); //Download, Found, None
@@ -202,7 +202,7 @@ public class HttpCache : DisposableBase, IHttpCache
     {
         try
         {
-            Logger.Write($"Downloading {uri}");
+            Logger.WriteVerbose($"Downloading {uri}");
             var bytes = await Http.GetByteArrayAsync(uri);
             Logger.WriteVerbose($"Writing {bytes.Length} bytes to {name}");
             await Cache.CacheFile(path, bytes, true);

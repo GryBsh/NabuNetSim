@@ -63,3 +63,26 @@ export function source(handler: SourceHandler) {
         return [];
     return handler(_source_uri);
 }
+
+export function receiveMessage(adaptor: Adaptor, logger: Logger) {
+    logger.Write("Received Message");
+
+    const buffer = new Uint8Array([0x10,0x06]);
+    adaptor.Write(buffer);
+}
+
+export function sendMessage(adaptor: Adaptor, logger: Logger, buffer: ArrayBufferLike | ArrayLike<number>) {
+    logger.Write("Sending Message");
+    var message = new Uint8Array(buffer);
+    adaptor.Write(message);
+}
+
+export function readFrame(adaptor: Adaptor, logger: Logger): AdaptorFrame {
+    const length = adaptor.ReadShort();
+    const frame = adaptor.Read(length);
+    logger.Write(`Received Frame: ${length} bytes`);
+    return {
+        Length: length,
+        Data: frame
+    };
+}

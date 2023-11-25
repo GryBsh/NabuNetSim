@@ -23,7 +23,7 @@ public class AnsiLogger : DisposableBase, ILogger
         => default!;
 
     public bool IsEnabled(LogLevel logLevel)
-        => logLevel >= LogLevel.Information &&
+        => //logLevel >= LogLevel.Information &&
            (logLevel <= LogLevel.Information && (FullName.StartsWith("Microsoft") is false || FullName.StartsWith("Microsoft.Hosting") is true)) &&
            (logLevel <= LogLevel.Information && FullName.StartsWith("System.Net.Http") is false);
 

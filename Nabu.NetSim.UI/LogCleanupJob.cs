@@ -28,6 +28,14 @@ public class LogCleanupJob : Job
             repository.Delete(e => e.Timestamp < cutoff);
         }
 
+        var good = repository.SelectDescending(e => e.Timestamp, 0, Settings.MaxLogEntries).Select(e => e.Id);
+        if (good.Count() == Settings.MaxLogEntries)
+        {
+            var bad = repository.Select(e => !good.Contains(e.Id)).Select(e => e.Id);
+            Logger.Write($"Removing {bad.Count()} entries");
+            repository.Delete(e => bad.Contains(e.Id));
+        }
+
         //GC.Collect();
     }
 

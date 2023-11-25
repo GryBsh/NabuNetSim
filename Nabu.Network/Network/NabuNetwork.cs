@@ -43,7 +43,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
     public void BackgroundRefresh(RefreshType refresh)
     {
+        //Logger.Write("Refreshing Sources");
         RefreshSources(refresh);
+        
     }
 
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
@@ -357,7 +359,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             }
             else if (checkLocal && source.SourceType is SourceType.Package)
             {
-                var package = installedPackages.FirstOrDefault(p => p.Name.Is(source.Name));
+                var package = installedPackages.FirstOrDefault(p => p.Name.LowerEquals(source.Name));
                 if (package is null ||
                     package.Manifest is null)
                     continue;

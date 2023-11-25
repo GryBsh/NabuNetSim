@@ -10,12 +10,6 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 
 > This is a work in progress, and may contain bugs, issues, poor code, etc.
 
-**IF YOU ARE ON A VERSION BEFORE 0.9.8** 
-
- Many of the sources/settings previously in the config file have been moved to packages, and many settings are moved or removed. Drop in the default settings files, and then make your changes.
-
-**There is no longer any need to choose your version, the UI and headless versions are now the same executable.**
-
 ## Stand Out Features
 
 - > Supports multiple NABU adaptors, serial and TCP. You can use multiple serial adaptors and listen for clients on multiple ports at the same time if you so choose.
@@ -23,6 +17,7 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 - > Supports local file system NABU files and cycles, with the classic cycles included
 - > Supports feeds from NABUNetwork.com and Nabu.ca.
 - > Supports NHACP and Retronet, so it can run IshkurCPM and Cloud CPM.
+- > A Fancy NABU Launcher, which can launch programs right from your NABU!
 - > Deeply integrated offline caching of remote files/programs.
 - > Web UI for configuration, with news from NabuNetwork.com.
 - > Extensible protocol support, you can add your own protocol handlers in Python or Javascript.
@@ -49,8 +44,6 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 
 - > macOS ARM64 (Apple Silicon) builds were not signed, for the moment, please use the X64 build.
 - > While using the X64 build on macOS, the serial port may not work.
-- > RetroNet support is experimental.
-- > NHACP support is experimental.
 - > JavaScript support is experimental.
 - > I'm 100% sure there are more.
 
@@ -119,7 +112,7 @@ A PC can potentially serve hundreds.
     "PackageSources": [
       {
         "Name": "Benevolent Society of NABUligans",
-        "Path": "https://raw.githubusercontent.com/NABUligans/NAPA/main/repository/repo.json"
+        "Path": "https://raw.githubusercontent.com/NABUligans/NAPA/main/repository/1R/repo.json"
       }
     ]
   },

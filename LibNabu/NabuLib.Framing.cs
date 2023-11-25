@@ -6,7 +6,7 @@ namespace Nabu;
 
 public static partial class NabuLib
 {
-    public static Memory<byte> Frame(byte[] header, params Memory<byte>[] buffer)
+    public static Memory<byte> Frame(Memory<byte> header, params Memory<byte>[] buffer)
     {
         return Concat(header, Concat(buffer));
     }
