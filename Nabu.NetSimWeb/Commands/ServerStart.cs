@@ -72,7 +72,6 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
                 logging
                     .ClearProviders()
                     .AddNLog("nlog.config")
-                    .AddSystemdConsole()
         );
 
         services.AddSingleton<INabuNetwork, NabuNetwork>();
@@ -95,7 +94,7 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         services.AddTransient<IProtocol, MenuProtocol>();
 
         services.AddSingleton(typeof(ILog<>), typeof(ConsoleLog<>));
-        //services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
+        services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
 
         services.AddSingleton<ISimulation, Simulation>()
                 .AddHostedService<Simulation>();
