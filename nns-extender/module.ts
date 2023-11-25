@@ -67,7 +67,7 @@ export function source(handler: SourceHandler) {
 export function receiveMessage(adaptor: Adaptor, logger: Logger) {
     logger.Write("Received Message");
 
-    const buffer = new Uint8Array([z, z, z, z]);
+    const buffer = new Uint8Array([0x10,0x06]);
     adaptor.Write(buffer);
 }
 

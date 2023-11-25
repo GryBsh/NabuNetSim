@@ -246,7 +246,7 @@ public class ClassicNabuProtocol : Protocol
             TransferRate(Started.Value, finished, totalLength);
             Started = null;
             var source = Network.Source(Adaptor);
-            if (Adaptor.ReturnToProgram is not null &&
+            if (Adaptor.ReturnToSource is not null &&
                 (pak is not 1 || source?.EnableExploitLoader is false)
             ){
                 Adaptor.Source = Adaptor.ReturnToSource!;

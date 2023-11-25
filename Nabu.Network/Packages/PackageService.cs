@@ -35,7 +35,6 @@ namespace Nabu.Packages
             //Packages.PreservedPackages.Add("nns-bundle-nabuca");
             //Packages.PreservedPackages.Add("nns-bundle-nabunetworkcom");
             //Packages.PreservedPackages.Add("nns-bundle-productiondave-nabugames");
-
             Task.Run(async () =>
             {
                 await Packages.Refresh();
@@ -44,6 +43,7 @@ namespace Nabu.Packages
                               .Subscribe(_ => Packages.Refresh(true))
                 );
             });
+
         }
 
         public ILog<PackageService> Log { get; }
@@ -51,6 +51,12 @@ namespace Nabu.Packages
         public IPackageManager Packages { get; }
         private ConcurrentDictionary<string, DateTime> HasUpdated { get; set; } = new();
         private ISourceService Sources { get; }
+
+        public void Update()
+        {
+            
+     
+        }
 
         private static ProgramSource Source(SourcePackage package)
         {

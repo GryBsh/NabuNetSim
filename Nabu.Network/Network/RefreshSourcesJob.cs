@@ -15,7 +15,7 @@ public class RefreshSourcesJob : Job
     public override void Start()
     {
         Disposables.AddInterval(
-            TimeSpan.FromMinutes(1),
+            TimeSpan.FromSeconds(10),
             _ => {
                 Network.BackgroundRefresh(RefreshType.Local);
             }

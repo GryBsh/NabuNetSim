@@ -96,6 +96,7 @@ public class TCPAdaptor
             logger.Write($"TCP Client Connected from {socket.RemoteEndPoint}");
             try
             {
+                //logger.Write($"Source: {settings.Source}");
                 await adaptor.Listen(stopping);
             }
             catch (Exception ex)

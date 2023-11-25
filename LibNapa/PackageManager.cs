@@ -135,16 +135,17 @@ public class PackageManager : IPackageManager
 
     public async Task Refresh(bool silent = false, bool localOnly = false)
     {
-        if (!silent)
-            Log.Write("Refreshing Packages");
-
         if (RefreshLock.CurrentCount == 0)
             return;
+
+        if (!silent)
+            Log.Write("Refreshing Packages");
 
         await RefreshLock.WaitAsync();
         var installed = await UpdateInstalled();
         await UpdateAvailable(installed);
         RefreshLock.Release();
+
     }
 
     public Task Uninstall(string id)

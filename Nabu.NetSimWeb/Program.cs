@@ -14,15 +14,14 @@ AnsiConsole.Write(FiggleFonts.Rectangles.Render("NABU NetSim"));
 AnsiConsole.WriteLine($"v{Emulator.Version} (c) 2022-{DateTime.Now.Year} Nick Daniels");
 AnsiConsole.WriteLine();
 
-if (args.Length is 0)
-    return ServerStart.WebServer(settings, args);
+//if (args.Length is 0)
+//    return ServerStart.WebServer(settings, args);
 
 CancellationTokenSource CancelSource = new();
-var handlers = new BuiltInCommandHandler(CancelSource);
 
 var registrations = new ServiceCollection();
 
-ServerStart.AddNabu(registrations, settings);
+
 registrations.AddSingleton(settings);
 registrations.AddHttpClient();
 

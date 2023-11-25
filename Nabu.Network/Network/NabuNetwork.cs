@@ -43,7 +43,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
     public void BackgroundRefresh(RefreshType refresh)
     {
+        //Logger.Write("Refreshing Sources");
         RefreshSources(refresh);
+        
     }
 
     public IEnumerable<NabuProgram> Programs(AdaptorSettings settings)
