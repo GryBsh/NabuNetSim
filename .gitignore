@@ -17,8 +17,8 @@ Assets/Packaging
 Assets/**/extracted/
 Nabu.NetSimDesktop/
 **/*.db
+**/bin/packages
 SavedCode/
 **/node_modules
-**/packages
 nns-*/bin/*.js
 nns-*/bin/*.js.map
