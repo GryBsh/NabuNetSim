@@ -210,7 +210,7 @@ public class HttpCache : DisposableBase, IHttpCache
         }
         catch (Exception ex)
         {
-            Logger.WriteWarning(null, ex);
+            Logger.WriteWarning(string.Empty, ex);
             return Array.Empty<byte>();
         }
     }

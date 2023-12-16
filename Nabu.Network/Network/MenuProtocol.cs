@@ -169,7 +169,9 @@ public partial class MenuProtocol : Protocol
             var items = ProgramPage(programs, page);
 
             if (!items.Any())
-                items = new[] { new NabuProgram { DisplayName = "No Programs" } };
+            {
+                return (0, [], 0);
+            }
 
             var itemCount = programs.Where(IsNotPakFile).Count();
             var pages = itemCount == pageSize ? 1 : (int)Math.Floor((double)(itemCount / pageSize) + 1);
