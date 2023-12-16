@@ -22,3 +22,4 @@ SavedCode/
 **/node_modules
 nns-*/bin/*.js
 nns-*/bin/*.js.map
+Nabu.NetSimWeb/Files/**

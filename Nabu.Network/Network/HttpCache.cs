@@ -117,20 +117,20 @@ public class HttpCache : DisposableBase, IHttpCache
         if (shouldDownload && found)
         {
             Logger.WriteVerbose($"Downloading {uri}");
-            var str = await Http.GetStringAsync(uri);
 
-            Logger.WriteVerbose($"Writing {str.Length} characters to {name} in cache");
+            
             try
             {
-                //await File.WriteAllTextAsync(path, str);
+                var str = await Http.GetStringAsync(uri);
+                Logger.WriteVerbose($"Writing {str.Length} characters to {name} in cache");
                 await Cache.CacheString(path, str, true);
+                return str;
             }
             catch
             {
                 Logger.WriteWarning("Caching failed, please try again later");
+                return string.Empty;
             }
-
-            return str;
         }
 
         Logger.WriteVerbose($"Reading {name} from cache");
@@ -164,7 +164,7 @@ public class HttpCache : DisposableBase, IHttpCache
             return new(true, true, false, DateTime.MinValue, length); //Download, Found, None
         }
 
-        var modified = head.Content.Headers.LastModified?.LocalDateTime;
+        var modified = head?.Content.Headers.LastModified?.LocalDateTime;
         modified ??= lastCached > DateTime.MinValue ?
                         lastCached.AddMinutes(Settings.MinimumCacheTimeMinutes) :
                         DateTime.MinValue;
@@ -210,7 +210,7 @@ public class HttpCache : DisposableBase, IHttpCache
         }
         catch (Exception ex)
         {
-            Logger.WriteWarning(null, ex);
+            Logger.WriteWarning(string.Empty, ex);
             return Array.Empty<byte>();
         }
     }

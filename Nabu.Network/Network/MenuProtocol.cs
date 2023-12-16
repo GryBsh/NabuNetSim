@@ -8,25 +8,47 @@ namespace Nabu.Network;
 /*
     [1      - 0x30
       2     - Length
-       ...] - Frame Data
+       ...] - Command + Data
 
+    Commands:
+    
+    Get Menu:
     [1      - 0x00 
       1     - Menu Index
        1]   - Page Index
     
-    [2          - Frame Length
-      1|n*]     - Item Length n, n bytes of item name, any number of times     
+    Returns:
+
+    [2         - Frame Length
+      (1       - Item Length
+        ...)*] - bytes of item name, any number of times     
+
+    The items for the specified page of the specified menu.
+
+    Select Item:
 
     [1      - 0x01 
       1     - Menu Index
        1    - Page Index
         1]  - Item Index
 
+    Returns:
+
+    [1]     - Boot Code
+
+    The type of reboot to perform
+
+    Adaptor List:
 
     [1]     - 0x10
-          
+    
+    Returns:          
+    
+    [2         - Frame Length
+      (1       - Item Length
+        ...)*] - bytes of item name, any number of times  
 
-    Next Action:
+    Boot Codes:
         - 0xFF - Restart
         - 0xFE - Cold Start
 */
@@ -100,14 +122,8 @@ public partial class MenuProtocol : Protocol
     IEnumerable<ProgramSource> SourceList()
         => Sources.All().Where(s => !s.Name.LowerEquals(Adaptor.Source));
 
-    ProgramSource? Source(int index) => SourceList().Skip(index).FirstOrDefault();
-
-    IEnumerable<ProgramSource> SourcePage(int page)
-        => SourceList().Skip(page * pageSize).Take(pageSize);
-    IEnumerable<NabuProgram> ProgramList(IEnumerable<NabuProgram> programs) 
-        => programs.Where(IsNotPakFile);
     IEnumerable<NabuProgram> ProgramPage(IEnumerable<NabuProgram> programs, int page)
-        => ProgramList(programs).Skip(page * pageSize).Take(pageSize);
+        => programs.Where(IsNotPakFile).Skip(page * pageSize).Take(pageSize);
 
     byte[] MenuItem(string message)
     {
@@ -129,7 +145,7 @@ public partial class MenuProtocol : Protocol
             var sources = SourceList().Skip(page * pageSize).Take(pageSize);
 
             var itemCount = SourceList().Count();
-            var pages = itemCount == pageSize ? pageSize : (int)Math.Floor((double)(itemCount / pageSize) + 1);
+            var pages = itemCount == pageSize ? 1 : (int)Math.Floor((double)(itemCount / pageSize) + 1);
 
             return (
                 (byte)pages,
@@ -153,10 +169,12 @@ public partial class MenuProtocol : Protocol
             var items = ProgramPage(programs, page);
 
             if (!items.Any())
-                items = new[] { new NabuProgram { DisplayName = "No Programs" } };
+            {
+                return (0, [], 0);
+            }
 
-            var itemCount = ProgramList(programs).Count();
-            var pages = itemCount == pageSize ? pageSize : (int)Math.Floor((double)(itemCount / pageSize) + 1);
+            var itemCount = programs.Where(IsNotPakFile).Count();
+            var pages = itemCount == pageSize ? 1 : (int)Math.Floor((double)(itemCount / pageSize) + 1);
 
             return (
                 (byte)pages,
@@ -185,7 +203,13 @@ public partial class MenuProtocol : Protocol
         var item = data[2];
         var source = SourceList().Skip(index-1).FirstOrDefault();
 
-        if (source is null) return;
+        if (source is null)
+        {
+            Log($"Source not found {index}");
+            Write(0x00);
+            return;
+        }
+
         var programs = Network.Programs(source);
         var program = IsPak(source, programs) switch {
             true => programs.Where(p => p.Name == Constants.CycleMenuPak).FirstOrDefault(),

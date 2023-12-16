@@ -14,7 +14,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     public const string HeadlessSourceName = "headless";
 
     public NabuNetwork(
-            ILog<NabuNetwork> logger,
+        ILog<NabuNetwork> logger,
         Settings settings,
         HttpClient http,
         IFileCache cache,

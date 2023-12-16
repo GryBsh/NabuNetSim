@@ -10,7 +10,7 @@
             "request": "launch",
             "preLaunchTask": "build",
             // If you have changed target frameworks, make sure to update the program path.
-            "program": "${workspaceFolder}/Nabu.NetSimWeb/bin/Debug/net7.0/nns-wui.dll",
+            "program": "${workspaceFolder}/Nabu.NetSimWeb/bin/Debug/net7.0/nns.dll",
             "args": [],
             "cwd": "${workspaceFolder}/Nabu.NetSimWeb",
             "stopAtEntry": false,

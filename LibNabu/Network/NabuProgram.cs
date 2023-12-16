@@ -40,6 +40,7 @@ public record NabuProgram
     public ImageType ImageType { get; set; }
     public IList<IProgramPatch> Patches { get; set; } = new List<IProgramPatch>();
     public bool IsPakMenu { get; set; }
+    public bool UseCPMDirect => Option<bool>(nameof(UseCPMDirect));
 
     public T? Option<T>(string name)
     {
