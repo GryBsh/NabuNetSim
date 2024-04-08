@@ -29,7 +29,7 @@ jobs:
       uses: ./.github/workflows/package
       with:
         project: NetSimWeb
-        archs: x64 arm arm64
+        archs: x64 arm64
         os: win
 
     - name: Package NetSim Web MacOS 10.10
