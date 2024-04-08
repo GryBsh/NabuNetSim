@@ -37,7 +37,7 @@ jobs:
       with:
         project: NetSimWeb
         archs: x64
-        os: osx.10.10
+        os: osx-x64
 
     - name: Package NetSim Web MacOS 11.0
       uses: ./.github/workflows/package
