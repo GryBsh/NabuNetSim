@@ -1,5 +1,5 @@
 ﻿@inherits ReactiveComponentBase<IReactiveObject>
-<Div Flex="Flex.JustifyContent.Between" Width="Width.Is100" Visibility="Visibility">
+<Div Flex="Flex.JustifyContent.Between" Width="Width.Is100" Visibility="Visibility" Class="@ContainerClass" Style="background-color: #7d75fc">
     <Div Class="hstack gap-3">
         <Icon IconSize=@IconSize.Large Name="@Icon" />
         <h6 class="center-vert-10">@Heading</h6>
@@ -7,7 +7,7 @@
     <Div Class="Hstack">
         <Div Class="center-vert-10" Visibility="@ButtonVisibility" data-bs-toggle="tooltip" title=@ButtonTitle>
             <button Type="button" 
-                    Class="btn btn-primary" 
+                    Class="btn @ButtonClass" 
                     onclick=@(() => { OnButtonClick(); })>
                 <Icon Name="@ButtonIconName" />
             </button>
@@ -39,4 +39,9 @@
     [Parameter]
     public Visibility Visibility { get; set; } = Visibility.Visible;
 
+    [Parameter]
+    public string ButtonClass { get; set; } = "btn-primary";
+
+    [Parameter]
+    public string ContainerClass { get; set; } = string.Empty;
 }

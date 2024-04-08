@@ -1,10 +1,7 @@
 ﻿//using Microsoft.EntityFrameworkCore;
-using Nabu.Models;
-using Nabu.Services;
-using System.Reactive.Linq;
-
 namespace Nabu.NetSim.UI.Services;
 
+/*
 public class LogService : DisposableBase, ILogService
 {
     //public ILog<LogService> Log { get; }
@@ -25,7 +22,8 @@ public class LogService : DisposableBase, ILogService
     )
     {
         Repository = repository;
-        Entries = new List<LogEntry>();
+        Entries = [];
+        
     }
 
     public RefreshMode RefreshMode { get; set; } = RefreshMode.None;
@@ -62,3 +60,4 @@ public class LogService : DisposableBase, ILogService
     public void BulkInsert(params LogEntry[] entries)
         => Repository.BulkInsert(entries);
 }
+*/

@@ -6,5 +6,6 @@ public enum VisiblePage
     AdaptorSettings,
     Logs,
     Packages,
-    Files
+    Files,
+    Settings
 }

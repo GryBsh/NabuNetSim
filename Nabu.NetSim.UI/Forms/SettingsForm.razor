@@ -1,0 +1,204 @@
+﻿@using Nabu.Sources
+@using Gry.Settings
+@using Nabu.Network
+@using Nabu.Settings
+@using System.Collections.ObjectModel
+
+<Repeater Context="section" TItem="(string Name, string Icon, SettingValue[] Settings)" Items="Sections">
+    <ListGroup Flush>        
+
+        <HeaderView Heading="@(section.Name)" Icon="@(section.Icon)" ContainerClass="sticky-top sticky-padded-top" />
+        <ListGroupItem>
+            <Repeater TItem="SettingValue" Items="section.Settings">
+            @if (FieldVisible(context)) 
+            {    
+                <Field>
+                    <FieldLabel>@(context.Label):</FieldLabel>
+                    <FieldBody>
+                    @if (context.Type == typeof(string) && context.OptionsType is SettingValueType.Port)
+                    {
+                        if (context.Context is SerialAdaptorSettings serial) {
+                            <Select Disabled=@context.ReadOnly @key=context TValue="string" @bind-SelectedValue="context.StringValue" class="form-control form-control-sm">
+                                <SelectItem @key=context Value="context.StringValue">@context.StringValue</SelectItem>
+                                @foreach (var source in SerialPorts ?? [])
+                                {
+                                    <SelectItem Value="@source">@source</SelectItem>
+                                }
+                            </Select>
+                        }
+                        else if (context.Context is TCPAdaptorSettings tcp)
+                        {
+                            <InputText disabled="@context.ReadOnly" @bind-Value="context.StringValue" class="form-control form-text form-range-xlrg" />
+                        }
+                    }
+                    else if (context.Type == typeof(string))
+                    {
+                        if (context.OptionsType is SettingValueType.None)
+                        {
+                            <InputText disabled=@context.ReadOnly @bind-Value="@context.StringValue" class="form-control form-text form-text-lrg" />
+                        }
+                        else
+                        {
+                            <Select disabled=@context.ReadOnly @key=context TValue="string" @bind-SelectedValue="context.StringValue" class="form-control form-control-sm" >
+                                @if (context.OptionsType is SettingValueType.Source)
+                                {
+                                    if (context.StringValue is null && Sources?.List.Any() is true)
+                                    {
+                                        context.StringValue = Sources.List.First().Name;
+                                    }
+                                    foreach (var source in Sources?.List ?? [])
+                                    {
+                                        <SelectItem Value="@source.Name">@source.Name</SelectItem>
+                                    }
+
+                                }
+                                else if (context.OptionsType is SettingValueType.Program && Programs is not null)
+                                {
+                                    var programs = Programs.ToArray().Where(p => !string.IsNullOrWhiteSpace(p.DisplayName));
+                                    if (context.StringValue is null && programs?.Any() is true)
+                                    {
+                                        context.StringValue = programs?.First().Name;
+                                    }
+                                    if (programs?.Any() is true && !programs?.Any(p => p.Name == context.StringValue) is true)
+                                    {
+                                        context.StringValue = programs?.First().Name;
+                                    }
+
+                                    if(programs?.Any(p => p.Category is not null) is true) 
+                                    {
+                                        var groups = programs.GroupBy(p => p.Category).ToArray();
+                                        foreach (var group in groups)
+                                        {
+                                            <SelectGroup Label="@group.Key">
+                                                @foreach (var source in group)
+                                                {
+                                                    <SelectItem Value="@source.Name">@source.DisplayName</SelectItem>
+                                                }
+                                            </SelectGroup>
+                                        }
+                                    }
+                                    else 
+                                    {
+                                        foreach (var source in programs ?? [])
+                                        {
+                                            <SelectItem Value="@source.Name">@source.DisplayName</SelectItem>
+                                        }
+                                    }
+
+                                }
+                                else if (context.OptionsType is SettingValueType.LauncherSource)
+                                {
+                                    if (context.StringValue is null && HeadlessSources?.Any() is true)
+                                    {
+                                        context.StringValue = HeadlessSources.First();
+                                    }
+                                    foreach (var source in HeadlessSources ?? [])
+                                    {
+                                        <SelectItem Value="@source">@source</SelectItem>
+                                    }
+
+                                }
+                                else if (context.OptionsType is SettingValueType.LauncherProgram)
+                                {
+                                    if (context.StringValue is null && HeadlessPrograms?.Any() is true)
+                                    {
+                                        context.StringValue = HeadlessPrograms.First().Name;
+                                    }
+                                    foreach (var source in HeadlessPrograms ?? [])
+                                    {
+                                        <SelectItem Value="@source.Name">@source.DisplayName</SelectItem>
+                                    }
+
+                                }
+                                else if (context.OptionsType is SettingValueType.Package)
+                                {
+                                    if (context.StringValue is null && Packages?.Installed.Any() is true)
+                                    {
+                                        context.StringValue = Packages.Installed.First().Id;
+                                    }
+                                    @foreach (var source in Packages?.Installed ?? [])
+                                    {
+                                        <SelectItem Value="@source.Id">@source.Name</SelectItem>
+                                    }
+
+                                }
+                                
+                            </Select>
+                        }
+
+                    }
+                    else if (context.Type == typeof(bool))
+                    {
+                        <Button disabled=@context.ReadOnly Class="@(context.BoolValue is true ? "btn-success" : "btn-danger")" Clicked="@(() => context.BoolValue = !context.BoolValue)">
+                            @(context.BoolValue is true ? "On" : "Off")
+                        </Button>
+                    }
+                    else if (context.Type == typeof(int))
+                    {
+                        <InputNumber disabled=@context.ReadOnly @key=context @bind-Value="@context.IntValue" class="form-control form-text form-range-xlrg" />
+                    }
+                    </FieldBody>
+                    <FieldHelp>
+                        <Div Style="color: white">
+                            @context.Description
+                        </Div>
+                    </FieldHelp>
+                </Field>
+            }
+            @if (context.OptionsType == SettingValueType.Program && (Programs?.FirstOrDefault(p => p.IsPakMenu) is not null))
+            {
+                if (context.StringValue != null)
+                    context.SetValue(context.Context, null);
+            }
+            </Repeater>
+        </ListGroupItem>
+    </ListGroup>        
+</Repeater>
+
+
+@code {
+
+    [Parameter]
+    public IEnumerable<(string Name, string Icon, SettingValue[] Settings)>? Sections { get; set; }
+
+    [Parameter]
+    public ISourceService? Sources { get; set; }
+
+
+    public IEnumerable<string>? HeadlessSources 
+    => Sources?.List.Where(s => s.HeadlessMenu)
+                   .Select(s => s.Name)
+                   .Distinct();
+
+    
+
+    [Parameter]
+    public IPackageManager? Packages { get; set; }
+
+    [Parameter]
+    public AdaptorSettings? Selected { get; set; }
+
+    [Parameter]
+    public IEnumerable<string>? SerialPorts { get; set; }
+
+    [Parameter]
+    public IEnumerable<NabuProgram>? Programs { get; set; }
+
+    [Parameter]
+    public IEnumerable<NabuProgram>? HeadlessPrograms { get; set; }
+
+    bool FieldVisible(SettingValue context) =>
+        !(context.OptionsType == SettingValueType.Program && 
+            Programs?.Any(p => p.IsPakMenu) is true) &&
+        !(context.OptionsType == SettingValueType.LauncherProgram &&
+            (HeadlessPrograms?.Any() is false || HeadlessPrograms?.Count() == 1));
+
+    //bool FieldVisibility(SettingValue setting)
+    //{
+        //if (setting.OptionsType == SettingValueType.Program && Programs?.ToArray().FirstOrDefault(p => p.IsPakMenu) is not null)
+        //{
+        //    return false;
+        //}
+        //return true;
+    //}
+}

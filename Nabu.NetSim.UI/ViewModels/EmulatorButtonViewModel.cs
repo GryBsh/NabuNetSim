@@ -1,18 +1,15 @@
 ﻿using Blazorise;
-using Nabu.Services;
+using Gry;
+using Gry.Adapters;
+using Nabu.Network;
+using Nabu.Settings;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.NetSim.UI.ViewModels
 {
     public class EmulatorButtonViewModel : ReactiveObject, IActivatableViewModel
     {
-        public EmulatorButtonViewModel(Settings settings, ProcessService process)
+        public EmulatorButtonViewModel(GlobalSettings settings, ProcessService process)
         {
             Settings = settings;
             Process = process;
@@ -20,12 +17,12 @@ namespace Nabu.NetSim.UI.ViewModels
 
         public ViewModelActivator Activator { get; } = new();
         public ProcessService Process { get; }
-        public Settings Settings { get; }
+        public GlobalSettings Settings { get; }
         private CancellationToken? EmulatorProcess { get; set; }
 
         public bool RunAvailable(AdaptorSettings context)
         => ShouldRun(context) &&
-            context.Running && (
+            context.Adapter?.State is AdapterState.Running && (
                 Process.IsRunning(Settings.EmulatorPath) is null ||
                 (EmulatorProcess is null || EmulatorProcess.Value.IsCancellationRequested)
             );
@@ -38,14 +35,18 @@ namespace Nabu.NetSim.UI.ViewModels
             EmulatorProcess = Process.Start(Settings.EmulatorPath);
         }
 
-        public Visibility RunVisibility(AdaptorSettings context)
+        public Visibility RunVisibility(AdaptorSettings context, bool changed)
         {
-            return ShouldRun(context) ? Visibility.Visible : Visibility.Invisible;
+            return ShouldRun(context) && changed ? Visibility.Visible : Visibility.Invisible;
         }
 
         public bool ShouldRun(AdaptorSettings context)
         {
-            return (context is TCPAdaptorSettings t && !t.Connection && Settings.EmulatorPath != string.Empty);
+            if (context.Type is AdapterType.TCP && Model.As<AdapterDefinition, TCPAdaptorSettings>(context) is var t)
+            {
+                return !t.Connection && Settings.EmulatorPath != string.Empty;
+            }
+            return false;
         }
     }
 }

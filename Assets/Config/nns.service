@@ -1,0 +1,14 @@
+[Unit]
+Description=NABU NetSim
+
+[Service]
+WorkingDirectory={{PATH}}
+ExecStart={{PATH}}/nns
+Restart=always
+RestartSec=10
+KillSignal=SIGINT
+SyslogIdentifier=nns
+User=nns
+
+[Install]
+WantedBy=multi-user.target

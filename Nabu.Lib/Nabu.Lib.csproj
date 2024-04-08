@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Nabu</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="NLog.Extensions.Logging" Version="5.3.8" />
+    <PackageReference Include="System.IO.Ports" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Dependencies\Gry.Base\Gry.Base.csproj" />
+    <ProjectReference Include="..\Dependencies\Gry.Caching\Gry.Caching.csproj" />
+    <ProjectReference Include="..\Dependencies\Gry.Services\Gry.Services.csproj" />
+    <ProjectReference Include="..\Dependencies\Lgc\Lgc.csproj" />
+    <ProjectReference Include="..\Dependencies\LibNapa\LibNapa.csproj" />
+    <ProjectReference Include="..\NHACP.Protocol\NHACP.Protocol.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,89 +1,77 @@
 ﻿@inherits ReactiveInjectableComponentBase<AdaptorSettingsViewModel>
+@using Nabu.NetSim.UI.Forms;
+
+<PlaceHolderView Icon="@("fa-gear")" Visibility="@ViewModel!.SettingsPage" />
+<Container Width="Width.Is100">
+    <Row>
+        <Column Visibility=@ViewModel.Home.IsVisible(VisiblePage.AdaptorSettings) 
+                ColumnSize="ColumnSize.Is2">
+            <Div Class="btn-group-vertical sticky-top sticky-padded-top" Style="width:min-content; margin: auto;">
+                <Button class="btn btn-success" 
+                        onclick="@(() => { ViewModel.ApplySettings(); })" 
+                        data-bs-toggle="tooltip" 
+                        title="Apply"
+                        disabled=@{!ViewModel.SettingsModel?.Changed}>
+                    <Icon Name="IconName.Check" />
+                </Button>
+                <Button class="btn btn-danger"
+                        onclick="@(() => { ViewModel.RevertSettings(); })"
+                        data-bs-toggle="tooltip"
+                        title="Revert"
+                        disabled=@{
+                            !ViewModel.SettingsModel?.Changed
+                        }>
+                    <Icon Name="IconName.Times" />
+                </Button>
+                <Button class="btn btn-warning"
+                        onclick="@(() => { ViewModel.SaveSettings(); })"
+                        data-bs-toggle="tooltip"
+                        title="Save"
+                        disabled=@{
+                            !ViewModel?.CanSave
+                        }>
+                    <Icon Name="IconName.Save" />
+                </Button>
+                <Button Type="ButtonType.Button"
+                        Class="btn btn-primary"
+                        onclick="@(() => {
+                            ViewModel.SetFilesPath(ViewModel.Selected.StoragePath);
+                        })"
+                        data-bs-toggle="tooltip"
+                        title="Browse Storage"
+                        disabled=@{ViewModel.BrowseDisabled}>
+                    <Icon Name="IconName.FolderOpen" />
+                </Button>
+                <EmulatorButtonView OnClick="@(() => {
+                                        if (ViewModel.SettingsModel?.Changed is true)
+                                            ViewModel.ApplySettings(); 
+                                    })" 
+                                    Adaptor="@ViewModel.Selected" 
+                                    Changed=@(ViewModel.SettingsModel?.Changed ?? false)/>
+            </Div>
+        </Column>
+        <Column ColumnSize=@(ViewModel.Home.IsVisible(VisiblePage.AdaptorSettings) is Visibility.Visible ? ColumnSize.Is10 : ColumnSize.IsFull)>
+            <HeaderView Icon="@(ViewModel?.Selected is TCPAdaptorSettings ? IconName.Wifi : IconName.Plug)"
+                        Heading="@((ViewModel!.Selected is SerialAdaptorSettings) ? "Serial Adaptor" : "TCP Adaptor")"
+                        ShowButton=true
+                        OnButtonClick="@(() => {
+                            ViewModel?.SetSelected(new NullAdaptorSettings());
+                            OnClose?.Invoke(ViewModel.Selected);
+                        })"
+                        Visibility="@(ViewModel?.Selected is not NullAdaptorSettings ? Visibility.Visible : Visibility.Invisible)" />
+            <br />
+            <ListGroup Flush>
+                <SettingsForm Sections=@ViewModel.Sections
+                              Sources=@ViewModel.Sources
+                              Programs=@ViewModel.Programs
+                              Selected=@ViewModel.Selected
+                              SerialPorts=@ViewModel.AvailableSerialPorts 
+                />
+            </ListGroup>
+        </Column>
+    </Row>
+</Container>
 
 
 
-<Div Class="center center-all" Visibility="@(ViewModel?.Selected is NullAdaptorSettings ? Visibility.Visible : Visibility.Invisible)" >
-    <Icon IconSize="@IconSize.x5" Name="@IconName.Home" Style="color: rgba(204, 204, 204, .2)" />
-</Div>
-
-<HeaderView Icon="@(ViewModel?.Selected is TCPAdaptorSettings ? IconName.Wifi : IconName.Plug)"
-            Heading="@ViewModel?.Selected.Port"
-            ShowButton=true
-            OnButtonClick="@(() => { ViewModel?.SetSelected(new NullAdaptorSettings()); })" 
-            Visibility="@(ViewModel?.Selected is not NullAdaptorSettings ? Visibility.Visible : Visibility.Invisible)"/>
-    
-<ListGroup Flush Visibility="@(ViewModel?.Selected is not NullAdaptorSettings ? Visibility.Visible : Visibility.Invisible)">
-    <ListGroupItem>
-            <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
-            <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
-                <Icon Name="IconName.Server" />
-                Source
-            </Heading>
-        </Div>
-        <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
-            <Select TValue="string" SelectedValue="@ViewModel?.Selected.Source"
-                    SelectedValueChanged="@(v => ViewModel?.SetSource(v))">
-                @foreach (var source in ViewModel!.SourceNames)
-                {
-                    <SelectItem @key=@source value="@source">@source</SelectItem>
-                }
-            </Select>
-        </Paragraph>
-    </ListGroupItem>
-    <ListGroupItem Visibility="@(ViewModel!.HasMultipleImages ? Visibility.Visible : Visibility.Invisible)">
-        <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
-            <Heading Size="HeadingSize.Is6" Margin="Margin.Is1.FromBottom">
-                <Icon Name="IconName.FolderOpen" />
-                Program
-            </Heading>
-        </Div>
-        <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
-            <Select TValue="string" SelectedValue=@ViewModel.Selected.Program 
-                    SelectedValueChanged="@(v => ViewModel.SetImage(v))">
-                <!--<option value=""></option>-->
-                <Repeater TItem="AvailableImage" Items="ViewModel.Images">
-                    <SelectItem @key=@context Value="@context.Name">@context.DisplayName</SelectItem>
-                </Repeater>
-            </Select>
-        </Paragraph>
-    </ListGroupItem>
-    <ListGroupItem Visibility="@ViewModel.TCPServerVisible">
-        <HeaderView Heading="TCP Server" Icon="@IconName.Server" />
-    </ListGroupItem>
-    <ListGroupItem Visibility="@ViewModel.TCPServerVisible">
-        <Paragraph>
-            <Container>
-                <Row>
-                    <Column>Active:</Column>
-                    <Column>@ViewModel.Selected.TCPServerActive</Column>
-                </Row>
-                <Row Visibility="@ViewModel.TCPServerActive">
-                    <Column>Protocol:</Column>
-                    <Column>@ViewModel.Selected.TCPServerProtocol</Column>
-                </Row>
-                <Row Visibility="@ViewModel.TCPServerActive">
-                    <Column>Port:</Column>
-                    <Column>@ViewModel.Selected.TCPServerPort</Column>
-                </Row>
-            </Container>
-        </Paragraph>
-    </ListGroupItem>
-</ListGroup>
-
-<ListGroup Flush>
-    <ListGroupItem>
-        <Div Class="hstack">
-            <Button Type="ButtonType.Button" 
-                    Class="btn btn-primary" 
-                    onclick="@(() => ViewModel.SetFilesPath(ViewModel.Selected.StoragePath))" 
-                    data-bs-toggle="tooltip"
-                    title="Browse Storage" 
-                    Visibility="@ViewModel.BrowseVisible">
-                <Icon Name="IconName.FolderOpen" />
-            </Button>
-            <EmulatorButtonView Adaptor="@ViewModel.Selected" />
-        </Div>
-    </ListGroupItem>
-</ListGroup>
-    
 

@@ -38,6 +38,15 @@
                     <Icon Name="IconName.Folder" />
                 </button>
             </Span>
+            <Span data-bs-toggle="tooltip"
+                  title="Settings">
+                <button type="button"
+                        class="btn @(ViewModel!.Home.IsVisible(VisiblePage.Settings) is Visibility.Visible ? "btn-success" : "btn-primary") justify-content-md-start"
+                        disabled="@(ViewModel!.Home.IsVisible(VisiblePage.Settings) is Visibility.Visible)"
+                        onclick="@(() => { ViewModel.Home.SetVisible(VisiblePage.Settings); })">
+                    <Icon Name="@("fa-gear")"/>
+                </button>
+            </Span>
         </Div>
     </Row>
 </Container>

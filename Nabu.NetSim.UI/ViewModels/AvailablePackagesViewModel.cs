@@ -1,22 +1,15 @@
 ﻿using Blazorise;
-using DynamicData;
+using Nabu.Settings;
 using Napa;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
-using System.Linq;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.NetSim.UI.ViewModels
 {
     public class AvailablePackagesViewModel : ReactiveObject, IActivatableViewModel
     {
-        public AvailablePackagesViewModel(IPackageManager packages, Settings settings)
+        public AvailablePackagesViewModel(IPackageManager packages, GlobalSettings settings)
         {
             Packages = packages;
             Settings = settings;
@@ -30,7 +23,7 @@ namespace Nabu.NetSim.UI.ViewModels
         public ObservableCollection<SourcePackage> AvailablePackages => Packages.Available;
         public bool InstallDisabled { get; set; } = false;
         public IPackageManager Packages { get; }
-        public Settings Settings { get; }
+        public GlobalSettings Settings { get; }
         public bool WarningVisible { get; set; } = false;
 
         private List<AdaptorSettings> NeedRestart { get; } = new();
@@ -41,8 +34,8 @@ namespace Nabu.NetSim.UI.ViewModels
             PendingId = null;
             InstallDisabled = false;
 
-            NeedRestart.ForEach((t) => t.State = ServiceShould.Run);
-            NeedRestart.Clear();
+            //NeedRestart.ForEach((t) => t.State = ServiceShould.Run);
+            //NeedRestart.Clear();
             this.RaisePropertyChanged(nameof(InstallDisabled));
             if (WarningVisible) HideWarning();
         }
@@ -51,9 +44,9 @@ namespace Nabu.NetSim.UI.ViewModels
         {
             if (PendingId is null) return;
             HideWarning();
-            NeedRestart.AddRange(Settings.Adaptors.Serial.Where(s => s.Running));
-            NeedRestart.AddRange(Settings.Adaptors.TCP.Where(t => t.Running));
-            NeedRestart.ForEach(t => t.State = ServiceShould.Stop);
+            //NeedRestart.AddRange(Settings.Adaptors.Serial.Where(s => s.Running));
+            //NeedRestart.AddRange(Settings.Adaptors.TCP.Where(t => t.Running));
+            //NeedRestart.ForEach(t => t.State = ServiceShould.Stop);
 
             Packages.InstallQueue.Enqueue(PendingId);
             await Packages.Refresh(true);
@@ -71,10 +64,10 @@ namespace Nabu.NetSim.UI.ViewModels
         {
             PendingId = id;
             InstallDisabled = true;
-            WarningVisible = true;
-            this.RaisePropertyChanged(nameof(InstallDisabled));
-            this.RaisePropertyChanged(nameof(WarningVisible));
-            
+            //WarningVisible = true;
+            //this.RaisePropertyChanged(nameof(InstallDisabled));
+            //this.RaisePropertyChanged(nameof(WarningVisible));
+            Install();
         }
 
         private void AvailablePackages_CollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)

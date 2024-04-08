@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Components;
 using Nabu.NetSim.UI.ViewModels;
+using Nabu.Settings;
 using ReactiveUI.Blazor;
 
 namespace Nabu.NetSim.UI.Views
@@ -9,6 +11,11 @@ namespace Nabu.NetSim.UI.Views
         {
             //ViewModel = Locator.Current.GetService<AdaptorSettingsViewModel>();
         }
+
+        [Parameter]
+        public Action<AdaptorSettings> OnClose { get; set; } = (a) => { };
+
+         
 
         protected override void OnInitialized()
         {

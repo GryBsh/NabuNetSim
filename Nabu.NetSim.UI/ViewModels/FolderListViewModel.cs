@@ -1,23 +1,19 @@
 ﻿using Nabu.NetSim.UI.Models;
-using Nabu.Services;
+using Nabu.Network;
+using Nabu.Settings;
 using ReactiveUI;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nabu.NetSim.UI.ViewModels
 {
     public class FolderListViewModel : ReactiveObject, IActivatableViewModel
     {
-        public FolderListViewModel(FilesViewModel files, Settings settings)
+        public FolderListViewModel(FilesViewModel files, GlobalSettings settings, StorageService storage)
         {
             Files = files;
             Settings = settings;
-
+            Storage = storage;
             this.WhenActivated(
                 disposables =>
                 {
@@ -35,7 +31,8 @@ namespace Nabu.NetSim.UI.ViewModels
         public ViewModelActivator Activator { get; } = new();
         public FilesViewModel Files { get; }
         public IEnumerable<DirectoryModel> Folders { get; set; } = Array.Empty<DirectoryModel>();
-        public Settings Settings { get; }
+        public GlobalSettings Settings { get; }
+        public StorageService Storage { get; }
 
         public string FolderName(string port) => port.Split(Path.DirectorySeparatorChar)[^1].Split(':')[0];
 
@@ -52,14 +49,18 @@ namespace Nabu.NetSim.UI.ViewModels
         public void ShowStorage(string name)
         {
             name = FolderName(name);
-            Files.SetRootDirectory(null, Path.Combine(Settings.StoragePath, name));
+            Files.SetRootDirectory(null, Path.Combine(Storage.StorageRoot, name));
         }
 
         public void UpdateList()
         {
-            Folders = Directory.GetDirectories(Settings.StoragePath)
-                               .Select(d => new DirectoryModel { Name = Path.GetFileName(d), Path = d })
-                               .Where(d => d.Name is not StorageNames.SourceFolder);
+            if (!Path.Exists(Storage.StorageRoot))
+                Directory.CreateDirectory(Storage.StorageRoot);
+
+            Folders = Storage.ListDirectories(".")
+                             .Select(d => new DirectoryModel { Name = Path.GetFileName(d), Path = d })
+                             .Where(d => d.Name is not StorageNames.SourceFolder);
+
             this.RaisePropertyChanged(nameof(Folders));
         }
     }
