@@ -42,8 +42,7 @@ runs:
         mkdir $BIN/Files
         mkdir $BIN/Files/Source
         mkdir $BIN/logs
-        mkdir $bin/cache
-        
+
         cp -r $Packages $BIN
         if [[ $os == osx* ]]; then
           cp -f $CONFIG/appsettings.macos.json $BIN/appsettings.json
