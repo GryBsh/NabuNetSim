@@ -4,7 +4,7 @@
             Heading="Log"/>
 
 <ListGroup Flush Class="sticky-top sticky-padded-top">
-    <ListGroupItem>
+    <ListGroupItem Style="padding: 0px;">
         <Div Flex="Flex.JustifyContent.Between">
             <Div Class="hstack gap-3" Style="width: 30%">
                 <Div Class="input-group">
@@ -39,26 +39,17 @@
         
     </ListGroupItem>
 </ListGroup>
-<ListGroup Flush>
-    <Virtualize TItem="IGrouping<LogKey, LogEntry>" Items="ViewModel.CurrentPage" OverscanCount="50">
-        <ListGroupItem>
-            <Div Flex="Flex.JustifyContent.Between" Border=@(Border.OnBottom.White) TextAlignment=@TextAlignment.Start Width="Width.Is100">
-                <Small Width="Width.Is50">
-                    <Highlighter Text="@context.Key.Name" HighlightedText="@ViewModel.Search" />
-                </Small>
-            </Div>
-            <Repeater TItem="LogEntry" Items="@context" Context="entry">
-                
-                <Div Width="Width.Is100" TextOverflow="TextOverflow.Wrap" Flex="Flex.JustifyContent.Between">
-                    <Div><Small><Highlighter Text="@entry.Timestamp.ToString()" HighlightedText="@ViewModel.Search" /></Small></Div>
-                    <Div><Small><Highlighter Text="@entry.LogLevel" HighlightedText="@ViewModel.Search" /></Small></Div>
-                    <Div Style="width: 65%; word-break:break-all"><Small><Highlighter Text="@entry.Message" HighlightedText="@ViewModel.Search" /></Small></Div>
-                </Div>
-            </Repeater>
-        </ListGroupItem>
-    </Virtualize>
-    
-</ListGroup>
+<br/>
+    <!--<Virtualize TItem="IGrouping<LogKey, LogEntry>" Items="ViewModel.CurrentPage" OverscanCount="50">-->
+<Div Style="font-family:  var(--bs-font-monospace); font-size: 9pt">
+    <Repeater TItem="string" Items="ViewModel.CurrentPage">
+        <Div>
+            <Highlighter Text="@(context)" HighlightedText="@ViewModel.Search" />
+        </Div>
+    </Repeater>
+</Div>
+
+
 
 
 

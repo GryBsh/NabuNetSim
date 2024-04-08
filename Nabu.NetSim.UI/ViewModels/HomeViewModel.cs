@@ -1,13 +1,9 @@
 ﻿using Blazorise;
-using LiteDB;
-using Nabu.Models;
 using Nabu.NetSim.UI.Models;
-using Nabu.NetSim.UI.Services;
 using Nabu.Network;
 using Nabu.Services;
+using Nabu.Settings;
 using ReactiveUI;
-using System.Reactive.Disposables;
-using System.Reactive.Linq;
 
 namespace Nabu.NetSim.UI.ViewModels;
 
@@ -18,7 +14,6 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
         "Assimilation in progress",
         "Admiral! There be whales here!",
         "Ay Sir, I'm working on it!",
-        "You should visit NABUNetwork.com",
         "Hey Mr. 🦉",
         "Standby for NABUfall",
         "Your honor, I object to this preposterous poppycock",
@@ -37,10 +32,9 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
     private bool loaded = false;
 
     public HomeViewModel(
-        Settings settings,
+        GlobalSettings settings,
         INabuNetwork sources,
-        ISimulation simulation,
-        IHeadlineService news
+        ISimulation simulation
     )
     {
         Settings = settings;
@@ -69,7 +63,7 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
     }
 
     public string Phrase => Phrases[Random.Shared.Next(0, Phrases.Length)];
-    public Settings Settings { get; }
+    public GlobalSettings Settings { get; }
     public ISimulation Simulation { get; }
     public INabuNetwork Sources { get; }
     public bool Visible { get; set; } = true;

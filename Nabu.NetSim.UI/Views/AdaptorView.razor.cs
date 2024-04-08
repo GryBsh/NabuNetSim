@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Nabu.NetSim.UI.ViewModels;
+using Nabu.Settings;
 using ReactiveUI.Blazor;
 
 namespace Nabu.NetSim.UI.Views

@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Nabu.Logs;
 using Nabu.Services;
 using System.Diagnostics;
 
@@ -13,9 +14,9 @@ namespace Nabu.NetSimWeb.Pages
 
         public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 
-        private readonly ILog<ErrorModel> _logger;
+        private readonly Logs.ILogger<ErrorModel> _logger;
 
-        public ErrorModel(ILog<ErrorModel> logger)
+        public ErrorModel(Logs.ILogger<ErrorModel> logger)
         {
             _logger = logger;
         }

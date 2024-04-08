@@ -1,17 +1,22 @@
 ﻿@inherits ReactiveInjectableComponentBase<StatusViewModel>
-
-<HeaderView Icon="@IconName.Server"
-            Heading="Adaptors" />
+<Span Class="sticky-top sticky-padded-top">
+    <HeaderView Icon="@IconName.Server"
+                Heading="Adaptors"
+                ShowButton=false
             
-<AdaptorView Adaptors="@ViewModel!.Serial" />
-<AdaptorView Adaptors="@ViewModel!.TCP" />
+                />
+    <br/>            
+    <AdaptorView Adaptors="@ViewModel!.Serial" />
+    <AdaptorView Adaptors="@ViewModel!.TCP" />
+    <!--<AdaptorView Adaptors="@ViewModel!.TCP" />-->
 
-@if (ViewModel.Connections.Count > 0)
-{
-    <HeaderView Icon="@IconName.UserFriends"
-                Heading="Connections" />
+    @if (ViewModel.Connections.Count > 0)
+    {
+        <HeaderView Icon="@IconName.UserFriends"
+                    Heading="Connections" />
 
     
-    <AdaptorView Adaptors="@ViewModel.Connections" />
+        <AdaptorView Adaptors="@ViewModel.Connections" />
 
-}
+    }
+</Span>

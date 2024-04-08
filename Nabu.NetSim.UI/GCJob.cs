@@ -1,21 +1,15 @@
-﻿using Nabu.Services;
-using System.Reactive.Linq;
+﻿using Gry;
+using Gry.Jobs;
 
 namespace Nabu.NetSim.UI;
 
 public class GCJob : Job
 {
-    public GCJob(ILog<GCJob> logger, Settings settings) : base(logger, settings)
+    protected override void OnSchedule()
     {
-    }
-
-    public override void Start()
-    {
-        Observable.Interval(
-            TimeSpan.FromMinutes(5)
-        ).Subscribe(_ =>
-        {
-            GC.Collect();
-        });
+        Disposables.AddInterval(
+            TimeSpan.FromMinutes(5),
+            _ => GC.Collect()
+        );
     }
 }

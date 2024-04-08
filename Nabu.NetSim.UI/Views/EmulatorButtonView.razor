@@ -1,7 +1,28 @@
 ﻿@inherits ReactiveInjectableComponentBase<EmulatorButtonViewModel>
 
-<Span data-bs-toggle="tooltip" title="Start Emulator">
-    <Button Type="ButtonType.Button" Class="btn-primary" Visibility=@ViewModel.RunVisibility(Adaptor) Disabled=@(!ViewModel.RunAvailable(Adaptor)) onclick="@(() => ViewModel.RunEmulator(Adaptor))">
+<Span data-bs-toggle="tooltip" 
+      title="Start Emulator">
+    <Button Type="ButtonType.Button" 
+            Class="btn-primary" 
+            Visibility=@ViewModel.RunVisibility(Adaptor, !Changed) 
+            Disabled=@(!ViewModel.RunAvailable(Adaptor)) 
+            onclick="@(() => {
+                OnClick();
+                ViewModel.RunEmulator(Adaptor);
+            })">
+        <Icon Name="IconName.Running" />
+    </Button>
+</Span>
+<Span data-bs-toggle="tooltip"
+      title="Apply and Start Emulator">
+    <Button Type="ButtonType.Button"
+            Class="btn-success"
+            Visibility=@ViewModel.RunVisibility(Adaptor, Changed)
+            Disabled=@(!ViewModel.RunAvailable(Adaptor))
+            onclick="@(() => {
+                OnClick();
+                ViewModel.RunEmulator(Adaptor);
+            })">
         <Icon Name="IconName.Running" />
     </Button>
 </Span>
@@ -9,4 +30,10 @@
 @code {
     [Parameter]
     public AdaptorSettings Adaptor { get; set; }
+
+    [Parameter]
+    public Action OnClick { get; set; } = () => { };
+
+    [Parameter]
+    public bool Changed { get; set; }
 }

@@ -2,13 +2,13 @@
 @inherits ReactiveInjectableComponentBase<HeadlineViewModel>
 
 <HeaderView Icon="@("fa-newspaper")"
-            Heading="NabuNetwork.com News"
+            Heading="Nabu News"
             ShowButton=true
             ButtonTitle="Collapse"
             ButtonIconName="IconName.MinusCircle"
             OnButtonClick=@(() => { ViewModel.ExpandCollapseNews(); }) 
             Visibility="@ViewModel.ExpandedVisibility" />
-<ListGroup Flush Visibility="@ViewModel.ExpandedVisibility">
+<ListGroup Flush Visibility="@ViewModel.ExpandedVisibility" Style="max-width: 600px">
      <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
          <ListGroupItem>
              <small>
@@ -24,7 +24,7 @@
  </ListGroup>
 
 <HeaderView Icon="@("fa-newspaper")"
-            Heading="NabuNetwork.com News"
+            Heading="Nabu News"
             ShowButton=true
             ButtonTitle="Expand"
             ButtonIconName="IconName.PlusCircle"
@@ -41,14 +41,40 @@
          </ListGroupItem>
      </Repeater>
  </ListGroup>
- <Div Class="center">
-     <a class="btn btn-primary btn-sm" 
+ <br/>
+<Div style="text-align: center">
+    <p>
+        <small>
+            Got NABU?
+        </small>
+    </p>
+    <a class="btn btn-primary btn-sm"
+       target="_blank"
+       href="https://www.youtube.com/results?search_query=nabu+pc"
+       data-bs-toggle="tooltip"
+       title="Search YouTube for NABU Videos">
+       <small>NABU Videos</small>
+    </a>
+    <a class="btn btn-primary btn-sm" 
         target="_blank" 
         href="https://www.nabunetwork.com" 
         data-bs-toggle="tooltip" 
-        title="More at NABUNetwork.com"
-     >
-         <small>Would you like to know more?</small>
+        title="Visit NABUNetwork.com">
+        <small>NabuNetwork.com</small>
+    </a>
+    <a class="btn btn-primary btn-sm"
+       target="_blank"
+       href="https://www.nabunetwork.com"
+       data-bs-toggle="tooltip"
+       title="Visit NABU.ca">
+        <small>NABU.ca</small>
+    </a>
+    <a class="btn btn-primary btn-sm"
+       target="_blank"
+       href="https://vcfed.org/"
+       data-bs-toggle="tooltip"
+       title="Visit vcfed.org!">
+        <small>VCF Community</small>
     </a>
 </Div>
 

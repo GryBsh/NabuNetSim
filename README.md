@@ -4,6 +4,8 @@
 
 > NOTE: `NNS` is used to abbreviate `NABU NetSim` in this document.
 
+## What is it?
+
 This is an Emulator for the NABU network adapter for use with real NABU PCs and Emulators (Marduk, MAME),
 and can host multiple instances of either. Making it possible to host a whole NABU Network from one
 adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, and can be extended to support your own custom protocols via JavaScript.
@@ -18,27 +20,18 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 - > Supports feeds from NABUNetwork.com and Nabu.ca.
 - > Supports NHACP and Retronet, so it can run IshkurCPM and Cloud CPM.
 - > A Fancy NABU Launcher, which can launch programs right from your NABU!
+- > Support RetroNET headless too
 - > Deeply integrated offline caching of remote files/programs.
 - > Web UI for configuration, with news from NabuNetwork.com.
 - > Extensible protocol support, you can add your own protocol handlers in Python or Javascript.
 
 ## Whats New(ish)
 
-- > NAPA Package support, content is now provided as NAPA packages, so they can be updated seperately.
-![Package Storage](./Assets/storage.png)
-    Content from packages is symlinked into storage by default, but files users will alter are copied, to avoid clobbering.
-- > User Storage Isolation
-  - > This allows users to have their own copy of local storage files, and will avoid clobber issues with RetroNet and NHACP.
-  ![Storage](./Assets/isolated-storage.png)
-- > Hybrid IskurCPM support, allows physical disk drives
-- > RetroNet TCP Client/Server Support
-  - > Telnet/RetroNet Chat/etc are working.
-  - > Mutiple clients can now open servers, the port number will be visible in Adapter Settings
-- > Revamped Web UI Log Viewer, with pagination and search
-  - > This does mean higher memory usage, but it's worth it.
-- > JavaScript support has switched from Jint to ClearScript V8.
-  - > This means support for all JavaScript Features like modules and the ability to use compile and use Typescript.
-- > 98% of all byte arrays are now dealt with using `Span<T>` and `Memory<T>` for better performance, the fastest adaptor is now even faster!
+- > Stability improvements in the NABU Launcher
+- > NHACP bug fixes
+- > Settings editor in the web ui
+- > RetroNET Headless Support 
+- > Precaching Support
 
 ## Known Issues
 
@@ -64,63 +57,7 @@ A PC can potentially serve hundreds.
 
 ## Basics
 
-### Configuration
-
-```json
-{
-  "Settings": {
-    // The path to where storage files will be kept.
-    // By default, its "$CWD/Files"
-    //"StoragePath": "./Files",
-
-    // The path to where NABU programs will be kept.
-    // These are the files shown under the "Local NABU Files" source.
-    // By default, its "$CWD/NABUs"
-    //"LocalProgramPath": "./NABUs",
-
-    // If you have a script which will launch MAME as a NABU, 
-    // like the one included with Windows builds of BriJohns' MAME source, 
-    // you can specify it here: and the running man icon will appear to launch it
-    // from the TCP adaptor summary on the Home page.
-    //"EmulatorPath": "/path/to/emulator/start.script",
-
-    // On Windows, if you have Developer Mode enabled, you can enable symlinks here.
-    //"EnableSymLinks": false
-    
-    "Adaptors": {
-      "Serial": [
-        {
-          "Port": "COM3",
-          "Source": "1984 Cycle 1", // <-- You change the inital source name here
-          //"Program": "NAME" // <-- You can specify the initial program to load here
-          "State": "Stop" // <-- You can specify the initial state of the adaptor here, Stop or Run.
-        } // You can add as many serial adapters as you have connected.
-      ],
-      "TCP": [
-        {
-          "Port": 5816,
-          "Source": "1984 Cycle 1"
-        }
-      ]
-    },
-    "Sources": [
-      {
-        "Name": "FigForth (latest)",
-        "Path": "https://github.com/hanshuebner/nabu-figforth/raw/main/figforth.nabu"
-      }
-    ],
-    "PackageSources": [
-      {
-        "Name": "Benevolent Society of NABUligans",
-        "Path": "https://raw.githubusercontent.com/NABUligans/NAPA/main/repository/1R/repo.json"
-      }
-    ]
-  },
-  // These are settings for the ASP.Net web server.
-  "AllowedHosts": "*",
-  "Urls": "http://*:5000" // <-- You change the port/hostname here
-}
-```
+Download the latest release from Github, and extract it to a folder. Run the executable, and open your browser to `http://localhost:5000`.
 
 ## Advanced
 
@@ -143,28 +80,19 @@ Preliminary Docker support is available, but is not extensively tested. It #Work
     nnswui:dev
 ```
 
-## What's in the pipe (Coming Soon, in no particular order)
-
-- > NabuNetwork.com Headless Support
-  - > This will allow you to use the on NABU browser/launcher with NNS
-
-
 ## No hardware? No Problem
 
 NABU PC can be emulated with MAME, and the standalone NABU emulator [Marduk](https://github.com/buricco/marduk)
 
-## Brought to you by
-
-- [NabuNetwork.com](https://nabunetwork.com)
-- [NABU Discord](https://discord.gg/NgxTXvND2A)!
+## Come chat with us!
+- [NABU Discord](https://discord.gg/NgxTXvND2A)
 
 ## Special Thanks
 
-- [Leo "The Undisputed God-Legend" Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
+- [Leo Binkowski](https://www.youtube.com/@leo.binkowski) : for preserving all that sweet hardware and software.
 - DKGrizzley: for his PICO emulator to fill in the parts I couldn't figure out
 - York University: for their recreation efforts, they are both numerous and awesome
 
-- [Geek with Social Skills](https://www.youtube.com/@geekwithsocialskills)
 - BriJohn: [NABU Mame](https://github.com/brijohn/mame/tree/nabupc_wip)
 - GTAMP: [NABU MAME Windows Builds](https://gtamp.com/nabu)
 - RetroNET and Discord Chaters (in no particular order):

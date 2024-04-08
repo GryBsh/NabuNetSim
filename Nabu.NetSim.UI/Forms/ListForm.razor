@@ -1,0 +1,47 @@
+﻿@using System.Collections.ObjectModel
+
+<Repeater TItem="SettingsModel" Items="Items">
+    <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
+        <Heading Size="HeadingSize.Is5" Margin="Margin.Is1.FromBottom" Style="padding-top: 7px">
+            @if (IsSelected(context.Source))
+            {
+                <Icon IconSize=@IconSize.Large Name="IconName.AngleRight" Style="min-width: 55px" />
+            }
+            else
+            {
+                <Icon IconSize=@IconSize.Large Name="context.Source is TCPAdaptorSettings ? IconName.Wifi : IconName.Plug" Style="min-width: 55px" />
+            }
+            @context.Name
+        </Heading>
+        <Div Height="Height.Auto" VerticalAlignment="VerticalAlignment.Middle">
+            <Button Type=@ButtonType.Button class="btn btn-primary" onclick="@(() => { SetSelected(context); })" data-bs-toggle="tooltip" title="Adaptor Settings">
+                <Icon Name="@("fa-gear")" />
+            </Button>
+
+            <Button Type=@ButtonType.Button class="btn btn-danger" onclick="@(() => { RemoveAdaptor(context); })" data-bs-toggle="tooltip" title="Remove Adaptor">
+                <Icon Name="@("fa-trash")" />
+            </Button>
+
+        </Div>
+    </Div>
+    <Div Style="height: 10px;" />
+</Repeater>
+
+@code {
+    [Parameter]
+    public IEnumerable<SettingsModel> Items { get; set; }
+
+    [Parameter]
+    public IEnumerable<AdaptorSettings> Adaptors { get; set; }
+
+    [Parameter]
+    public Func<object, bool> IsSelected { get; set; }
+
+    [Parameter]
+    public Action<SettingsModel> RemoveAdaptor { get; set; }
+
+    [Parameter]
+    public Action<SettingsModel> SetSelected { get; set; }
+
+       
+}

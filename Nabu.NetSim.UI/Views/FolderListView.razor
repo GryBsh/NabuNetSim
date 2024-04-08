@@ -1,11 +1,10 @@
 ﻿@using Nabu.Services;
 @inherits ReactiveInjectableComponentBase<FolderListViewModel>
-<Div Class="sticky-top sticky-padded-top">
+<Div Class="">
     <HeaderView Icon="@IconName.FolderOpen"
                 Heading="Storage"
                 ShowButton=false />
-
-    <ListGroup Flush Class="top-sm">
+    <ListGroup Flush Class="top-more-padding sticky-top sticky-padded-top">
         <ListGroupItem Class="folder">
             <Button Type="ButtonType.Button"
                     Class="btn btn-dark"
@@ -36,6 +35,17 @@
             </Button>
             Logs
         </ListGroupItem>
+        <!--<ListGroupItem Class="folder">
+            <Button Type="ButtonType.Button"
+                    Class="btn btn-dark"
+                    onclick="@(() => {  })"
+                    data-bs-toggle="tooltip"
+                    title="Cache">
+                <Icon Name="IconName.Download" />
+            </Button>
+            Cache
+        </ListGroupItem>-->
+        <!--Client Folders-->
         <Repeater TItem="DirectoryModel" Items="ViewModel!.Folders">
             <ListGroupItem Class="folder">
                 <Button Type="ButtonType.Button"
@@ -48,6 +58,7 @@
                 @ViewModel.FolderName(context.Name)
             </ListGroupItem>
         </Repeater>
+        <!--END-->
     </ListGroup>
 </Div>
 

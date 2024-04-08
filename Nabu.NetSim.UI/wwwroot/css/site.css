@@ -1,7 +1,24 @@
 @font-face {
     font-family: 'modeseven';
     src: url(../webfonts/Modeseven-L3n5.ttf) format('truetype');
+    
 }
+
+/*@font-face {
+    font-family: 'modeseven';
+    src: url(../webfonts/ZX-Eurostile.woff2);
+    font-stretch: extra-condensed;
+}*/
+
+html {
+    font-size: 12pt;
+    
+}
+
+i {
+    
+}
+
 
 body {
     --border: 10px solid white;
@@ -11,12 +28,13 @@ body {
     --color: white;
     --inverse-background: var(--dark-background);
     background: var(--background);
-    --bs-font-family: 'modeseven';
-    font-family: 'modeseven';
-    font-size: 10pt;
     --b-bar-light-background: var(--light-background);
     overflow-y: scroll;
     overflow-x: clip;
+    font-family: 'modeseven';
+    font-size: 10pt;
+    font-weight: 400;
+    line-height: 1.5;
 }
 
 button, .btn {
@@ -52,7 +70,18 @@ button, .btn {
 
 .top-sm {
     margin-top: 0px;
+    
+    padding-bottom: 10px;
+}
+
+.top-more-padding {
+    padding-top: 10px;
+    margin-top: 0px;
+    padding-bottom: 0px;
+}
+.top-padding {
     padding-top: 5px;
+    margin-top: 0px;
     padding-bottom: 10px;
 }
 

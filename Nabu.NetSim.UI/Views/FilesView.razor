@@ -25,11 +25,17 @@
                                      <Icon Name="IconName.FileUpload" />
                                  </button>
                              </Span>
-                             <Span data-bs-toggle="tooltip" title="Add Folder">
-                                 <button type="button" class="btn btn-primary" disabled="@(!ViewModel.ActionEnabled)" onclick="@(() => { ViewModel.ShowNewFolder = true; })" >
-                                     <Icon Name="IconName.FolderPlus" />
-                                 </button>
-                             </Span>
+                            
+                            <Span data-bs-toggle="tooltip" title="Add Folder">
+                                <button type="button" class="btn btn-primary" disabled="@(!ViewModel.ActionEnabled)" onclick="@(() => { ViewModel.ShowNewFolder = true; })">
+                                    <Icon Name="IconName.FolderPlus" />
+                                </button>
+                            </Span>
+                            <Span data-bs-toggle="tooltip" title="Download">
+                                <a class="btn btn-primary @(ViewModel.ActionButtonDisabled || !ViewModel.ActionEnabled ? "disabled" : string.Empty)" href="@ViewModel.DownloadLink(ViewModel.SelectedFile)" download="@ViewModel.SelectedFile?.Name">
+                                    <Icon Name="IconName.FileDownload" />
+                                </a>
+                            </Span>
                              <Span data-bs-toggle="tooltip" title="Delete Folder">
                                  <Button class="btn btn-danger" disabled=@(ViewModel.DeleteFolderDisabled || !ViewModel.ActionEnabled) onclick="@(() => { ViewModel.StartAction(FileViewAction.DeleteFolder, ViewModel.CurrentPath); })" >
                                      <Icon Name="IconName.Delete" />
@@ -61,7 +67,7 @@
                  </ListGroupItem>
              </ListGroup>
         </Column>
-        <Column>
+        <Column Style="padding-top: 10px;">
              <ListGroup Flush Visibility="@ViewModel.Visible">
                 @if (ViewModel?.CurrentPath != ViewModel?.RootPath)
                 {

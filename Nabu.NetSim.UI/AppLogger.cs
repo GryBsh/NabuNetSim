@@ -1,14 +1,8 @@
-﻿using Microsoft.Extensions.Logging;
-using Nabu.Models;
-using Nabu.Services;
-using System.Collections.Concurrent;
-using System.Reactive.Linq;
-
-//using Microsoft.EntityFrameworkCore;
+﻿//using Microsoft.EntityFrameworkCore;
 //using Microsoft.EntityFrameworkCore.Design;
 
 namespace Nabu.NetSim.UI;
-
+/*
 public class AppLogger : DisposableBase, ILogger
 {
     private readonly string FullName;
@@ -79,3 +73,4 @@ public class AppLogger : DisposableBase, ILogger
         });
     }
 }
+*/

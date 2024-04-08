@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
 
   <PropertyGroup>
-    <TargetFramework>net7.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <Platforms>AnyCPU;x64</Platforms>
@@ -13,19 +13,18 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Blazorise" Version="1.2.4" />
+    <PackageReference Include="Blazorise" Version="1.5.1" />
     <PackageReference Include="CodeHollow.FeedReader" Version="1.2.6" />
-    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="7.0.8" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="7.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="7.0.0" />
-    <PackageReference Include="ReactiveUI" Version="19.2.1" />
-    <PackageReference Include="ReactiveUI.Blazor" Version="19.2.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Components.Web" Version="8.0.3" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="8.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Configuration" Version="8.0.0" />
+    <PackageReference Include="ReactiveUI" Version="19.6.1" />
+    <PackageReference Include="ReactiveUI.Blazor" Version="19.6.1" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LIbNabu.LiteDB\LIbNabu.LiteDB.csproj" />
-    <ProjectReference Include="..\Nabu.Network\Nabu.Network.csproj" />
+    <ProjectReference Include="..\Nabu.Lib\Nabu.Lib.csproj" />
   </ItemGroup>
 
 </Project>

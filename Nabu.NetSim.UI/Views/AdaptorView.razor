@@ -2,17 +2,20 @@
 
 <ListGroup Flush>
     <Repeater TItem="AdaptorSettings" Items="AdaptorList">    
+        @{
+            var isConnection = context is TCPAdaptorSettings tcp && tcp.Connection;
+        }
         <ListGroupItem @key=@context>
             <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100">
-                <Heading Size="HeadingSize.Is5" Margin="Margin.Is1.FromBottom">
+                <Heading Size="@(isConnection ? HeadingSize.Is6 : HeadingSize.Is5)" Margin="Margin.Is1.FromBottom">
                     <button class="btn @(ViewModel?.AdaptorStatus(context) == "Running" ? "btn-success" : "btn-primary")" onclick="@(() => { ViewModel?.Menu.SetSelected(context); })" data-bs-toggle="tooltip" title="Adaptor Settings">
                         @if (context is TCPAdaptorSettings)
                         {
-                            <Icon IconSize=@IconSize.Large Name="IconName.Wifi" />
+                            <Icon IconSize=@IconSize.Large Name="IconName.Wifi" Style="min-width: 25px" />
                         }
                         else
                         {
-                            <Icon IconSize=@IconSize.Large Name="IconName.Plug" />
+                            <Icon IconSize=@IconSize.Large Name="IconName.Plug" Style="min-width: 25px" />
                         }
                     </button>
                     @context.Port
@@ -27,7 +30,7 @@
                     </Button>
                 </Div>
             </Div>
-            <Paragraph Class="top-sm" Margin="Margin.Is1.FromBottom">
+            <Paragraph Class="top-padding" Margin="Margin.Is1.FromBottom">
                 <Icon IconSize="@IconSize.Large" Name="IconName.Folder" />
                 @context.Source@(!string.IsNullOrWhiteSpace(context.Program) ? $"/{context.Program}" : string.Empty)
             </Paragraph>

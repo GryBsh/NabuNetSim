@@ -1,8 +1,7 @@
-﻿@using Nabu.Packages;
-@using Napa;
-@inherits ReactiveInjectableComponentBase<PackagesViewModel>
+﻿@inherits ReactiveInjectableComponentBase<PackagesViewModel>
 <HeaderView Icon="@("fa-box")"
-            Heading="Installed"></HeaderView>
+            Heading="Installed"
+            ContainerClass="sticky-top sticky-padded-top"></HeaderView>
 
 <ListGroup Flush>
     <Virtualize TItem="InstalledPackage" Items="ViewModel.InstalledPackages">
@@ -40,14 +39,14 @@
         </ListGroupItem>
     </Virtualize>
 </ListGroup>
-<Container Class="sticky-bottom top" Style="padding-bottom: 10px" Visibility="ViewModel.WarningVisible ? Visibility.Visible : Visibility.Invisible">
+<Container Class="sticky-bottom top" Style="background: var(--light-background); padding-bottom: 30px" Visibility="ViewModel.WarningVisible ? Visibility.Visible : Visibility.Invisible">
     <Row>
         <Column>
             <Div Flex="Flex.JustifyContent.Between" Width="Width.Is100" Height="Height.Auto" VerticalAlignment="VerticalAlignment.Middle">
                 <Div TextOverflow="TextOverflow.Wrap">
-                    Uninstallation will disconnect all clients and restart all adaptors, proceed?
+                    Are you sure?
                 </Div>
-                <Div Width="Width.Is50">
+                <Div Width="Width.Is50" TextAlignment="TextAlignment.End">
                     <Span data-bs-toggle="tooltip" title="Confirm">
                         <Button class="btn btn-success" Clicked="@ViewModel.Uninstall">
                             <Icon Name="IconName.Check" />

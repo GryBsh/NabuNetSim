@@ -2,7 +2,8 @@
 @inherits ReactiveInjectableComponentBase<AvailablePackagesViewModel>
 
 <HeaderView Icon=@IconName.Store
-            Heading="Available"></HeaderView>
+            Heading="Available"
+            ContainerClass="sticky-top sticky-padded-top"></HeaderView>
 
 <PlaceHolderView Icon="IconName.Store" Visibility="@(ViewModel.AvailablePackages.Count() is 0 ? Visibility.Visible : Visibility.Invisible)" />
 

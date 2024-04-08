@@ -20,7 +20,7 @@
                 <HeadlineView />
             </Column>
             <Column Class="top-sm" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.AdaptorSettings))">
-                <AdaptorSettingsView />
+                <AdaptorSettingsView OnClose="@((adaptor) => {})" />
             </Column>
             <Column Class="top-sm" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.AdaptorSettings))">
                 <FilesView />
@@ -40,6 +40,10 @@
             <Column Class="top-sm" ColumnSize=ColumnSize.Is4 Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.Files))">
                 <FilesView />
             </Column>
+            <Column Width="Width.Is100" Class="top-sm" Style="min-height: 50%" Visibility="@(ViewModel!.IsVisible(VisiblePage.Settings))">
+                <SettingsView />
+            </Column>
+           
         </Row>
     </Container>
 </Div>

@@ -1,39 +1,79 @@
-﻿using Nabu.NetSim.UI.Services;
-using Nabu.Services;
+﻿using Nabu.Logs;
+using Nabu.NetSim.UI.Services;
+using Nabu.Settings;
+using Gry;
+using Gry.Jobs;
 
 namespace Nabu.NetSim.UI;
 
-public class LogCleanupJob : Job
+public class LogTailCleanupJob(ILogger<LogTailCleanupJob> logger, GlobalSettings settings, ILogTailingService logService) : Job
 {
-    public ILogService LogService { get; set; }
+    public ILogTailingService LogService { get; set; } = logService;
+    protected ILog Logger { get; } = logger;
+    protected GlobalSettings Settings { get; } = settings;
 
-    public LogCleanupJob(ILog<LogCleanupJob> logger, Settings settings, ILogService logService) : base(logger, settings)
+    
+    private void Cleanup()
     {
-        LogService = logService;
+    
+        //var cutoff = DateTime.Now.AddDays(-Settings.MaxLogEntryDatabaseAgeDays);
+        
+        //LogService.DropBefore(cutoff);
+        //Logger.Write($"Entries before {cutoff} removed");
+        
+        var bad = LogService.Count() - Settings.MaxLogEntries;
+        if (bad > 0)
+        {
+            LogService.DropLast(bad);
+            Logger.Write($"{bad} entries over limit of {Settings.MaxLogEntries} removed");
+        }
+        
     }
+    
+
+    
+
+    protected override void OnSchedule()
+    {
+        Cleanup();
+
+        Disposables.AddInterval(
+            TimeSpan.FromMinutes(Settings.LogCleanupIntervalMinutes),
+            _ => Cleanup()
+        );
+    }
+}
+
+/*
+public class LogCleanupJob(ILogger<LogCleanupJob> logger, GlobalSettings settings, ILogService logService) : Job
+{
+    public ILogService LogService { get; set; } = logService;
+    protected ILog Logger { get; } = logger;
+    protected GlobalSettings Settings { get; } = settings;
 
     private void Cleanup()
     {
-        //using var scope = Scope.CreateScope();
         var repository = LogService.Repository;
-
         var cutoff = DateTime.Now.AddDays(-Settings.MaxLogEntryDatabaseAgeDays);
-        //Repository.Collection<LogEntry>().EnsureIndex(e => e.Timestamp);
         var pendingDelete = repository.Count(e => e.Timestamp < cutoff);
         var hasPending = pendingDelete > 0;
 
-        Logger.Write((hasPending ? "Removing" : "No") + $" entries before {cutoff}" + (hasPending ? $": {pendingDelete}" : string.Empty));
+        
         if (hasPending)
         {
             repository.Delete(e => e.Timestamp < cutoff);
         }
+        if (hasPending)
+            Logger.Write($"{pendingDelete} entries from before {cutoff} removed");
 
         var good = repository.SelectDescending(e => e.Timestamp, 0, Settings.MaxLogEntries).Select(e => e.Id);
-        if (good.Count() == Settings.MaxLogEntries)
+        if (good.Count() >= Settings.MaxLogEntries)
         {
             var bad = repository.Select(e => !good.Contains(e.Id)).Select(e => e.Id);
-            Logger.Write($"Removing {bad.Count()} entries");
+
             repository.Delete(e => bad.Contains(e.Id));
+            if (bad.Any())
+                Logger.Write($"{bad.Count()} entries over limit of {Settings.MaxLogEntries} removed");
         }
 
         //GC.Collect();
@@ -45,9 +85,9 @@ public class LogCleanupJob : Job
         LogService.Repository.RunMaintenance();
     }
 
-    public override void Start()
+    protected override void OnSchedule()
     {
-        Cleanup();
+        //Cleanup();
 
         Disposables.AddInterval(
             TimeSpan.FromMinutes(Settings.LogCleanupIntervalMinutes),
@@ -59,3 +99,4 @@ public class LogCleanupJob : Job
         );
     }
 }
+*/

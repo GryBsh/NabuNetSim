@@ -1,7 +1,8 @@
 ﻿using Blazorise;
 using Microsoft.AspNetCore.Components.Forms;
+using Nabu.Logs;
 using Nabu.NetSim.UI.Models;
-using Nabu.Services;
+using Nabu.Settings;
 using ReactiveUI;
 using System.IO.Compression;
 using System.Reactive.Disposables;
@@ -23,15 +24,12 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
 
     public List<FileModel> Files { get; set; } = new();
     public List<DirectoryModel> Directories { get; set; } = new();
-    private ILog<FilesViewModel> Logger { get; }
+    private ILogger<FilesViewModel> Logger { get; }
     public ViewModelActivator Activator { get; } = new();
-    public HomeViewModel Home { get; }
-
-    public FilesViewModel(ILog<FilesViewModel> logger, HomeViewModel home)
+    public HomeViewModel Home { get; }    public GlobalSettings Settings { get; }    public FilesViewModel(ILogger<FilesViewModel> logger, HomeViewModel home, GlobalSettings settings)
     {
         Logger = logger;
-        Home = home;
-        this.WhenActivated(
+        Home = home;        Settings = settings;        this.WhenActivated(
             disposables =>
             {
                 var whenPageChanged = Home.WhenAnyValue(h => h.VisiblePage);
@@ -136,11 +134,11 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
 
     public void SetCurrentDirectory(string path)
     {
-        CurrentPath = path == string.Empty ? string.Empty : new DirectoryInfo(path).FullName;
+        CurrentPath = path == string.Empty ? string.Empty : new DirectoryInfo(path).FullName;        RootPath ??= CurrentPath;
         SelectedFile = null;
         UpdateList();
         NotifyChange();
-    }
+    }    public string DownloadLink(FileModel? file)    {        if (file is null) return string.Empty;        var path = Path.GetRelativePath(AppContext.BaseDirectory, file.Path).Replace("\\","/");        return $"/api/download/" + path;    }
 
     public void UpDirectory()
     {

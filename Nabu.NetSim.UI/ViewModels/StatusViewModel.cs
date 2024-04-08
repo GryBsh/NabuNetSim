@@ -1,4 +1,5 @@
-﻿using Nabu.Adaptor;
+﻿using Nabu.Adaptors;
+using Nabu.Settings;
 using ReactiveUI;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
@@ -11,7 +12,7 @@ public class StatusViewModel : ReactiveObject, IActivatableViewModel
         HomeViewModel home,
         AdaptorSettingsViewModel menu,
         LogViewModel logViewer,
-        Settings settings
+        GlobalSettings settings
     )
     {
         Home = home;
@@ -24,7 +25,7 @@ public class StatusViewModel : ReactiveObject, IActivatableViewModel
             disposables =>
             {
                 Observable
-                    .Interval(TimeSpan.FromSeconds(5), RxApp.TaskpoolScheduler)
+                    .Interval(TimeSpan.FromSeconds(30), RxApp.TaskpoolScheduler)
                         .Subscribe(_ =>
                         {
                             this.RaisePropertyChanged(nameof(Serial));
@@ -40,32 +41,23 @@ public class StatusViewModel : ReactiveObject, IActivatableViewModel
     public HomeViewModel Home { get; }
     public AdaptorSettingsViewModel Menu { get; }
     public LogViewModel LogViewer { get; }
-    public Settings Settings { get; }
+    public GlobalSettings Settings { get; }
     public ViewModelActivator Activator { get; }
 
-    public ICollection<SerialAdaptorSettings> Serial
+
+    public IEnumerable<SerialAdaptorSettings> Serial
     {
-        get => Settings.Adaptors.Serial;
+        get => Settings.Serial;
     }
 
-    public ICollection<TCPAdaptorSettings> TCP
+    public IEnumerable<TCPAdaptorSettings> TCP
     {
-        get => Settings.Adaptors.TCP;
+        get => Settings.TCP;
     }
 
     public ICollection<TCPAdaptorSettings> Connections
     {
-        get => TCPAdaptor.Connections.Values.ToList();
+        get => TCPAdapter.Connections.Values;
     }
 
-    public string AdaptorStatus(AdaptorSettings settings)
-    {
-        return settings.State switch
-        {
-            ServiceShould.Run => "Running",
-            ServiceShould.Restart => "Stopping",
-            ServiceShould.Stop => "Stopped",
-            _ => "Unknown"
-        };
-    }
 }

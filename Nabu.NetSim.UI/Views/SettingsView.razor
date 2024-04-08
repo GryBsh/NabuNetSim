@@ -1,9 +1,99 @@
-﻿@inherits ReactiveInjectableComponentBase<SettingsViewModel>
+﻿@using Nabu.NetSim.UI.Forms;
+@inherits ReactiveInjectableComponentBase<SettingsViewModel>
+<HeaderView Icon="@("fa-gear")"
+            Heading="Settings" />
+<br/>
+<Container Width="Width.Is100">
+    <Row>
+        <Column ColumnSize="ColumnSize.Is1">
+            <Div Class="btn-group-vertical sticky-top sticky-padded-top" Style="width:min-content; margin: auto;">
+                <Button class="btn btn-success" 
+                        onclick="@(() => { ViewModel.Apply(); })" 
+                        data-bs-toggle="tooltip" 
+                        title="Apply"
+                        disabled=@{!ViewModel.HasChanged}>
+                    <Icon Name="IconName.Check" />
+                </Button>
 
-<ListGroup Flush>
-    <ListGroupItem>
-        <Div Class="input-group">
-            
-        </Div>
-    </ListGroupItem>
-</ListGroup>
+                <Button class="btn btn-danger" 
+                        onclick="@(() => { ViewModel.Revert(); })" 
+                        data-bs-toggle="tooltip" 
+                        title="Revert"
+                        disabled=@{!ViewModel.HasChanged}>
+                    <Icon Name="IconName.Times" />
+                </Button>
+
+                <Button class="btn btn-warning" 
+                        onclick="@(() => { ViewModel.Save(); })" 
+                        data-bs-toggle="tooltip" 
+                        title="Save"
+                        disabled=@{!ViewModel.CanSave}>
+                    <Icon Name="IconName.Save" />
+                </Button>
+
+                <Button class="btn btn-danger" onclick="@(() => { ViewModel.ShowAdvanced = !ViewModel.ShowAdvanced; ViewModel.Menu.ShowAdvanced = !ViewModel.Menu.ShowAdvanced; })" data-bs-toggle="tooltip" title="Advanced">
+                    @if (ViewModel.ShowAdvanced)
+                    {
+                        <Icon Name="IconName.EyeSlash" />
+                    }
+                    else
+                    {
+                        <Icon Name="IconName.Eye" />
+                    }
+                </Button>
+            </Div>
+        </Column>
+        <Column ColumnSize="ColumnSize.Is6">
+            <ListGroup Flush>
+                <HeaderView Icon="IconName.Server" Heading="Adaptors" ContainerClass="sticky-top sticky-padded-top" />
+                <ListGroupItem>
+                    <Div Style="height: 10px;" />
+                    <ListForm 
+                        Adaptors="ViewModel.Current.Serial"
+                        Items="ViewModel.SerialAdaptors"
+                        IsSelected=@((t) => ViewModel.IsSelected(t as AdaptorSettings) )
+                        RemoveAdaptor=@((t) => ViewModel.RemoveSerialAdaptor(
+                            t as SettingsModel<SerialAdaptorSettings>
+                        ))
+                        SetSelected=@((t) => ViewModel.SetSelected(t as SettingsModel<SerialAdaptorSettings>)) 
+                    />
+
+                    <ListForm 
+                        Adaptors="ViewModel.Current.TCP" 
+                        Items="ViewModel.TCPAdaptors" 
+                        IsSelected=@((t) => ViewModel.IsSelected(t as AdaptorSettings) )
+                        RemoveAdaptor=@((t) => ViewModel.RemoveTCPAdaptor(
+                            t as SettingsModel<TCPAdaptorSettings>
+                        ))
+                        SetSelected=@((t) => ViewModel.SetSelected(t as SettingsModel<TCPAdaptorSettings>))
+                    />
+
+                    <Div Flex="Flex.JustifyContent.Center" Width="Width.Is100">
+                        <Div Height="Height.Auto" VerticalAlignment="VerticalAlignment.Middle">
+                            <Button class="btn btn-primary" onclick="@(() => { ViewModel.NewSerialAdapter(); })" data-bs-toggle="tooltip" title="Add Serial">
+                                <Icon Name="IconName.PlusCircle" />
+                                <Icon Name="IconName.Plug" />
+                            </Button>
+
+                            <Button class="btn btn-primary" onclick="@(() => { ViewModel.NewTCPAdapter(); })" data-bs-toggle="tooltip" title="Add TCP">
+                                <Icon Name="IconName.PlusCircle" />
+                                <Icon Name="IconName.Wifi" />
+                            </Button>
+                        </Div>
+                    </Div>
+
+                </ListGroupItem>
+            </ListGroup>
+            <SettingsForm Sections=@ViewModel.Sections
+                          Packages=@ViewModel.PackageManager
+                          Sources=@ViewModel.Sources
+                          HeadlessPrograms=@ViewModel.Programs
+            />
+        </Column>
+        <Column ColumnSize="ColumnSize.Is5">
+            <AdaptorSettingsView OnClose="@((adaptor) => ViewModel?.SetSelected(adaptor))" />
+        </Column>
+    </Row>
+</Container>
+
+
