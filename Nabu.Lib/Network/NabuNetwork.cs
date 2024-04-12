@@ -6,6 +6,7 @@ using Nabu.Settings;
 using Nabu.Sources;
 using Napa;
 using Newtonsoft.Json.Linq;
+using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Reactive.Linq;
@@ -59,7 +60,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     }
 
     private static ConcurrentDictionary<(AdaptorSettings, ProgramSource, int), Memory<byte>> PakCache { get; } = new();
-    private static ConcurrentDictionary<ProgramSource, IEnumerable<NabuProgram>> SourceCache { get; } = new();
+    private static DataDictionary<IEnumerable<NabuProgram>> SourceCache { get; } = new();
     private IFileCache FileCache { get; set; }
     private HttpCache Http { get; }
     private IPackageManager Packages { get; }
@@ -89,7 +90,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         if (source is null)
             return [];
-        if (SourceCache.TryGetValue(source, out IEnumerable<NabuProgram>? value))
+        if (SourceCache.TryGetValue(source.Name, out IEnumerable<NabuProgram>? value))
             return value;
 
         return Array.Empty<NabuProgram>();
@@ -107,7 +108,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         if (source is null)
             return (ImageType.None, Array.Empty<byte>());
 
-        if (SourceCache.ContainsKey(source) is false)
+        if (SourceCache.ContainsKey(source.Name) is false)
             return (ImageType.None, Array.Empty<byte>());
 
         if (PakCache.TryGetValue((settings, source, pak), out var value))
@@ -133,7 +134,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         if (targetProgram == null)
             return (ImageType.None, Array.Empty<byte>());
 
-        var program = SourceCache[source].FirstOrDefault(p => p.Name == targetProgram);
+        var program = SourceCache[source.Name].FirstOrDefault(p => p.Name == targetProgram);
 
         //BECAUSE: A package using the exploit loader should not have to bundle a menu.
         if (program is null /* && pak > Constants.CycleMenuNumber */)
@@ -267,9 +268,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
         foreach (var task in tasks)
         {
-            var (isList, programs) = await task;
-            if (isList) return (isList, programs);
-        }
+            var (isList, programs) = await task;
+            if (isList) return (isList, ListCache[source.Path] = programs);            
+        }        if (ListCache.TryGetValue(source.Path, out var progs))            return (true, progs);
         return (false, Array.Empty<NabuProgram>());
     }
 
@@ -291,7 +292,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     {
         if (source is null || 
             source.SourceType is not SourceType.Remote || 
-            !SourceCache.TryGetValue(source, out IEnumerable<NabuProgram>? programs)
+            !SourceCache.TryGetValue(source.Name, out IEnumerable<NabuProgram>? programs)
         )   return;
 
         foreach (var program in from p in programs where !p.IsPakMenu select p)
@@ -384,7 +385,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                         ));
                     }
 
-                    SourceCache[source] = programs;
+                    SourceCache[source.Name] = programs;
 
                 }
                 else if (checkLocal && source.SourceType is SourceType.Local)
@@ -439,7 +440,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                         ));
                     }
 
-                    SourceCache[source] = programs;
+                    SourceCache[source.Name] = programs;
                 }
                 else if (checkLocal && source.SourceType is SourceType.Package)
                 {
@@ -473,7 +474,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
                     if (programs.Count != 0)
                     {
-                        SourceCache[source] = programs;
+                        SourceCache[source.Name] = programs;
                     }
                 }
             });
@@ -518,19 +519,17 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     public static string BlankIconPtrnStr { get; } = Convert.ToBase64String(BlankIconPattern);
 
     const string Empty = " ";
-
+    DataDictionary<NabuProgram[]> ListCache = new();
     protected async Task<(bool, NabuProgram[])> IsNabuCaJson(ProgramSource source)
     {
         var uri = source.Path;
         if (!(uri.EndsWith(".json") && uri.Contains("nabu.ca"))) { return (false, Array.Empty<NabuProgram>()); }
         var (_, found, cached, _, _, _, _) = await Http.GetPathStatus(uri);
-        if (!found && !cached) { return (false, []); }
+        if (!found && !cached) {             return (false, []);         }
 
-       
         try
         {            var json = await Http.GetString(uri);
-            var progs = new List<NabuProgram>();
-            var sections = JObject.Parse(json)["Items"];
+            var progs = new List<NabuProgram>();            JToken? sections = null;            while (sections == null)                try                {                    sections = JObject.Parse(json)["Items"];                }                catch { }
             if (sections is null) { return (false, []); }
 
             string[] skipSections = ["NABU Cycles", "Demos", "Utilities"];
@@ -576,9 +575,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                     ));
                 }
             }
-            return (true, progs.ToArray());
+            return (true, ListCache[uri] = progs.ToArray());
         }
-        catch { return (false, []); }
+        catch {            return (false, []);         }
     }
 
     protected async Task<(bool, NabuProgram[])> IsNabuNetworkList(ProgramSource source)

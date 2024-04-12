@@ -290,7 +290,7 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
             if (SettingsModel != null)
                 SettingsModel.PropertyChanged += (s, e) =>
                 {
-                    Task.Run(RefreshPrograms);                    Selected.SetChanged();
+                    RefreshPrograms();                    Selected.SetChanged();
                 };
 
             RefreshPrograms();
