@@ -25,16 +25,15 @@ public class LogService : DisposableBase, ILogTailingService
     {
         LogEntries.Clear();
         var logs = new DirectoryInfo(path).GetFiles("*.log").OrderByDescending(f => f.CreationTime);
-
-        var current = logs.FirstOrDefault();
+
+        var current = logs.FirstOrDefault()?.FullName ?? Path.Combine(path, "current.log");
         var last = logs.Skip(1).Reverse();
 
-        if (current is null)
-            return;
+
         foreach (var l in last)        {            var loaded = false;            while (!loaded)                try {                     foreach (var line in File.ReadLines(l.FullName))
-                        LogEntries.Insert(0, line);                    loaded = true;                } catch {}        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        }        long position = await ReadAll(current.FullName, 0, cancellation);                while (!cancellation.IsCancellationRequested) {
+                        LogEntries.Insert(0, line);                    loaded = true;                } catch {}        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        }        long position = 0;                while (position == 0)            try            {                position = await ReadAll(current, 0, cancellation);                await Task.Delay(1000, cancellation);            } catch { }                while (!cancellation.IsCancellationRequested) {
             try
-            {                position = await Read(current.FullName, position, cancellation);                await Task.Delay(1000, cancellation);            }
+            {                position = await Read(current, position, cancellation);                await Task.Delay(1000, cancellation);            }
             catch { }            //(Exception ex) when (ex is ArgumentOutOfRangeException or IOException)             //{            //    position = 0;            //}   
         }
            
