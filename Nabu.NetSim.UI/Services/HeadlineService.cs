@@ -5,4 +5,6 @@ using Nabu.Models;
 using Nabu.Services;
 using System.Reactive.Linq;
 
-namespace Nabu.NetSim.UI.Services;public sealed class HeadlineService { }
+namespace Nabu.NetSim.UI.Services;
+
+public sealed class HeadlineService { }

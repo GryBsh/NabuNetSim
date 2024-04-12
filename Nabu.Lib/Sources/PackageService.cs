@@ -1,4 +1,5 @@
 ﻿using Gry;
+using Microsoft.Extensions.Logging;
 using Nabu.Logs;
 using Nabu.Network;
 using Nabu.Settings;
@@ -15,7 +16,8 @@ namespace Nabu.Sources
             IPackageManager packages,
             ISourceService sources,
             INabuNetwork network,
-            ILogger<PackageService> log,            GlobalSettings settings
+            ILogger<PackageService> log,
+            GlobalSettings settings
         )
         {
             Packages = packages;
@@ -54,7 +56,9 @@ namespace Nabu.Sources
                 TCPServerPort = (int)package.Option<long>(PackageOptions.ServerPort),
                 Path = package.Path,
                 SourceType = SourceType.Package,
-                SourcePackage = package.Id,                Author = package.Author,                Description = package.Description
+                SourcePackage = package.Id,
+                Author = package.Author,
+                Description = package.Description
             };
             return source;
         }
@@ -78,7 +82,9 @@ namespace Nabu.Sources
                 HeadlessMenu = pak.Option<bool>(AdaptorFeatures.HeadlessMenu),
                 Path = path,
                 SourceType = isRemotePak ? SourceType.Remote : SourceType.Local,
-                SourcePackage = package.Id,                Author = package.Author,                Description = package.Description
+                SourcePackage = package.Id,
+                Author = package.Author,
+                Description = package.Description
             };
 
             return source;

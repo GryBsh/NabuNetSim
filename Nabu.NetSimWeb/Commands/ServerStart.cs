@@ -59,10 +59,33 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
 
     public GlobalSettings Settings { get; }
     public SettingsProvider SettingsProvider { get;}
-    static void AddGlobal(IConfiguration configuration, IServiceCollection services, Action<GlobalSettings>? setter = null)    {        var settings = new GlobalSettings();        var napaOptions = new NapaOptions();        configuration.Bind("Settings", settings);        configuration.Bind("Packages", napaOptions);        services.Configure<NapaOptions>(configuration.GetSection("Packages"));        setter?.Invoke(settings);        services.AddSingleton(settings);           }
+
+
+    static void AddGlobal(IConfiguration configuration, IServiceCollection services, Action<GlobalSettings>? setter = null)
+    {
+        var settings = new GlobalSettings();
+        var napaOptions = new NapaOptions();
+        configuration.Bind("Settings", settings);
+        configuration.Bind("Packages", napaOptions);
+        services.Configure<NapaOptions>(configuration.GetSection("Packages"));
+        setter?.Invoke(settings);
+        services.AddSingleton(settings);
+       
+    }
+
     public static async Task<int> Headless(GlobalSettings settings, string[] args)
-    {        
-        Runtime.DisableRegistrar<NetSim.UI.ModuleBuilder>();        var builder = Host.CreateDefaultBuilder(args);        builder.ConfigureServices(            (builder,services) => {                 services.AddSingleton<ProcessService>();                AddGlobal(builder.Configuration, services, s => s.ForceHeadless = true);            }        );
+    {
+        
+        Runtime.DisableRegistrar<NetSim.UI.ModuleBuilder>();
+        var builder = Host.CreateDefaultBuilder(args);
+        builder.ConfigureServices(
+            (builder,services) => { 
+                services.AddSingleton<ProcessService>();
+
+                AddGlobal(builder.Configuration, services, s => s.ForceHeadless = true);
+            }
+        );
+
         await Runtime.Build(builder).RunConsoleAsync();
         await Task.Delay(2000);
         return 0;
@@ -71,14 +94,17 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
     public static int WebServer(GlobalSettings settings, string[] args)
     {
         var builder = WebApplication.CreateBuilder(args);        
-        
-        var services = builder.Services;        AddGlobal(builder.Configuration, services);
+        var services = builder.Services;
+        AddGlobal(builder.Configuration, services);
+
         //services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
         services.UseMicrosoftDependencyResolver();
         var resolver = Locator.CurrentMutable;
         resolver.InitializeSplat();
         resolver.InitializeReactiveUI();
-        services.AddControllers();        services.AddRouting();
+
+        services.AddControllers();
+        services.AddRouting();
         services.AddDataProtection();
         services.AddRazorPages();
         services.AddServerSideBlazor();
@@ -103,7 +129,8 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         app.UseStaticFiles();
         app.UseRouting();
         app.MapBlazorHub();
-        app.MapFallbackToPage("/_Host");        app.MapControllers();
+        app.MapFallbackToPage("/_Host");
+        app.MapControllers();
         app.Run();
 
         return 0;

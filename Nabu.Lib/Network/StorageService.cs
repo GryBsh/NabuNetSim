@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.FileSystemGlobbing;
+using Microsoft.Extensions.Logging;
 using Nabu.Logs;
 using Nabu.Settings;
 using Nabu.Sources;
@@ -35,7 +36,7 @@ namespace Nabu.Network
         private const string COMPortName = "COM";
         private const string OldAdaptorFolderPrefix = "-";
         private readonly SemaphoreSlim Lock = new(1);
-        private readonly ILog Logger = console;
+        private readonly ILogger Logger = console;
 
         public GlobalSettings Settings { get; } = settings;
         public ISourceService Sources { get; } = sources;
@@ -92,7 +93,7 @@ namespace Nabu.Network
 
         private void MigrateToIsolatedStorage(DirectoryInfo root, string source, bool sourceExists, IEnumerable<DirectoryInfo> folders)
         {
-            Logger.Write("Migrating items from Storage root to File Source");
+            Logger.LogInformation("Migrating items from Storage root to File Source");
             if (!sourceExists) UpdatePath(source, root.FullName, SearchOption.TopDirectoryOnly, StorageUpdateType.Move);
 
             foreach (var folder in folders)
@@ -105,7 +106,7 @@ namespace Nabu.Network
                 };
 
                 var newPath = Path.Join(folder.Parent!.FullName, newName);
-                Logger.Write($"Migrating {folder} to {newPath}");
+                Logger.LogInformation($"Migrating {folder} to {newPath}");
                 Directory.Move(folder.FullName, newPath);
             }
             MigratedToIsolatedStorage = true;
@@ -155,7 +156,7 @@ namespace Nabu.Network
                         if (updateType is StorageUpdateType.Move)
                         {
                             Directory.Move(origin, target);
-                            Logger.Write($"Moved: {folder} to {destinationName}");
+                            Logger.LogInformation($"Moved: {folder} to {destinationName}");
                         }
                         else if (updateType is StorageUpdateType.Copy)
                         {
@@ -166,7 +167,7 @@ namespace Nabu.Network
                                 var t = Path.Join(target, tPath);
                                 File.Copy(c, t, true);
                             }
-                            Logger.Write($"Copied: {folder} to {destinationName}");
+                            Logger.LogInformation($"Copied: {folder} to {destinationName}");
                         }
                         else if (updateType is StorageUpdateType.SymLink)
                         {
@@ -174,7 +175,7 @@ namespace Nabu.Network
                                 Directory.Delete(target);
 
                             Directory.CreateSymbolicLink(origin, target);
-                            Logger.Write($"SymLinked: {folder} to {destinationName}");
+                            Logger.LogInformation($"SymLinked: {folder} to {destinationName}");
                         }
                     }
                 }
@@ -240,17 +241,17 @@ namespace Nabu.Network
                         if (updateType is StorageUpdateType.Move)
                         {
                             File.Move(file.FullName, newPath, true);
-                            Logger.Write($"Moved: {filePath} to {destinationName}");
+                            Logger.LogInformation($"Moved: {filePath} to {destinationName}");
                         }
                         else if (updateType is StorageUpdateType.Copy)
                         {
                             File.Copy(file.FullName, newPath, true);
-                            Logger.Write($"Copied: {filePath} to {destinationName}");
+                            Logger.LogInformation($"Copied: {filePath} to {destinationName}");
                         }
                         else if (updateType is StorageUpdateType.SymLink)
                         {
                             File.CreateSymbolicLink(newPath, file.FullName);
-                            Logger.Write($"SymLinked: {filePath} to {destinationName}");
+                            Logger.LogInformation($"SymLinked: {filePath} to {destinationName}");
                         }
                     }
                 }
@@ -316,7 +317,7 @@ namespace Nabu.Network
                     var target = NabuLib.ResolveLink(file.FullName);
                     if (!Path.Exists(target))
                     {
-                        Logger.WriteWarning($"Deleting link with missing target: {file.Name}");
+                        Logger.LogWarning($"Deleting link with missing target: {file.Name}");
                         File.Delete(file.FullName);
                         continue;
                     }

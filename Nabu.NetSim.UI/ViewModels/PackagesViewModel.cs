@@ -47,7 +47,9 @@ namespace Nabu.NetSim.UI.ViewModels
             PendingId = id;
             UninstallDisabled = true;
             WarningVisible = true;
-            this.RaisePropertyChanged(nameof(UninstallDisabled));            this.RaisePropertyChanged(nameof(WarningVisible));            //Uninstall();
+            this.RaisePropertyChanged(nameof(UninstallDisabled));
+            this.RaisePropertyChanged(nameof(WarningVisible));
+            //Uninstall();
         }
 
         public async void Uninstall()

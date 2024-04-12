@@ -43,11 +43,11 @@
                     <Icon Name="IconName.FolderOpen" />
                 </Button>
                 <EmulatorButtonView OnClick="@(() => {
-                                        if (ViewModel.SettingsModel?.Changed is true)
-                                            ViewModel.ApplySettings(); 
-                                    })" 
-                                    Adaptor="@ViewModel.Selected" 
-                                    Changed=@(ViewModel.SettingsModel?.Changed ?? false)/>
+                        if (ViewModel.SettingsModel?.Changed is true)
+                            ViewModel.ApplySettings(); 
+                    })" 
+                    Adaptor="@ViewModel.Selected" 
+                    Changed=@(ViewModel.SettingsModel?.Changed ?? false)/>
             </Div>
         </Column>
         <Column ColumnSize=@(ViewModel.Home.IsVisible(VisiblePage.AdaptorSettings) is Visibility.Visible ? ColumnSize.Is10 : ColumnSize.IsFull)>

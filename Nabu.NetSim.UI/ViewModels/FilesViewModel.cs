@@ -1,5 +1,6 @@
 ﻿using Blazorise;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.Extensions.Logging;
 using Nabu.Logs;
 using Nabu.NetSim.UI.Models;
 using Nabu.Settings;
@@ -26,10 +27,15 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
     public List<DirectoryModel> Directories { get; set; } = new();
     private ILogger<FilesViewModel> Logger { get; }
     public ViewModelActivator Activator { get; } = new();
-    public HomeViewModel Home { get; }    public GlobalSettings Settings { get; }    public FilesViewModel(ILogger<FilesViewModel> logger, HomeViewModel home, GlobalSettings settings)
+    public HomeViewModel Home { get; }
+    public GlobalSettings Settings { get; }
+
+    public FilesViewModel(ILogger<FilesViewModel> logger, HomeViewModel home, GlobalSettings settings)
     {
         Logger = logger;
-        Home = home;        Settings = settings;        this.WhenActivated(
+        Home = home;
+        Settings = settings;
+        this.WhenActivated(
             disposables =>
             {
                 var whenPageChanged = Home.WhenAnyValue(h => h.VisiblePage);
@@ -134,11 +140,21 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
 
     public void SetCurrentDirectory(string path)
     {
-        CurrentPath = path == string.Empty ? string.Empty : new DirectoryInfo(path).FullName;        RootPath ??= CurrentPath;
+        CurrentPath = path == string.Empty ? string.Empty : new DirectoryInfo(path).FullName;
+        RootPath ??= CurrentPath;
         SelectedFile = null;
         UpdateList();
         NotifyChange();
-    }    public string DownloadLink(FileModel? file)    {        if (file is null) return string.Empty;        var path = Path.GetRelativePath(AppContext.BaseDirectory, file.Path).Replace("\\","/");        return $"/api/download/" + path;    }
+    }
+
+    public string DownloadLink(FileModel? file)
+    {
+        if (file is null) return string.Empty;
+
+        var path = Path.GetRelativePath(AppContext.BaseDirectory, file.Path).Replace("\\","/");
+
+        return $"/api/download/" + path;
+    }
 
     public void UpDirectory()
     {
@@ -213,7 +229,7 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
             }
             catch (Exception ex)
             {
-                Logger.WriteError(string.Empty, ex);
+                Logger.LogError(string.Empty, ex);
                 Alert(ex.Message, AlertState.Error);
             }
         }
@@ -231,7 +247,7 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
             }
             catch (Exception ex)
             {
-                Logger.WriteError(string.Empty, ex);
+                Logger.LogError(string.Empty, ex);
                 Alert(ex.Message, AlertState.Error);
             }
         }

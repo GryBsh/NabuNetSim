@@ -1,5 +1,6 @@
 ﻿using Gry;
 using Gry.Serialization;
+using Microsoft.Extensions.Logging;
 using Nabu.Logs;
 using Napa;
 using Spectre.Console;
@@ -28,13 +29,13 @@ namespace Nabu.Cli.Packages
 
             var paths = Directories.List(settings.Path, pattern);
             var manifests = new List<Package>();
-            Log.Write($"Input path: {settings.Path}");
-            Log.Write($"Destination: {settings.Destination ?? settings.Path}");
-            Log.Write("Found Packages:");
+            Log.LogInformation($"Input path: {settings.Path}");
+            Log.LogInformation($"Destination: {settings.Destination ?? settings.Path}");
+            Log.LogInformation("Found Packages:");
 
             foreach (var path in paths)
             {
-                Log.Write(path);
+                Log.LogInformation(path);
                 try
                 {
                     var relativePath = Path.GetRelativePath(settings.Path, path);
@@ -52,7 +53,7 @@ namespace Nabu.Cli.Packages
                     NabuCli.WriteError(ex);
                 }
             }
-            Log.Write("Exporting package list");
+            Log.LogInformation("Exporting package list");
             var list = Yaml.Serialize(new SerializerOptions(), manifests.ToArray());
             await File.WriteAllTextAsync(
                 Path.Combine(settings.Destination ?? settings.Path, "repo.yaml"), 

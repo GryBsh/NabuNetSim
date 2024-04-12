@@ -3,13 +3,14 @@ using Nabu.NetSim.UI.Services;
 using Nabu.Settings;
 using Gry;
 using Gry.Jobs;
+using Microsoft.Extensions.Logging;
 
 namespace Nabu.NetSim.UI;
 
 public class LogTailCleanupJob(ILogger<LogTailCleanupJob> logger, GlobalSettings settings, ILogTailingService logService) : Job
 {
     public ILogTailingService LogService { get; set; } = logService;
-    protected ILog Logger { get; } = logger;
+    protected ILogger Logger { get; } = logger;
     protected GlobalSettings Settings { get; } = settings;
 
     
@@ -25,7 +26,7 @@ public class LogTailCleanupJob(ILogger<LogTailCleanupJob> logger, GlobalSettings
         if (bad > 0)
         {
             LogService.DropLast(bad);
-            Logger.Write($"{bad} entries over limit of {Settings.MaxLogEntries} removed");
+            Logger.LogDebug("{} entries over limit of {} removed", bad, Settings.MaxLogEntries);
         }
         
     }

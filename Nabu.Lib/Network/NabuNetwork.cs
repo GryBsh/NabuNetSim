@@ -68,7 +68,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
     }
 
     public IEnumerable<NabuProgram> Programs(ProgramSource? source)
-    {        if (source is null)            return [];
+    {
+        if (source is null)
+            return [];
         if (SourceCache.TryGetValue(source, out IEnumerable<NabuProgram>? value))
             return value;
 
@@ -281,7 +283,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                 var status = await Http.GetPathStatus(program.Path);
                 if (!status.ShouldDownload) continue;
                 var (path, name) = Http.CacheFileNames(program.Path);
-                Logger.LogInformation("Caching {} from {}", program.DisplayName, source.Name);
+                Logger.LogDebug("Caching {} from {}", program.DisplayName, source.Name);
                 //await Http.DownloadAndCache(program.Path, path, name);
                 _ = await Http.GetFile(program.Path);
             }
@@ -338,7 +340,11 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             pakUrl,
                             source.SourceType,
                             type,
-                            DefaultPatches,                            source.Author ?? Empty,                            source.Description ?? Empty,                            BlankIconClrStr,                            BlankIconPtrnStr,
+                            DefaultPatches,
+                            source.Author ?? Empty,
+                            source.Description ?? Empty,
+                            BlankIconClrStr,
+                            BlankIconPtrnStr,
                             isPakMenu: true
                         ));
                     }
@@ -352,7 +358,11 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             source.Path,
                             source.SourceType,
                             ImageType.Raw,
-                            DefaultPatches,                            source.Author ?? Empty,                            source.Description ?? Empty,                            BlankIconClrStr,                            BlankIconPtrnStr
+                            DefaultPatches,
+                            source.Author ?? Empty,
+                            source.Description ?? Empty,
+                            BlankIconClrStr,
+                            BlankIconPtrnStr
                         ));
                     }
 
@@ -381,7 +391,11 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             menuPak,
                             source.SourceType,
                             type,
-                            DefaultPatches,                            source.Author ?? Empty,                            Empty,                            BlankIconClrStr,                            BlankIconPtrnStr,
+                            DefaultPatches,
+                            source.Author ?? Empty,
+                            Empty,
+                            BlankIconClrStr,
+                            BlankIconPtrnStr,
                             isPakMenu: true
                         ));
                         files = files.Except(new[] { menuPak }).ToArray();
@@ -399,7 +413,11 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             file,
                             source.SourceType,
                             ImageType.Raw,
-                            DefaultPatches,                            source.Author ?? Empty,                            Empty,                            BlankIconClrStr,                            BlankIconPtrnStr
+                            DefaultPatches,
+                            source.Author ?? Empty,
+                            Empty,
+                            BlankIconClrStr,
+                            BlankIconPtrnStr
                         ));
                     }
 
@@ -426,7 +444,11 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                                 SourceType.Remote :
                                 SourceType.Local,
                             ImageType.Raw,
-                            DefaultPatches,                            program.Author ?? source.Author ?? Empty,                            program.Description ?? Empty,                            program.TileColor ?? BlankIconClrStr,                            program.TilePattern ?? BlankIconPtrnStr,
+                            DefaultPatches,
+                            program.Author ?? source.Author ?? Empty,
+                            program.Description ?? Empty,
+                            program.TileColor ?? BlankIconClrStr,
+                            program.TilePattern ?? BlankIconPtrnStr,
                             options: program.Options
                         )
                     );
@@ -456,17 +478,133 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
     protected static bool IsRawPak(string path) => PakFile().IsMatch(path);
 
-    protected static bool IsWebSource(string path) => path.Contains("://");    #endregion URLs
-    #region Http Location
-    public static byte[] BlankIconPattern { get; } = [        0xFF,0x80,0xA2,0xB2,0xAA,0xA6,0xA2,0x80,        0x80,0xBE,0xA2,0xAC,0xA2,0xBE,0x80,0xFF,        0xFF,0x01,0x7D,0x45,0x7D,0x45,0x45,0x01,        0x01,0x45,0x45,0x45,0x45,0x7D,0x01,0xFF    ];     public static byte[] BlankIconColor { get; } = [        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F    ];    public static string BlankIconClrStr { get; } = Convert.ToBase64String(BlankIconColor);    public static string BlankIconPtrnStr { get; } = Convert.ToBase64String(BlankIconPattern);    const string Empty = " ";    protected async Task<(bool, NabuProgram[])> IsNabuCaJson(ProgramSource source)    {        var uri = source.Path;        if (!(uri.EndsWith(".json") && uri.Contains("nabu.ca"))) { return (false, Array.Empty<NabuProgram>()); }        var (_, found, cached, _, _, _, _) = await Http.GetPathStatus(uri);
-        if (!found && !cached) { return (false, []); }        var json = await Http.GetString(uri);        try        {            var progs = new List<NabuProgram>();            var sections = JObject.Parse(json)["Items"];            if (sections is null) { return (false, []); }            string[] skipSections = ["NABU Cycles", "Demos", "Utilities"];            foreach (var section in sections)            {                var title = section["Title"]?.ToString();                if (skipSections.Contains(title)) continue;                var files = section["Files"];                if (files is null) continue;                foreach (var item in files)                {                    var name = item["Title"]?.ToString() ?? "Unnamed Program";                    var filename = item["Filename"]?.ToString() ?? Empty;                    var url = $"https://cloud.nabu.ca/HomeBrew/titles/{filename}";                    var author = item["Author"]?.ToString() ?? Empty;                    var description = item["Description"]?.ToString() ?? Empty;                    var tileColor = item["IconTileColor"]?.ToString() ?? BlankIconClrStr;                    var tilePattern = item["IconTilePattern"]?.ToString() ?? BlankIconPtrnStr;                    var headless = item["IsHeadless"]?.ToObject<bool>() is true;                    if (headless && !source.HeadlessMenu)                        source.HeadlessMenu = true;                    progs.Add(new(                        name,                        filename,                        source.Name,                        url,                        SourceType.Remote,                        ImageType.Raw,                        DefaultPatches,                        author,                        description,                        tileColor,                        tilePattern,                        category: title,                        headless: headless                    ));                }            }            return (true, progs.ToArray());        }        catch { return (false, []); }    }
+    protected static bool IsWebSource(string path) => path.Contains("://");
+
+    #endregion URLs
+
+    #region Http Location
+
+    public static byte[] BlankIconPattern { get; } = [
+        0xFF,0x80,0xA2,0xB2,0xAA,0xA6,0xA2,0x80,
+        0x80,0xBE,0xA2,0xAC,0xA2,0xBE,0x80,0xFF,
+        0xFF,0x01,0x7D,0x45,0x7D,0x45,0x45,0x01,
+        0x01,0x45,0x45,0x45,0x45,0x7D,0x01,0xFF
+    ]; 
+    public static byte[] BlankIconColor { get; } = [
+        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
+        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
+        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
+        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F
+    ];
+    public static string BlankIconClrStr { get; } = Convert.ToBase64String(BlankIconColor);
+    public static string BlankIconPtrnStr { get; } = Convert.ToBase64String(BlankIconPattern);
+
+    const string Empty = " ";
+
+    protected async Task<(bool, NabuProgram[])> IsNabuCaJson(ProgramSource source)
+    {
+        var uri = source.Path;
+        if (!(uri.EndsWith(".json") && uri.Contains("nabu.ca"))) { return (false, Array.Empty<NabuProgram>()); }
+        var (_, found, cached, _, _, _, _) = await Http.GetPathStatus(uri);
+        if (!found && !cached) { return (false, []); }
+
+        var json = await Http.GetString(uri);
+        try
+        {
+            var progs = new List<NabuProgram>();
+            var sections = JObject.Parse(json)["Items"];
+            if (sections is null) { return (false, []); }
+
+            string[] skipSections = ["NABU Cycles", "Demos", "Utilities"];
+
+            foreach (var section in sections)
+            {
+                var title = section["Title"]?.ToString();
+                if (skipSections.Contains(title)) continue;
+
+                var files = section["Files"];
+                if (files is null) continue;
+
+                foreach (var item in files)
+                {
+                    var name = item["Title"]?.ToString() ?? "Unnamed Program";
+                    var filename = item["Filename"]?.ToString() ?? Empty;
+                    var url = $"https://cloud.nabu.ca/HomeBrew/titles/{filename}";
+
+                    var author = item["Author"]?.ToString() ?? Empty;
+                    var description = item["Description"]?.ToString() ?? Empty;
+
+                    var tileColor = item["IconTileColor"]?.ToString() ?? BlankIconClrStr;
+                    var tilePattern = item["IconTilePattern"]?.ToString() ?? BlankIconPtrnStr;
+
+                    var headless = item["IsHeadless"]?.ToObject<bool>() is true;
+                    if (headless && !source.HeadlessMenu)
+                        source.HeadlessMenu = true;
+
+                    progs.Add(new(
+                        name,
+                        filename,
+                        source.Name,
+                        url,
+                        SourceType.Remote,
+                        ImageType.Raw,
+                        DefaultPatches,
+                        author,
+                        description,
+                        tileColor,
+                        tilePattern,
+                        category: title,
+                        headless: headless
+                    ));
+                }
+            }
+            return (true, progs.ToArray());
+        }
+        catch { return (false, []); }
+    }
 
     protected async Task<(bool, NabuProgram[])> IsNabuNetworkList(ProgramSource source)
-    {        var uri = source.Path;
+    {
+        var uri = source.Path;
         if (!uri.EndsWith(".xml") && !uri.Contains("nabunetwork.com")) { return (false, Array.Empty<NabuProgram>()); }
         var (_, found, cached, _, _, _, _) = await Http.GetPathStatus(uri);
         if (!found && !cached) { return (false, []); }
-        try        {            var xml = await Http.GetString(uri);            var list = new XmlDocument();            list.LoadXml(xml);            var cycleNodes = list.DocumentElement?.SelectNodes("Target");            if (cycleNodes is null) { return (false, Array.Empty<NabuProgram>()); }            var progs = new List<NabuProgram>();            foreach (XmlNode cycleNode in cycleNodes)            {                var targetType = cycleNode["TargetType"]?.InnerText;                if (targetType == "NabuNetwork")                    continue;                var name = cycleNode["Name"]?.InnerText ?? "Unnamed Program";                var url = cycleNode["Url"]?.InnerText ?? Empty;                url = url.Replace("loader.nabu", "000002.nabu");                progs.Add(new(                    name,                    name,                    source.Name,                    url,                    SourceType.Remote,                    ImageType.Raw,                    DefaultPatches,                    source.Author ?? Empty,                    Empty,                    BlankIconClrStr,                    BlankIconPtrnStr,                    category: targetType                ));            }            return (true, progs.ToArray());        }        catch { return (false, []); }
+        try
+        {
+            var xml = await Http.GetString(uri);
+            var list = new XmlDocument();
+            list.LoadXml(xml);
+            var cycleNodes = list.DocumentElement?.SelectNodes("Target");
+            if (cycleNodes is null) { return (false, Array.Empty<NabuProgram>()); }
+            var progs = new List<NabuProgram>();
+            foreach (XmlNode cycleNode in cycleNodes)
+            {
+                var targetType = cycleNode["TargetType"]?.InnerText;
+                if (targetType == "NabuNetwork")
+                    continue;
+
+                var name = cycleNode["Name"]?.InnerText ?? "Unnamed Program";
+                var url = cycleNode["Url"]?.InnerText ?? Empty;
+                url = url.Replace("loader.nabu", "000002.nabu");
+
+                progs.Add(new(
+                    name,
+                    name,
+                    source.Name,
+                    url,
+                    SourceType.Remote,
+                    ImageType.Raw,
+                    DefaultPatches,
+                    source.Author ?? Empty,
+                    Empty,
+                    BlankIconClrStr,
+                    BlankIconPtrnStr,
+                    category: targetType
+                ));
+            }
+            return (true, progs.ToArray());
+        }
+        catch { return (false, []); }
     }
 
     protected async Task<(bool, string, ImageType)> IsPak(string url, int pak)

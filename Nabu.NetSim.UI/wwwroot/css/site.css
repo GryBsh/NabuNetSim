@@ -68,6 +68,11 @@ button, .btn {
     top: 30px;
 }
 
+.sticky-padded-bottom {
+    bottom: 15px;
+    background-color: #7d75fc;
+}
+
 .top-sm {
     margin-top: 0px;
     

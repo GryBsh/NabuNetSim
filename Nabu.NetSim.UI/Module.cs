@@ -16,7 +16,7 @@ namespace Nabu.NetSim.UI;
 public class UIModule : Module
 {
 }
-
+/*
 public class DBLogBuilder : ILoggerBuilder
 {
     public ILoggingBuilder Build(ILoggingBuilder builder)
@@ -27,7 +27,9 @@ public class DBLogBuilder : ILoggerBuilder
         //builder.Services.AddSingleton<ILoggerProvider, AppLogProvider>();
         return builder;
     }
-}
+}*/
+
+
 
 public class ModuleBuilder : IRegister 
 {
@@ -38,7 +40,6 @@ public class ModuleBuilder : IRegister
         
         //services.AddSingleton<IHeadlineService, HeadlineService>();
         services.AddSingleton<ProcessService>();
-
         services.AddScoped<MainLayoutViewModel>();
         services.AddScoped<HomeViewModel>();
         services.AddScoped<AdaptorSettingsViewModel>();

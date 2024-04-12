@@ -1,63 +1,83 @@
 ﻿//using Microsoft.EntityFrameworkCore;
+using Blazorise;
+using Gry;
+using Microsoft.Extensions.Logging;
+using Nabu.Settings;
+using System.Collections.ObjectModel;
+using System.IO;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+
 namespace Nabu.NetSim.UI.Services;
 
-/*
-public class LogService : DisposableBase, ILogService
+public class LogService : DisposableBase, ILogTailingService
 {
-    //public ILog<LogService> Log { get; }
-    public IRepository<LogEntry> Repository { get; }
+    readonly SemaphoreSlim _lock = new(1, 1);
+    public ObservableCollection<string> LogEntries { get; set; } = [];   
 
-    public List<LogEntry> Entries { get; private set; }
-
-    public int Count
+    GlobalSettings Settings { get; }
+    async Task<long> ReadAll(string path, long position, CancellationToken cancellation)    {        using var log = new FileStream(
+            path,            FileMode.Open,            FileAccess.Read,            FileShare.ReadWrite
+        );        using var rdr = new StreamReader(log);        rdr.BaseStream.Seek(position, SeekOrigin.Begin);        var text = (await rdr.ReadToEndAsync(cancellation)).Split('\n');        position = rdr.BaseStream.Position;        foreach (var line in text)        {            await _lock.WaitAsync(cancellation);            LogEntries.Insert(0, line);            _lock.Release();        }        return position;    }    async Task<long> Read(string path, long position, CancellationToken cancellation)    {        using var log = new FileStream(
+            path,            FileMode.Open,            FileAccess.Read,            FileShare.ReadWrite
+        );        using var rdr = new StreamReader(log);        rdr.BaseStream.Seek(position, SeekOrigin.Begin);        var text = await rdr.ReadLineAsync(cancellation);        position = rdr.BaseStream.Position;        if (text is not null)        {            await _lock.WaitAsync(cancellation);            LogEntries.Insert(0, text);            _lock.Release();        }        return position;    }
+    public async void Tail(string path, CancellationToken cancellation)
     {
-        get
-        {
-            return Repository.Count();
-        }
-    }
+        LogEntries.Clear();
+        var logs = new DirectoryInfo(path).GetFiles("*.log").OrderByDescending(f => f.CreationTime);
 
-    public LogService(
-        IRepository<LogEntry> repository
-    )
-    {
-        Repository = repository;
-        Entries = [];
-        
-    }
+        var current = logs.FirstOrDefault();
+        var last = logs.Skip(1).Reverse();
 
-    public RefreshMode RefreshMode { get; set; } = RefreshMode.None;
-
-    private DateTime LastUpdate { get; set; } = DateTime.MinValue;
-
-    public void Refresh(bool force = false)
-    {
-        if (RefreshMode is RefreshMode.None && !force)
+        if (current is null)
             return;
-
-        var now = DateTime.Now;
-        var entries = Repository.Select(e => e.Timestamp > LastUpdate)
-                                .OrderByDescending(e => e.Timestamp);
-        Entries.InsertRange(0, entries);
-        LastUpdate = now;
-    }
-
-    public IEnumerable<LogEntry> GetPage(int page, int pageSize)
-    {
-        var pageSkip = (page - 1) * pageSize;
-        if (RefreshMode is RefreshMode.MemoryCache)
-        {
-            return Entries.Skip(pageSkip).Take(pageSize);
+        foreach (var l in last)        {            var loaded = false;            while (!loaded)                try {                     foreach (var line in File.ReadLines(l.FullName))
+                        LogEntries.Insert(0, line);                    loaded = true;                } catch {}        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        }        long position = await ReadAll(current.FullName, 0, cancellation);                while (!cancellation.IsCancellationRequested) {
+            try
+            {                position = await Read(current.FullName, position, cancellation);            }
+            catch { }            //(Exception ex) when (ex is ArgumentOutOfRangeException or IOException)             //{            //    position = 0;            //}   
         }
-        return Repository.SelectDescending(e => e.Timestamp, pageSkip, pageSize);
-    }
+           
+    } 
 
-    public void Insert(LogEntry entry)
+    public LogService(GlobalSettings settings)
     {
-        Repository.Insert(entry);
+        Settings = settings;
+        var cancellation = new CancellationDisposable();                Tail(Path.Combine(AppContext.BaseDirectory, "logs"), cancellation.Token);        /*        var path = Path.Combine(AppContext.BaseDirectory, "logs");        var logs = new DirectoryInfo(path).GetFiles("*.log").OrderByDescending(f => f.CreationTime);
+
+        //var current = logs.FirstOrDefault();
+        var last = logs.Skip(1).Reverse();
+
+        foreach (var log in last)        {            var loaded = false;            while (!loaded)                try                {                    foreach (var line in File.ReadLines(log.FullName))
+                        LogEntries.Insert(0, (DateTime.Now, line));                    loaded = true;                }                catch { }        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        } */
+        Disposables.Add(cancellation);
+
     }
 
-    public void BulkInsert(params LogEntry[] entries)
-        => Repository.BulkInsert(entries);
-}
-*/
+    public int Count() => LogEntries.Count();
+    public int PageCount(int pageSize)
+    {
+        var count = Count();
+        return count == pageSize ? 1 : (int)Math.Floor((count / pageSize) + 1.0);
+    }
+
+    public IEnumerable<string> GetPage(int page, int pageSize)
+    {
+        lock (_lock) 
+            return LogEntries.Skip((page-1) * pageSize)
+                             .Take(pageSize)
+                             .ToArray();
+    }
+
+    public async void DropLast(int entries)
+    {
+        await _lock.WaitAsync();
+        for (int i = (LogEntries.Count - entries); i < LogEntries.Count(); i++)        {            LogEntries.RemoveAt(i);        }
+        _lock.Release();
+    }
+
+    public async void DropBefore(DateTime timestamp)
+    {
+       
+    }   
+}   

@@ -1,4 +1,5 @@
-﻿using Nabu.NetSim.UI.Models;
+﻿
+using Nabu.NetSim.UI.Models;
 using Nabu.NetSim.UI.Services;
 using ReactiveUI;
 using System.Reactive.Disposables;
@@ -15,19 +16,17 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
 
     public LogViewModel(
         ILogTailingService logService,
-        HomeViewModel home
+        HomeViewModel home
     )
     {
-        Home = home;
-        //Repository = repository;
-        Activator = new();
+        Home = home;        //Repository = repository;        Activator = new();
         LogService = logService;
         //LogService.RefreshMode = RefreshMode.None;
         this.WhenActivated(
             disposables =>
             {
                 Observable
-                    .Interval(TimeSpan.FromSeconds(30), RxApp.TaskpoolScheduler)
+                    .Interval(TimeSpan.FromSeconds(5), RxApp.TaskpoolScheduler)
                     .Subscribe(
                         _ =>
                         {
@@ -51,10 +50,7 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
         );
     }
 
-    public HomeViewModel Home { get; }
-    //IRepository<LogEntry> Repository { get; }
-
-    private void NotifyChange()
+    public HomeViewModel Home { get; }    //IRepository<LogEntry> Repository { get; }    private void NotifyChange()
     {
         this.RaisePropertyChanged(nameof(PageCount));
         this.RaisePropertyChanged(nameof(CurrentPage));
@@ -126,7 +122,8 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
     {
         if (LogVisible is false) return;
     }
-    /*
+
+    /*
     private LogEntry Highlight(LogEntry e)
     {
         var term = Search.ToLowerInvariant();
@@ -140,7 +137,8 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
         else e.Highlight = false;
 
         return e;
-    }    */
+    }
+    */
 
     //private (int, int, int, ICollection<IGrouping<LogKey, LogEntry>>)? PageCache { get; set; }
     private (int, int, int, ICollection<string>)? PageCache { get; set; }

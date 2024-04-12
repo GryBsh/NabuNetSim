@@ -23,19 +23,19 @@ public class NabuModule : Module;
 
 public class ModuleBuilder : IRegister
 {
-    void LoggingBuilder(ILoggingBuilder builder)
+    void LoggingBuilder(ILoggingBuilder builder, IConfiguration configuration)
     {
         builder.ClearProviders();
         var builders = Runtime.GetImplementationsOf<ILoggerBuilder>()
                               .Select(b => Runtime.Activate<ILoggerBuilder>(b));
         foreach (var logBuilder in builders)
-            logBuilder?.Build(builder);
+            logBuilder?.Build(builder, configuration);
     }
 
     public void Register(IServiceCollection services, IConfiguration configuration)
     {
         services.AddAutofac();
-        services.AddLogging(LoggingBuilder);
+        services.AddLogging(builder => LoggingBuilder(builder, configuration));
 
         services.AddSingleton<INabuNetwork, NabuNetwork>();
         services.AddSingleton<SourceService>();
@@ -51,11 +51,12 @@ public class ModuleBuilder : IRegister
         services.AddTransient<ClassicNabuProtocol>();
         services.AddTransient<IProtocol<AdaptorSettings>, NHACPProtocol>();
         services.AddTransient<IProtocol<AdaptorSettings>, NHACPV01Protocol<AdaptorSettings>>();
-        services.AddTransient<IProtocol<AdaptorSettings>, RetroNetProtocol>();        services.AddTransient<IProtocol<AdaptorSettings>, RetroNetHeadlessProtocol>();
+        services.AddTransient<IProtocol<AdaptorSettings>, RetroNetProtocol>();
+        services.AddTransient<IProtocol<AdaptorSettings>, RetroNetHeadlessProtocol>();
         services.AddTransient<IProtocol<AdaptorSettings>, MenuProtocol>();
         services.AddTransient<IProtocol<AdaptorSettings>, ControlProtocol>();
 
-        services.AddSingleton(typeof(Logs.ILogger<>), typeof(Logs.ConsoleLog<>));
+        //services.AddSingleton(typeof(Logs.ILogger<>), typeof(Logs.ConsoleLog<>));
 
         services.AddSingleton<ISimulation, NabuSimulation>();
         //services.AddSingleton<ISimulation, Simulation>()

@@ -1,4 +1,5 @@
-﻿using Nabu.Logs;
+﻿using Microsoft.Extensions.Logging;
+using Nabu.Logs;
 using Napa;
 using Spectre.Console.Cli;
 using System.Diagnostics.CodeAnalysis;
@@ -24,7 +25,7 @@ namespace Nabu.Cli.Packages
 
             foreach (var path in paths)
             {
-                Log.Write($"Creating from {path}");
+                Log.LogInformation($"Creating from {path}");
                 try
                 {
                     var (_, manifest, _) = await Packages.Open(path);

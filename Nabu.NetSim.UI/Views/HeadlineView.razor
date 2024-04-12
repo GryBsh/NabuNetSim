@@ -7,7 +7,8 @@
             ButtonTitle="Collapse"
             ButtonIconName="IconName.MinusCircle"
             OnButtonClick=@(() => { ViewModel.ExpandCollapseNews(); }) 
-            Visibility="@ViewModel.ExpandedVisibility" />
+            Visibility="@ViewModel.ExpandedVisibility" 
+            ContainerClass="sticky-top sticky-padded-top" />
 <ListGroup Flush Visibility="@ViewModel.ExpandedVisibility" Style="max-width: 600px">
      <Virtualize TItem="TickerItem" Items="ViewModel!.Headlines">
          <ListGroupItem>
@@ -29,7 +30,8 @@
             ButtonTitle="Expand"
             ButtonIconName="IconName.PlusCircle"
             OnButtonClick=@(() => { ViewModel.ExpandCollapseNews(); }) 
-            Visibility="ViewModel.CollapsedVisibility"/>
+            Visibility="ViewModel.CollapsedVisibility"
+            ContainerClass="sticky-top sticky-padded-top" />
  <ListGroup Flush Visibility="ViewModel.CollapsedVisibility">
      <Repeater TItem="TickerItem" Items="ViewModel.Headlines">
          <ListGroupItem>
@@ -42,7 +44,7 @@
      </Repeater>
  </ListGroup>
  <br/>
-<Div style="text-align: center">
+<Div style="text-align: center" Class="sticky-bottom sticky-padded-bottom">
     <p>
         <small>
             Got NABU?
