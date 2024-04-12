@@ -20,7 +20,7 @@ public class LogService : DisposableBase, ILogTailingService
             path,            FileMode.Open,            FileAccess.Read,            FileShare.ReadWrite
         );        using var rdr = new StreamReader(log);        rdr.BaseStream.Seek(position, SeekOrigin.Begin);        var text = (await rdr.ReadToEndAsync(cancellation)).Split('\n');        position = rdr.BaseStream.Position;        foreach (var line in text)        {            await _lock.WaitAsync(cancellation);            LogEntries.Insert(0, line);            _lock.Release();        }        return position;    }    async Task<long> Read(string path, long position, CancellationToken cancellation)    {        using var log = new FileStream(
             path,            FileMode.Open,            FileAccess.Read,            FileShare.ReadWrite
-        );        using var rdr = new StreamReader(log);        rdr.BaseStream.Seek(position, SeekOrigin.Begin);        var text = await rdr.ReadLineAsync(cancellation);        position = rdr.BaseStream.Position;        if (text is not null)        {            await _lock.WaitAsync(cancellation);            LogEntries.Insert(0, text);            _lock.Release();        }        return position;    }
+        );        using var rdr = new StreamReader(log);        string? text = null;        do        {            rdr.BaseStream.Seek(position, SeekOrigin.Begin);            text = await rdr.ReadLineAsync(cancellation);            position = rdr.BaseStream.Position;            if (text is not null)            {                await _lock.WaitAsync(cancellation);                LogEntries.Insert(0, text);                _lock.Release();            }        } while (text is not null);        return position;    }
     public async void Tail(string path, CancellationToken cancellation)
     {
         LogEntries.Clear();
@@ -34,7 +34,7 @@ public class LogService : DisposableBase, ILogTailingService
         foreach (var l in last)        {            var loaded = false;            while (!loaded)                try {                     foreach (var line in File.ReadLines(l.FullName))
                         LogEntries.Insert(0, line);                    loaded = true;                } catch {}        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        }        long position = await ReadAll(current.FullName, 0, cancellation);                while (!cancellation.IsCancellationRequested) {
             try
-            {                position = await Read(current.FullName, position, cancellation);            }
+            {                position = await Read(current.FullName, position, cancellation);                await Task.Delay(1000, cancellation);            }
             catch { }            //(Exception ex) when (ex is ArgumentOutOfRangeException or IOException)             //{            //    position = 0;            //}   
         }
            

@@ -17,7 +17,25 @@ namespace Nabu.Network;
 public partial class NabuNetwork : NabuBase, INabuNetwork
 {
     public const string HeadlessSourceName = "headless";
-
+    static string[] Phrases = [
+        //"👁️🚢👿",
+        "Assimilation in progress",
+        "Admiral! There be whales here!",
+        "Ay Sir, I'm working on it!",
+        "Hey Mr. 🦉",
+        "Standby for NABUfall",
+        "Your honor, I object to this preposterous poppycock",
+        "It works for us now, Comrade",
+        "Buy Pants",
+        "2 NABUs and a KayPro walk into a bar...",
+        "💣 0.015625 MEGA POWER 💣",
+        "9/10 Doctors would prefer not to endorse this product",
+        "NABU4Ever!",
+        "👸Beware the wrath of King NABU 👸",
+        "☎️ Please stay on the line, your call is important to us ☎️",
+        "🎵 Never gonna give you up. Never gonna let you down 🎵",
+        "Excuse me human, can I interest you in this pamphlet on the kingdom of NABU?"
+    ];    public static string Phrase() => Phrases[Random.Shared.Next(0, Phrases.Length)];
     public NabuNetwork(
         ILogger<NabuNetwork> logger,
         HttpClient http,
@@ -488,13 +506,13 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         0xFF,0x80,0xA2,0xB2,0xAA,0xA6,0xA2,0x80,
         0x80,0xBE,0xA2,0xAC,0xA2,0xBE,0x80,0xFF,
         0xFF,0x01,0x7D,0x45,0x7D,0x45,0x45,0x01,
-        0x01,0x45,0x45,0x45,0x45,0x7D,0x01,0xFF
+        0x01,0x45,0x45,0x45,0x45,0x7D,0x01,0xFF        
     ]; 
     public static byte[] BlankIconColor { get; } = [
         0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
         0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
         0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,
-        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F
+        0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F,0x0F        
     ];
     public static string BlankIconClrStr { get; } = Convert.ToBase64String(BlankIconColor);
     public static string BlankIconPtrnStr { get; } = Convert.ToBase64String(BlankIconPattern);
@@ -508,9 +526,9 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         var (_, found, cached, _, _, _, _) = await Http.GetPathStatus(uri);
         if (!found && !cached) { return (false, []); }
 
-        var json = await Http.GetString(uri);
+       
         try
-        {
+        {            var json = await Http.GetString(uri);
             var progs = new List<NabuProgram>();
             var sections = JObject.Parse(json)["Items"];
             if (sections is null) { return (false, []); }

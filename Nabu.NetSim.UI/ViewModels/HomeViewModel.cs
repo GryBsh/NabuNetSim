@@ -9,25 +9,7 @@ namespace Nabu.NetSim.UI.ViewModels;
 
 public class HomeViewModel : ReactiveObject, IActivatableViewModel
 {
-    private static string[] Phrases = new[] {
-        "👁️🚢👿",
-        "Assimilation in progress",
-        "Admiral! There be whales here!",
-        "Ay Sir, I'm working on it!",
-        "Hey Mr. 🦉",
-        "Standby for NABUfall",
-        "Your honor, I object to this preposterous poppycock",
-        "It works for us now, Comrade",
-        "Buy Pants",
-        "2 NABUs and a KayPro walk into a bar...",
-        "💣 0.015625 MEGA POWER 💣",
-        "9/10 Doctors would prefer not to endorse this product",
-        "NABU4Ever!",
-        "👸Beware the wrath of King NABU 👸",
-        "☎️ Please stay on the line, your call is important to us ☎️",
-        "🎵 Never gonna give you up. Never gonna let you down 🎵",
-        "Excuse me human, can I interest you in this pamphlet on the kingdom of NABU?"
-    };
+    
 
     private bool loaded = false;
 
@@ -62,7 +44,7 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
         }
     }
 
-    public string Phrase => Phrases[Random.Shared.Next(0, Phrases.Length)];
+    public string Phrase => NabuNetwork.Phrase();
     public GlobalSettings Settings { get; }
     public ISimulation Simulation { get; }
     public INabuNetwork Sources { get; }
