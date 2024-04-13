@@ -44,7 +44,7 @@ public class HomeViewModel : ReactiveObject, IActivatableViewModel
         }
     }
 
-    public string Phrase => NabuNetwork.Phrase();
+    public string Phrase { get; } = CommonUI.Phrase();
     public GlobalSettings Settings { get; }
     public ISimulation Simulation { get; }
     public INabuNetwork Sources { get; }
