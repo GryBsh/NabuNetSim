@@ -34,7 +34,7 @@ public class ProcessService : DisposableBase
         return null;
     }
 
-    public CancellationToken Start(string path, bool hidden = false, string[]? verb = null)
+    public CancellationToken Start(string path, bool hidden = true, string[]? verb = null)
     {
         if (IsRunning(path) is CancellationTokenSource source and not null)
         {

@@ -2,6 +2,7 @@
 using Gry.Caching;
 using Gry.Settings;
 using Lgc;
+using Nabu.Network;
 using Nabu.Sources;
 using Napa;
 using Newtonsoft.Json;
@@ -98,7 +99,7 @@ public record GlobalSettings : AdapterServerOptions<AdaptorSettings, TCPAdaptorS
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public List<ProtocolSettings> Protocols { get; set; } = [];
-
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("Default Icon Pattern", Section = "Headless", Advanced = true, Description = "The default icon pattern for RetroNET headless, as a Base64 string")]    public string? DefaultIconPattern { get; set; }    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("Default Icon Color", Section = "Headless", Advanced = true, Description = "The default icon color for RetroNET headless, as a Base64 string")]    public string? DefaultIconColor { get; set; }
     //public string? CPMSource { get; set; }
     //public string? CPMProgram { get; set; }    
 }
