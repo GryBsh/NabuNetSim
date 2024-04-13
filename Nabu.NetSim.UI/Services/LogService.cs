@@ -23,8 +23,8 @@ public class LogService : DisposableBase, ILogTailingService
         );        using var rdr = new StreamReader(log);        string? text = null;        do        {            rdr.BaseStream.Seek(position, SeekOrigin.Begin);            text = await rdr.ReadLineAsync(cancellation);            position = rdr.BaseStream.Position;            if (text is not null)            {                await _lock.WaitAsync(cancellation);                LogEntries.Insert(0, text);                _lock.Release();            }        } while (text is not null);        return position;    }
     public async void Tail(string path, CancellationToken cancellation)
     {
-        LogEntries.Clear();
-        var logs = new DirectoryInfo(path).GetFiles("*.log").OrderByDescending(f => f.CreationTime);
+        LogEntries.Clear();        var dir = new DirectoryInfo(path);        if (!dir.Exists)        {            dir.Create();        }
+        var logs = dir.GetFiles("*.log").OrderByDescending(f => f.CreationTime);
 
         var current = logs.FirstOrDefault()?.FullName ?? Path.Combine(path, "current.log");
         var last = logs.Skip(1).Reverse();
@@ -34,7 +34,7 @@ public class LogService : DisposableBase, ILogTailingService
                         LogEntries.Insert(0, line);                    loaded = true;                } catch {}        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        }        long position = 0;                while (position == 0)            try            {                position = await ReadAll(current, 0, cancellation);                await Task.Delay(1000, cancellation);            } catch { }                while (!cancellation.IsCancellationRequested) {
             try
             {                position = await Read(current, position, cancellation);                await Task.Delay(1000, cancellation);            }
-            catch { }            //(Exception ex) when (ex is ArgumentOutOfRangeException or IOException)             //{            //    position = 0;            //}   
+            catch { }
         }
            
     } 
@@ -42,13 +42,7 @@ public class LogService : DisposableBase, ILogTailingService
     public LogService(GlobalSettings settings)
     {
         Settings = settings;
-        var cancellation = new CancellationDisposable();                Tail(Path.Combine(AppContext.BaseDirectory, "logs"), cancellation.Token);        /*        var path = Path.Combine(AppContext.BaseDirectory, "logs");        var logs = new DirectoryInfo(path).GetFiles("*.log").OrderByDescending(f => f.CreationTime);
-
-        //var current = logs.FirstOrDefault();
-        var last = logs.Skip(1).Reverse();
-
-        foreach (var log in last)        {            var loaded = false;            while (!loaded)                try                {                    foreach (var line in File.ReadLines(log.FullName))
-                        LogEntries.Insert(0, (DateTime.Now, line));                    loaded = true;                }                catch { }        }        if (LogEntries.Count > Settings.MaxLogEntries)        {            DropLast(Settings.MaxLogEntries);        } */
+        var cancellation = new CancellationDisposable();                Tail(Path.Combine(AppContext.BaseDirectory, "logs"), cancellation.Token);        
         Disposables.Add(cancellation);
 
     }

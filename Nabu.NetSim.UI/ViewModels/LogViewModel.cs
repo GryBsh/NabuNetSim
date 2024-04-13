@@ -123,24 +123,7 @@ public class LogViewModel : ReactiveObject, IActivatableViewModel
         if (LogVisible is false) return;
     }
 
-    /*
-    private LogEntry Highlight(LogEntry e)
-    {
-        var term = Search.ToLowerInvariant();
-        if (
-            Search != string.Empty && (
-                e.Timestamp.ToString().Contains(term, StringComparison.InvariantCultureIgnoreCase) ||
-                e.Name.Contains(term, StringComparison.InvariantCultureIgnoreCase) ||
-                e.Message.Contains(term, StringComparison.InvariantCultureIgnoreCase)
-            )
-        ) e.Highlight = true;
-        else e.Highlight = false;
-
-        return e;
-    }
-    */
-
-    //private (int, int, int, ICollection<IGrouping<LogKey, LogEntry>>)? PageCache { get; set; }
+   
     private (int, int, int, ICollection<string>)? PageCache { get; set; }
 
     //public ICollection<IGrouping<LogKey, LogEntry>> CurrentPage
