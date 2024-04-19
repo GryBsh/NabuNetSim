@@ -20,7 +20,7 @@ adaptor. It supports the Classic NABU protocol as well as NHACP and RetroNet, an
 - > Supports feeds from NABUNetwork.com and Nabu.ca.
 - > Supports NHACP and Retronet, so it can run IshkurCPM and Cloud CPM.
 - > A Fancy NABU Launcher, which can launch programs right from your NABU!
-- > Support RetroNET headless too
+- > Supports RetroNET headless too
 - > Deeply integrated offline caching of remote files/programs.
 - > Web UI for configuration, with news from NabuNetwork.com.
 - > Extensible protocol support, you can add your own protocol handlers in Python or Javascript.
@@ -95,13 +95,7 @@ NABU PC can be emulated with MAME, and the standalone NABU emulator [Marduk](htt
 
 - BriJohn: [NABU Mame](https://github.com/brijohn/mame/tree/nabupc_wip)
 - GTAMP: [NABU MAME Windows Builds](https://gtamp.com/nabu)
-- RetroNET and Discord Chaters (in no particular order):
-  - Sark
-  - Nath (The legend who decrypted NPAK files)
-  - Guidol
-  - VTTCP
-  - HungryMarmot
-- DJ Sures: For his work on Nabu.Ca
+- The great folks at the [NABU Discord](https://discord.gg/NgxTXvND2A)
 - And many many more
 
 ## Join us on Discord
