@@ -43,7 +43,9 @@ public static partial class Runtime
 
     public static RuntimeOptions? Options { get; private set; }
 
-    public static ConcurrentDictionary<string, object?> Settings { get; } = new();
+    public static ConcurrentDictionary<string, object?> Settings { get; } = new();    public static IEnumerable<T?> ActivateAll<T>(params object[] args)         => from i in GetImplementationsOf<T>()           select Activate<T>(i, args);    public static IEnumerable<T?> ActivateAll<T>(Type type, params object[] args)         => from i in GetImplementationsOf(type)           select Activate<T>(i, args);
+
+    public static IEnumerable<Y?> ActivateAll<T, Y>(params object[] args)         => from i in GetImplementationsOf<T>()           select Activate<Y>(i, args);
 
     /// <summary>
     /// Adds automatic registration / registrar types to the provided container
@@ -94,14 +96,11 @@ public static partial class Runtime
 
     public static IHostBuilder Build(IHostBuilder hostBuilder)
     {
-        var builders = (
-            from builder in GetImplementationsOf<IBuildHost>()
-            select Activate<IBuildHost>(builder)
-        ).ToArray();
+        var builders = ActivateAll<IBuildHost>();
 
         foreach (var builder in builders)
         {
-            builder.Build(hostBuilder);
+            builder?.Build(hostBuilder);
         }
 
         hostBuilder.ConfigureServices(
@@ -110,6 +109,16 @@ public static partial class Runtime
         );
 
         return hostBuilder;
+    }    public static T Build<T>(T appBuilder) where T : IHostApplicationBuilder
+    {
+        var builders = ActivateAll<IBuildApp<T>>();
+
+        foreach (var builder in builders)
+        {
+            builder?.Build(appBuilder);
+        }        Register(appBuilder.Services, appBuilder.Configuration);
+
+        return appBuilder;
     }
 
     public static IHost Build<T>(IServiceProviderFactory<T> factory, string[]? args = null)

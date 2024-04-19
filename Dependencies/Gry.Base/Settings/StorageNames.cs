@@ -1,0 +1,3 @@
+﻿namespace Nabu.Network;public static class StorageNames
+{    // For Home Profile / AppImage mode    public static string Home { get; set; } = string.Empty;    public const string Storage = "storage";    public const string Cache = "cache";    public const string Programs = "programs";    public const string Logs = "logs";    public const string Packages = "packages";    public const string StorageSource = "source";    // Partial Names    public const string ClientPrefix = "client";    public static string SettingsFileName { get; set; } = "appsettings.json";
+}

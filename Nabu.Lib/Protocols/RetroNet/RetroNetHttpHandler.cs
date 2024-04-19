@@ -1,6 +1,7 @@
 ﻿using Gry.Caching;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Nabu.Network;
 using Nabu.Settings;
 namespace Nabu.Protocols.RetroNet
 {
@@ -10,11 +11,10 @@ namespace Nabu.Protocols.RetroNet
             ILogger logger,
             HttpClient client,
             AdaptorSettings adaptor,
-            CacheOptions cacheOptions,
-            IFileCache cache
+            IFileCache cache,            LocationService location,            IOptions<CacheOptions> settings
         ) : base(logger, adaptor)
         {
-            Client = new HttpCache(client, Logger, cache, cacheOptions, adaptor.CacheFolderPath(cacheOptions));
+            Client = new HttpCache(client, Logger, cache, settings, location, adaptor.Port);
         }
 
         public HttpCache Client { get; }

@@ -1,14 +1,16 @@
 using Gry.Adapters;
 using Gry.Caching;
+using Gry.Settings;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using System.Net;
 using YamlDotNet.Serialization;
 
 namespace NHACP.V01
 {
-    public class NHACPV1HttpHandler(ILogger logger, AdapterDefinition adaptor, HttpClient http, IFileCache cache, CacheOptions cacheOptions) : NHACPV1RamHandler(logger, adaptor)
+    public class NHACPV1HttpHandler(        ILogger logger,         AdapterDefinition adaptor,         HttpClient http,         IFileCache cache,         IOptions<CacheOptions> cacheOptions,        ILocationService location    ) : NHACPV1RamHandler(logger, adaptor)
     {
-        private readonly HttpCache Http = new(http, logger, cache, cacheOptions, adaptor.CacheFolderPath(cacheOptions));
+        private readonly HttpCache Http = new(http, logger, cache, cacheOptions, location, adaptor.Port);
 
         public override async Task<(bool, string, uint, NHACPErrors)> Open(NHACPOpenFlags flags, string uri)
         {

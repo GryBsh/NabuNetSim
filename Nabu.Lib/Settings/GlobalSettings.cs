@@ -43,7 +43,7 @@ public record GlobalSettings : AdapterServerOptions<AdaptorSettings, TCPAdaptorS
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     [Setting("Emulator Script Path", Description = "Path to a script which will start a local NABU Emulator")]
-    public string EmulatorPath { get; set; } = string.Empty;    // STORAGE        [JsonIgnore]    [System.Text.Json.Serialization.JsonIgnore]
+    public string EmulatorPath { get; set; } = string.Empty;    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    //[Setting("Use Home", Description = "When enabled, all folders are expected to be in ~/.nns, not the current directory")]    public bool UseHome { get; set; } = false;    // STORAGE    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public string StoragePath { get; set; } = "Files";
 
     // SOURCES
@@ -57,7 +57,7 @@ public record GlobalSettings : AdapterServerOptions<AdaptorSettings, TCPAdaptorS
     [Setting("Enable Symlinks", Advanced = true, Section= "Sources", Description = "Use SymLinks for storage files sourced from packages. Not recommended.")]
     public bool EnableSymLinks { get; set; } = false;
 
-    [JsonIgnore()]    [System.Text.Json.Serialization.JsonIgnore]
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public string LocalProgramPath { get; set; } = "NABUs";
     
     // LOGS
@@ -99,7 +99,6 @@ public record GlobalSettings : AdapterServerOptions<AdaptorSettings, TCPAdaptorS
 
     [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]
     public List<ProtocolSettings> Protocols { get; set; } = [];
-    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("Default Icon Pattern", Section = "Headless", Advanced = true, Description = "The default icon pattern for RetroNET headless, as a Base64 string")]    public string? DefaultIconPattern { get; set; }    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("Default Icon Color", Section = "Headless", Advanced = true, Description = "The default icon color for RetroNET headless, as a Base64 string")]    public string? DefaultIconColor { get; set; }
-    //public string? CPMSource { get; set; }
-    //public string? CPMProgram { get; set; }    
+    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("Default Icon Pattern", Section = "Headless", Advanced = true, Description = "The default icon pattern for RetroNET headless, as a Base64 string")]    public string? DefaultIconPattern { get; set; }    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("Default Icon Color", Section = "Headless", Advanced = true, Description = "The default icon color for RetroNET headless, as a Base64 string")]    public string? DefaultIconColor { get; set; }    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    [Setting("CPMDirect Source", Section = "Headless", Advanced = true, Description = "The default icon pattern for RetroNET headless, as a Base64 string")]
+    public string? CPMSource { get; set; }    [JsonProperty(DefaultValueHandling = DefaultValueHandling.Ignore)]    public string? CPMProgram { get; set; }    
 }

@@ -4,15 +4,10 @@ using Newtonsoft.Json.Linq;
 using System.Collections.Concurrent;
 using System.ComponentModel;
 using System.Reactive.Disposables;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.Reflection;
-using System.Text.Json;
+using System.Reactive.Linq;using System.Text.Json;
 using System.Text.Json.Nodes;
-
 using YamlDotNet.Serialization;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
+using TextJson = System.Text.Json.Serialization;
 namespace Gry;
 
 public interface INullType { }
@@ -50,7 +45,7 @@ public partial record Model :
 
     [YamlIgnore()]
     [JsonExtensionData(WriteData = false)]
-    [System.Text.Json.Serialization.JsonExtensionData()]
+    [TextJson.JsonExtensionData()]
     protected DataDictionary Properties { get; private init; } = new();
 
     public object? this[string name]
@@ -139,7 +134,7 @@ public partial record Model :
 
     [YamlIgnore]
     [JsonIgnore]
-    [System.Text.Json.Serialization.JsonIgnore]
+    [TextJson.JsonIgnore]
     public bool DisableNotifications { get; set; } = false;
 
     #region INotifyPropertyChang(ing/ed)
@@ -164,8 +159,8 @@ public partial record Model :
 
     #region Observables
 
-    IObservable<PropertyChangingEventArgs>? Changing { get; }
-    IObservable<PropertyChangedEventArgs>? Changed { get; }
+    IObservable<PropertyChangingEventArgs> Changing { get; }
+    IObservable<PropertyChangedEventArgs> Changed { get; }
 
     public IDisposable Subscribe(IObserver<PropertyChangingEventArgs> observer)
     {

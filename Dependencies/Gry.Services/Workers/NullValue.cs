@@ -1,0 +1,1 @@
+﻿namespace Gry.Workers;public record NullValue {     public static NullValue Default { get; } = new();}

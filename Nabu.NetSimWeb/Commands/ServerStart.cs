@@ -47,42 +47,33 @@ public class ServerStartSettings : CommandSettings
 
 public class ServerStart : AsyncCommand<ServerStartSettings>
 {
-    public ServerStart(GlobalSettings settings, SettingsProvider settingsProvider)
+    public ServerStart(GlobalSettings settings, SettingsProvider settingsProvider, ILocationService location)
     {
         Settings = settings;
-        SettingsProvider = settingsProvider;
-        Runtime.AddModule<GryModule>();
+        SettingsProvider = settingsProvider;        Location = location;        Runtime.AddModule<GryModule>();
         Runtime.AddModule<NabuModule>();
         Runtime.AddModule<UIModule>();
         Runtime.AddModule<NHACPModule>();
     }
 
-    public GlobalSettings Settings { get; }
-    public SettingsProvider SettingsProvider { get;}
+    GlobalSettings Settings { get; }
+    SettingsProvider SettingsProvider { get;}
+    ILocationService Location { get; }
 
-
-    static void AddGlobal(IConfiguration configuration, IServiceCollection services, Action<GlobalSettings>? setter = null)
-    {
-        var settings = new GlobalSettings();
-        var napaOptions = new NapaOptions();
-        configuration.Bind("Settings", settings);
-        configuration.Bind("Packages", napaOptions);
+    static void AddGlobal(        GlobalSettings settings,        ILocationService location,        IConfiguration configuration,         IServiceCollection services,         Action<GlobalSettings>? setter = null    )
+    {        settings = new();        configuration.Bind("Settings", settings);
         services.Configure<NapaOptions>(configuration.GetSection("Packages"));
         setter?.Invoke(settings);
         services.AddSingleton(settings);
-       
-    }
+    }    static ILocationService Config(        GlobalSettings settings,         ILocationService location,         IHostBuilder? builder = null,        ConfigurationManager? config = null)    {        if (settings.UseHome)        {            location =  new LocationService(useClassic: false);            if (builder is not null)                builder.ConfigureHostConfiguration(b => b.AddJsonFile(location.FromHome.SettingsPath));            else            {                config?.AddJsonFile(location.FromHome.SettingsPath);            }        }        return location;    }
 
-    public static async Task<int> Headless(GlobalSettings settings, string[] args)
-    {
-        
-        Runtime.DisableRegistrar<NetSim.UI.ModuleBuilder>();
-        var builder = Host.CreateDefaultBuilder(args);
+    public static async Task<int> Headless(        GlobalSettings settings,         ILocationService location,        string[] args    )
+    {        Runtime.DisableRegistrar<NetSim.UI.ModuleBuilder>();
+        var builder = Host.CreateDefaultBuilder(args);        location = Config(settings, location, builder);
         builder.ConfigureServices(
             (builder,services) => { 
                 services.AddSingleton<ProcessService>();
-
-                AddGlobal(builder.Configuration, services, s => s.ForceHeadless = true);
+                AddGlobal(settings, location, builder.Configuration, services, s => s.ForceHeadless = true);
             }
         );
 
@@ -91,11 +82,11 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         return 0;
     }
 
-    public static int WebServer(GlobalSettings settings, string[] args)
+    public static int WebServer(GlobalSettings settings, ILocationService location, string[] args)
     {
-        var builder = WebApplication.CreateBuilder(args);        
+        var builder = WebApplication.CreateBuilder(args);                builder.Configuration.AddJsonFile(location.FromHome.SettingsPath, true);        location = Config(settings, location, config: builder.Configuration);
         var services = builder.Services;
-        AddGlobal(builder.Configuration, services);
+        AddGlobal(settings, location, builder.Configuration, services);
 
         //services.AddSingleton<ILoggerProvider, AnsiLogProvider>();
         services.UseMicrosoftDependencyResolver();
@@ -142,8 +133,8 @@ public class ServerStart : AsyncCommand<ServerStartSettings>
         var args = context.Remaining.Raw.ToArray();
 
         if (settings.NoUI)
-            return await Headless(Settings, args);
-        return WebServer(Settings, args);
+            return await Headless(Settings, Location, args);
+        return WebServer(Settings, Location, args);
     }
 
     /*

@@ -102,9 +102,5 @@ public record AdapterDefinition : Model
 
     #endregion
 
-    public string CacheFolderPath(CacheOptions options)
-    {
-        return Path.Join(AppContext.BaseDirectory, options.HttpCacheFolderName, $"Client.{Name}");
-
-    }
+    
 }

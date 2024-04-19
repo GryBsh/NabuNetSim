@@ -1,6 +1,7 @@
 ﻿using Gry;
 using Gry.Caching;
 using Gry.Serialization;
+using Gry.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
@@ -25,35 +26,30 @@ public class PackageManager : IPackageManager
 
     public PackageManager(
         ILogger<PackageManager> console,
-        IOptionsMonitor<NapaOptions> settings,
+        IOptions<NapaOptions> settings,
         IFileCache cache,
-        IHttpCache http
+        IHttpCache http,        ILocationService location
     )
     {
         Log = console;
-        OptionsMonitor = settings;
+        Settings = settings.Value;
         Cache = cache;
-        Http = http;
-        //SourceService = sources;
-
-        NapaLib.EnsureFolder(PackageFolder);
-        //Task.Run(() => Refresh());
+        Http = http;        Location = location;        NapaLib.EnsureFolder(PackageFolder);
     }
 
     public string ArchiveFolder => Path.Combine(PackageFolder, ArchiveFolderName);
     public ObservableCollection<SourcePackage> Available { get; private set; } = new();
     public ObservableCollection<InstalledPackage> Installed { get; private set; } = new();
     public ConcurrentQueue<string> InstallQueue { get; } = new();
-    public string PackageFolder => Path.Combine(AppContext.BaseDirectory, Settings.PackageFolder);
+    public string PackageFolder => Location.GetPath("packages");
     public List<string> PreservedPackages { get; } = new();
     public List<PackageSource> Sources => Settings.Sources;
     public ConcurrentQueue<string> UninstallQueue { get; } = new();
     private static SemaphoreSlim RefreshLock { get; } = new(1, 1);
     private IFileCache Cache { get; }
-    private IHttpCache Http { get; }
-    private ILogger Log { get; }
-    private IOptionsMonitor<NapaOptions> OptionsMonitor { get; }
-    private NapaOptions Settings => OptionsMonitor.CurrentValue;
+    private IHttpCache Http { get; }    private ILocationService Location { get; }    private ILogger Log { get; }
+    
+    private NapaOptions Settings { get; }
     private List<SourcePackage> SourcePackages { get; } = [];
 
     public async Task<bool> Create(string path, string destination)

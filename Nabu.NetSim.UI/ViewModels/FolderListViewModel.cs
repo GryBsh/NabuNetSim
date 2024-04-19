@@ -47,9 +47,8 @@ namespace Nabu.NetSim.UI.ViewModels
         }
 
         public void ShowStorage(string name)
-        {
-            name = FolderName(name);
-            Files.SetRootDirectory(null, Path.Combine(Storage.StorageRoot, name));
+        {            var root = name == StorageNames.StorageSource && !Settings.UseHome ?                NNSFolderNames.ClassicStorageSource :                 StorageNames.StorageSource;            var path = Path.Combine(root, FolderName(name));
+            Files.SetRootDirectory(null, path);
         }
 
         public void UpdateList()
@@ -59,7 +58,7 @@ namespace Nabu.NetSim.UI.ViewModels
 
             Folders = Storage.ListDirectories(".")
                              .Select(d => new DirectoryModel { Name = Path.GetFileName(d), Path = d })
-                             .Where(d => d.Name is not StorageNames.SourceFolder);
+                             .Where(d => d.Name is not StorageNames.StorageSource or NNSFolderNames.ClassicStorageSource);
 
             this.RaisePropertyChanged(nameof(Folders));
         }

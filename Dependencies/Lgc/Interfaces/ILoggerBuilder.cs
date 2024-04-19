@@ -3,7 +3,7 @@ using Microsoft.Extensions.Logging;
 
 namespace Lgc;
 
-public interface ILoggerBuilder
+public interface ILoggerBuilder<TContext>
 {
-    ILoggingBuilder Build(ILoggingBuilder builder, IConfiguration configuration);
+    ILoggingBuilder Build(        TContext context,         ILoggingBuilder builder,         IConfiguration configuration    );
 }

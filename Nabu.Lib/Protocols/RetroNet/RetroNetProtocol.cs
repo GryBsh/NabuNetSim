@@ -1,6 +1,7 @@
 using Gry.Adapters;
 using Gry.Caching;
 using Gry.Protocols;
+using Gry.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Nabu.Network;
@@ -12,22 +13,17 @@ using System.Text.RegularExpressions;
 namespace Nabu.Protocols.RetroNet
 {
     public partial class RetroNetProtocol : Protocol<AdaptorSettings>
-    {
-        //private readonly GlobalSettings Global;
-
-        public RetroNetProtocol(
+    {        private readonly IOptions<CacheOptions> cacheOptions;        //private readonly GlobalSettings Global;        public RetroNetProtocol(
             ILogger<RetroNetProtocol> logger,
             HttpClient httpClient,
             INabuNetwork nabuNet,
             IFileCache cache,
-            IOptions<CacheOptions> cacheOptions
+            IOptions<CacheOptions> options,            LocationService location
         ) : base(logger)
         {
             HttpClient = httpClient;
             NabuNet = nabuNet;
-            FileCache = cache;
-            //Global = settings;
-            CacheOptions = cacheOptions.Value;
+            FileCache = cache;            cacheOptions = options;            Location = location;            //Global = settings;            
         }
 
         public override byte[] Messages { get; } = [
@@ -63,9 +59,8 @@ namespace Nabu.Protocols.RetroNet
 
         public override byte Version { get; } = 0x01;
         private FileDetails[]? CurrentList { get; set; }
-        private IFileCache FileCache { get; }
-        private HttpCache? Http { get; set; }
-        private CacheOptions CacheOptions { get; set; }
+        private IFileCache FileCache { get; }        public LocationService Location { get; }        private HttpCache? Http { get; set; }
+        private CacheOptions CacheOptions => cacheOptions.Value;
         private HttpClient HttpClient { get; }
         private INabuNetwork NabuNet { get; }
         private Dictionary<byte, IRetroNetFileHandle> Slots { get; } = [];
@@ -74,7 +69,7 @@ namespace Nabu.Protocols.RetroNet
 
         public override bool Attach(AdaptorSettings settings, Stream stream)
         {
-            Http = new(HttpClient, Logger, FileCache, CacheOptions, settings.CacheFolderPath(CacheOptions));
+            Http = new(HttpClient, Logger, FileCache, cacheOptions, Location, settings.Port);
             return base.Attach(settings, stream);
         }
 
@@ -258,8 +253,8 @@ namespace Nabu.Protocols.RetroNet
         {
             return filename switch
             {
-                _ when NabuLib.IsHttp(filename) => new RetroNetHttpHandler(Logger, HttpClient, Adapter, CacheOptions, FileCache),
-                _ => new RetroNetFileHandler(Logger, Adapter)
+                _ when NabuLib.IsHttp(filename) => new RetroNetHttpHandler(                    Logger,                     HttpClient,                     Adapter!,                     FileCache,                     Location,                     cacheOptions                ),
+                _ => new RetroNetFileHandler(                    Logger,                     Adapter!                )
             };
         }
 

@@ -6,6 +6,6 @@
         public List<string> UninstallPackageIds {  get; private set; } = new();
         public List<string> UninstallPackages { get; private set; } = new();
         public List<string> InstallPackages { get; private set; } = new();
-        public string PackageFolder { get; set; } = "Packages";
+        public string PackagePath { get; set; }
     }
 }

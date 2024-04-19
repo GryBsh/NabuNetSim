@@ -23,17 +23,17 @@ RegisterServices(registrations);
 return NabuCli.Execute(App(registrations), args);
 
 void RegisterServices(IServiceCollection services)
-{
+{    var location = new LocationService(null, useClassic: true);    
     
     services.AddHttpClient();
     services.AddTransient<ISerializeProvider, SerializerProvider>();
     services.AddTransient<ISerialize, YAMLSerializer>();
-    services.AddTransient<ISerialize, JSONSerializer>();
+    services.AddTransient<ISerialize, JSONSerializer>();    services.AddSingleton<ILocationService>(location);
     services.AddSingleton<SettingsProvider>();
     services.AddSingleton(sp =>
     {
         return sp.GetRequiredService<SettingsProvider>()
-                 .FromSection<GlobalSettings>("Settings") ?? 
+                 .FromSection<GlobalSettings>(location, null, "Settings") ?? 
                new();
     });
 }

@@ -24,8 +24,7 @@ public class SettingsViewModel : ReactiveObject
     public AdaptorSettingsViewModel Menu { get; }
     public INabuNetwork Network { get; }
     public ISourceService Sources { get; }
-    public IPackageManager PackageManager { get; }
-    public SettingsProvider SettingsProvider { get; }
+    public IPackageManager PackageManager { get; }    public ILocationService Location { get; }    public SettingsProvider SettingsProvider { get; }
     public GlobalSettings Global { get; }
     public SettingsModel<GlobalSettings>? Value { get; set; }
     public GlobalSettings? Current => Value?.Current;
@@ -68,7 +67,7 @@ public class SettingsViewModel : ReactiveObject
         HomeViewModel home,
         INabuNetwork network, 
         ISourceService sources, 
-        IPackageManager packageManager
+        IPackageManager packageManager,        ILocationService location
     )
     {
         Global = global;
@@ -77,8 +76,7 @@ public class SettingsViewModel : ReactiveObject
         SettingsProvider = settingsProvider;
         Network = network;
         Sources = sources;
-        PackageManager = packageManager;
-        Revert();
+        PackageManager = packageManager;        Location = location;        Revert();
         home.PropertyChanged += (_, e) =>
         {
             if (e.PropertyName == nameof(home.VisiblePage))
@@ -146,11 +144,7 @@ public class SettingsViewModel : ReactiveObject
     public void Save()
     {
         Apply();
-        SettingsProvider.SaveSettings("Settings", Global);
-        foreach (var adapter in Global.Adapters)
-        {
-            adapter.ResetChanged();
-        }        AppliedButNotSaved = false;
+        if (SettingsProvider.SaveSettings(Location, null, "Settings", Global))        {            foreach (var adapter in Global.Adapters)            {                adapter.ResetChanged();            }            AppliedButNotSaved = false;        }
     }
 
     public bool HasChanged 

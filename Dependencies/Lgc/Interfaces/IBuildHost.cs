@@ -8,10 +8,9 @@ public interface IBuild<T>
 }
 
 /// <summary>
-/// Defines a method which, when called during host creation,
-/// makes alterations to the IHostBuilder before the IHost is built.
+/// A component to perform alterations to the IHostBuilder before the host container is built.
 /// </summary>
 public interface IBuildHost : IBuild<IHostBuilder>
 {
     
-}
+}/// <summary>/// A component to perform alterations to IHostApplicationBuilders before the application container is built./// </summary>public interface IBuildApp<T> : IBuild<T>     where T : IHostApplicationBuilder{    }

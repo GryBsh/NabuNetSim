@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Gry.Settings;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System.Net;
 using System.Reactive.Linq;
@@ -6,7 +7,7 @@ using System.Reactive.Linq;
 namespace Gry.Caching;
 
 public partial class HttpCache : DisposableBase, IHttpCache
-{
+{    const string cacheFolderName = "cache";
     public static void EnsureFolder(string folder)
     {
         if (Directory.Exists(folder) is false)
@@ -19,34 +20,16 @@ public partial class HttpCache : DisposableBase, IHttpCache
             name = name.Replace(bad, '_');
         return name;
     }
-
-    public HttpCache(
-        HttpClient http, 
-        ILogger<HttpCache> logger, 
-        IFileCache cache, 
-        IOptions<CacheOptions> settings
-    ) : this(http, logger, cache, settings.Value, null)
-    {
-    }
-
-    public HttpCache(
-        HttpClient http, 
-        ILogger logger, 
-        IFileCache cache, 
-        CacheOptions settings, 
-        string? name = null
+    public HttpCache(
+        HttpClient http,        ILogger<HttpCache> logger,        IFileCache cache,        IOptions<CacheOptions> settings,        ILocationService location
+    ) : this(http, logger, cache, settings, location, null)    {}    public HttpCache(
+        HttpClient http,        ILogger logger,        IFileCache cache,        IOptions<CacheOptions> options,        ILocationService location,        string? name = null
     )
     {
         Http = http;
         Logger = logger;
         Cache = cache;
-        Settings = settings;
-        CacheFolder = Path.Combine(
-            AppContext.BaseDirectory, 
-            settings.HttpCacheFolderName, 
-            name ?? string.Empty
-        );
-                
+        CacheFolder = location.Of.Cache;        Settings = options.Value;
         Task.Run(() => EnsureFolder(CacheFolder));
         Task.Run(() => CheckConnection());
         Disposables.AddInterval(
@@ -58,12 +41,9 @@ public partial class HttpCache : DisposableBase, IHttpCache
     public bool InternetAvailable { get; private set; }
     protected IFileCache Cache { get; }
     protected string CacheFolder { get; }
-    protected CacheOptions Settings { get; }
-    private HttpClient Http { get; }
-    private ILogger Logger { get; }
 
-   
-    public async Task<Memory<byte>> GetBytes(string uri)
+    private HttpClient Http { get; }
+    private ILogger Logger { get; }    public CacheOptions Settings { get; }    public async Task<Memory<byte>> GetBytes(string uri)
     {
         //var safeName = NabuLib.SafeFileName(uri);
         //var path = Path.Join(CacheFolder, safeName);
@@ -145,10 +125,6 @@ public partial class HttpCache : DisposableBase, IHttpCache
         Logger.LogDebug("Reading {} from cache", name);
         return await Cache.GetString(path);
     }
-
-    
-
-    
 
     public async Task<Memory<byte>> DownloadAndCache(string uri, string? path, string? name)
     {

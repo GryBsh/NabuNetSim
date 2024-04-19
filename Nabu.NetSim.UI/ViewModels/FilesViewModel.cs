@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.Extensions.Logging;
 using Nabu.Logs;
 using Nabu.NetSim.UI.Models;
+using Nabu.Network;
 using Nabu.Settings;
 using ReactiveUI;
 using System.IO.Compression;
@@ -28,14 +29,11 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
     private ILogger<FilesViewModel> Logger { get; }
     public ViewModelActivator Activator { get; } = new();
     public HomeViewModel Home { get; }
-    public GlobalSettings Settings { get; }
-
-    public FilesViewModel(ILogger<FilesViewModel> logger, HomeViewModel home, GlobalSettings settings)
+    public GlobalSettings Settings { get; }    public LocationService Location { get; }    public FilesViewModel(        ILogger<FilesViewModel> logger,         HomeViewModel home,         GlobalSettings settings,         LocationService location)
     {
         Logger = logger;
         Home = home;
-        Settings = settings;
-        this.WhenActivated(
+        Settings = settings;        Location = location;        this.WhenActivated(
             disposables =>
             {
                 var whenPageChanged = Home.WhenAnyValue(h => h.VisiblePage);
@@ -151,7 +149,7 @@ public class FilesViewModel : ReactiveObject, IActivatableViewModel
     {
         if (file is null) return string.Empty;
 
-        var path = Path.GetRelativePath(AppContext.BaseDirectory, file.Path).Replace("\\","/");
+        var path = Path.GetRelativePath(Location.Home, file.Path).Replace("\\","/");
 
         return $"/api/download/" + path;
     }

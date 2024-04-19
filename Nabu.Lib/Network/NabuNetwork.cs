@@ -26,12 +26,12 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
         IPackageManager packages,
         StorageService storage,
         GlobalSettings settings,
-        IOptions<CacheOptions> cacheOptions
+        IOptions<CacheOptions> cacheOptions,        LocationService location
     ) : base(logger)
     {
         Settings = settings;
         Sources = sources;
-        Http = new(http, logger, cache, cacheOptions.Value);
+        Http = new(http, logger, cache, cacheOptions, location);
         FileCache = cache;
         Packages = packages;
         Storage = storage;
@@ -102,21 +102,23 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
 
         if (program is null)
             return (ImageType.None, Array.Empty<byte>());
-        /*
+        
         if (program.UseCPMDirect && Settings.CPMSource is not null)
         {
             source = Source(Settings.CPMSource)!;
-            program = SourceCache[source].FirstOrDefault(p => p.Name == Settings.CPMProgram);
+            program = SourceCache[source.Name].FirstOrDefault(p => p.Name == Settings.CPMProgram);
             if (program is not null)
                 path = Path.Combine(source.Path, program.Path);
             else
             {
                 return (ImageType.None, Array.Empty<byte>());
-            }
-            Path.Combine(Settings.StoragePath, "A0", "PROFILE.SUB");
-        }*/
-        //else 
-        if (program.IsPakMenu && pak > Constants.CycleMenuNumber)
+            }
+            var profile = Path.Combine(Settings.StoragePath, "A0", "PROFILE.SUB");            if (File.Exists(profile))
+            {
+                File.Copy(profile, Path.Combine(Settings.StoragePath, "A0", "PROFILE.BAK"), true);
+            }            File.WriteAllText(profile, "");
+        }
+        else if (program.IsPakMenu && pak > Constants.CycleMenuNumber)
         {
             var ext = program.ImageType switch
             {
@@ -204,7 +206,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
             }
             catch { continue; }
         }
-    }
+    }    
 
     public async void RefreshSources(RefreshType refresh = RefreshType.All)
     {
@@ -236,7 +238,7 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                     var programs = new List<NabuProgram>();
                     //source.SourceType = SourceType.Remote;
                                         var cached = SourceCache.TryGetValue(source.Name, out var progs);
-                    var (isList, items) = await IsKnownListType(source);                    if (!isList || items.Length == 0 && cached)                        items = progs?.ToArray() ?? [];                         
+                    var (isList, items) = await IsKnownListType(source);                    if (!isList || items.Length == 0 && cached)                        items = progs?.ToArray() ?? [];                     if (SourceCache.ContainsKey(source.Name) is false || !SourceCache[source.Name].Any())                        SourceCache[source.Name] = items;                        
                     var (isPak, pakUrl, type) = isList ? 
                         (false, string.Empty, ImageType.None) : 
                         await IsPak(source.Path, 1);
@@ -257,8 +259,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             DefaultPatches,
                             source.Author ?? Empty,
                             source.Description ?? Empty,
-                            Settings.DefaultIconColor ?? CommonUI.BlankIconClrStr,
-                            Settings.DefaultIconPattern ?? CommonUI.BlankIconPtrnStr,
+                            CommonUI.IconData(Settings.DefaultIconColor, CommonUI.DefaultIconClrStr),
+                            CommonUI.IconData(Settings.DefaultIconPattern, CommonUI.DefaultIconPtrnStr),
                             isPakMenu: true
                         ));
                     }
@@ -275,8 +277,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             DefaultPatches,
                             source.Author ?? Empty,
                             source.Description ?? Empty,
-                            Settings.DefaultIconColor ?? CommonUI.BlankIconClrStr,
-                            Settings.DefaultIconPattern ?? CommonUI.BlankIconPtrnStr
+                            CommonUI.IconData(Settings.DefaultIconColor, CommonUI.DefaultIconClrStr),
+                            CommonUI.IconData(Settings.DefaultIconPattern, CommonUI.DefaultIconPtrnStr)
                         ));
                     }
 
@@ -308,8 +310,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             DefaultPatches,
                             source.Author ?? Empty,
                             Empty,
-                            CommonUI.BlankIconClrStr,
-                            CommonUI.BlankIconPtrnStr,
+                            CommonUI.DefaultIconClrStr,
+                            CommonUI.DefaultIconPtrnStr,
                             isPakMenu: true
                         ));
                         files = files.Except(new[] { menuPak }).ToArray();
@@ -330,8 +332,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             DefaultPatches,
                             source.Author ?? Empty,
                             Empty,
-                            Settings.DefaultIconColor ?? CommonUI.BlankIconClrStr,
-                            Settings.DefaultIconPattern ?? CommonUI.BlankIconPtrnStr
+                            CommonUI.IconData(Settings.DefaultIconColor, CommonUI.DefaultIconClrStr),
+                            CommonUI.IconData(Settings.DefaultIconPattern, CommonUI.DefaultIconPtrnStr)
                         ));
                     }
 
@@ -361,8 +363,8 @@ public partial class NabuNetwork : NabuBase, INabuNetwork
                             DefaultPatches,
                             program.Author ?? source.Author ?? Empty,
                             program.Description ?? Empty,
-                            Settings.DefaultIconColor ?? CommonUI.BlankIconClrStr,
-                            Settings.DefaultIconPattern ?? CommonUI.BlankIconPtrnStr,
+                            CommonUI.IconData(Settings.DefaultIconColor, CommonUI.DefaultIconClrStr),
+                            CommonUI.IconData(Settings.DefaultIconPattern, CommonUI.DefaultIconPtrnStr),
                             options: program.Options
                         )
                     );

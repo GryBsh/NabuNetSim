@@ -2,6 +2,7 @@
 using Blazorise;
 using Gry;
 using Microsoft.Extensions.Logging;
+using Nabu.Network;
 using Nabu.Settings;
 using System.Collections.ObjectModel;
 using System.IO;
@@ -37,12 +38,10 @@ public class LogService : DisposableBase, ILogTailingService
             catch { }
         }
            
-    } 
-
-    public LogService(GlobalSettings settings)
+    }    public LogService(GlobalSettings settings, LocationService location)
     {
         Settings = settings;
-        var cancellation = new CancellationDisposable();                Tail(Path.Combine(AppContext.BaseDirectory, "logs"), cancellation.Token);        
+        var cancellation = new CancellationDisposable();                Tail(location.Logs, cancellation.Token);        
         Disposables.Add(cancellation);
 
     }

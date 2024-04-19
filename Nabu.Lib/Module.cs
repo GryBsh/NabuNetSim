@@ -16,6 +16,7 @@ using Gry.Protocols;
 using NHACP.V0;
 using NHACP.V01;
 using Gry.Settings;
+using YamlDotNet.Serialization;
 
 namespace Nabu;
 
@@ -23,20 +24,20 @@ public class NabuModule : Module;
 
 public class ModuleBuilder : IRegister
 {
-    void LoggingBuilder(ILoggingBuilder builder, IConfiguration configuration)
+    void LoggingBuilder(ILoggingBuilder builder, IConfiguration configuration, ILocationService location)
     {
         builder.ClearProviders();
-        var builders = Runtime.GetImplementationsOf<ILoggerBuilder>()
-                              .Select(b => Runtime.Activate<ILoggerBuilder>(b));
+        var builders = Runtime.GetImplementationsOf<ILoggerBuilder<ILocationService>>()
+                              .Select(b => Runtime.Activate<ILoggerBuilder<ILocationService>>(b));
         foreach (var logBuilder in builders)
-            logBuilder?.Build(builder, configuration);
+            logBuilder?.Build(location, builder, configuration);
     }
 
     public void Register(IServiceCollection services, IConfiguration configuration)
-    {
+    {        var location = services.GetLocator();
         services.AddAutofac();
-        services.AddLogging(builder => LoggingBuilder(builder, configuration));
-
+        services.AddLogging(builder => LoggingBuilder(builder, configuration, location));
+        services.AddSingleton<ILocationService, LocationService>();
         services.AddSingleton<INabuNetwork, NabuNetwork>();
         services.AddSingleton<SourceService>();
         services.AddSingleton<ISourceService, SourceService>();

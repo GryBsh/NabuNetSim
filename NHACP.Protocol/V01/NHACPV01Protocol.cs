@@ -2,6 +2,7 @@
 using Gry.Adapters;
 using Gry.Caching;
 using Gry.Protocols;
+using Gry.Settings;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NHACP;
@@ -25,9 +26,7 @@ public partial class NHACPV01Protocol<TSettings> : Protocol<TSettings>
     where TSettings : AdapterDefinition
 {
     private readonly ushort CurrentVersion = 1;
-    private readonly IFileCache FileCache;
-    private readonly IProtocolHostInfo hostInfo;
-    private readonly HttpClient HttpClient;
+    private readonly IFileCache FileCache;    private readonly IOptions<CacheOptions> cacheOptions;    private readonly IProtocolHostInfo hostInfo;    private readonly ILocationService location;    private readonly HttpClient HttpClient;
     private readonly NHACPOptions Options = NHACPOptions.None;
 
     public NHACPV01Protocol(
@@ -35,19 +34,17 @@ public partial class NHACPV01Protocol<TSettings> : Protocol<TSettings>
         HttpClient http, 
         IFileCache fileCache,
         IOptions<CacheOptions> cacheOptions,
-        IProtocolHostInfo hostInfo
+        IProtocolHostInfo hostInfo,        ILocationService location
     ) : base(logger)
     {
         Sessions = [];
         HttpClient = http;
-        FileCache = fileCache;
-        this.hostInfo = hostInfo;
-        CacheOptions = cacheOptions.Value;
+        FileCache = fileCache;        this.cacheOptions = cacheOptions;        this.hostInfo = hostInfo;        this.location = location;        
     }
 
     public override byte[] Messages => [ 0x8F ];
     public bool SendCRC { get; private set; }
-    public CacheOptions CacheOptions { get; }
+    public CacheOptions CacheOptions => cacheOptions.Value;
     public override byte Version { get; } = 0x01;
 
     void ThrowIf(NHACPProtocolState state, byte? sessionId = null)
@@ -724,7 +721,7 @@ public partial class NHACPV01Protocol<TSettings> : Protocol<TSettings>
             Sessions[sessionId][index] = path switch
             {
                 _ when Net.IsHttp(path)
-                            => new NHACPV1HttpHandler(Logger, Adapter!, HttpClient, FileCache, CacheOptions),
+                            => new NHACPV1HttpHandler(                                Logger,                                 Adapter!,                                 HttpClient,                                 FileCache,                                 cacheOptions,                                 location                            ),
                 _ when path.StartsWith("0x")
                             => new NHACPV1RamHandler(Logger, Adapter!),
                 _ when NHACPV1TCPClient.IsTcp(path)

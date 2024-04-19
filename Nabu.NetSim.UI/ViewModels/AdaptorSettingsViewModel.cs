@@ -28,7 +28,7 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
         FilesViewModel files,
         SourceService sources,
         ProcessService process,
-        SettingsProvider settingsProvider
+        SettingsProvider settingsProvider,        LocationService location
     //IOptions<GlobalSettings> options
     )
     {
@@ -38,8 +38,7 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
         Files = files;
         Sources = sources;
         Process = process;
-        SettingsProvider = settingsProvider;
-        Settings = settings;
+        SettingsProvider = settingsProvider;        Location = location;        Settings = settings;
         //Options = options.Value;
         //Status = status;
         SettingsModel = new SettingsModel<object>(string.Empty, new(), SettingsProvider);
@@ -143,8 +142,7 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
     public INabuNetwork Network { get; }
 
     public ProcessService Process { get; }
-    public SettingsProvider SettingsProvider { get; }
-
+    public SettingsProvider SettingsProvider { get; }    public LocationService Location { get; }
     public AdaptorSettings Selected { get; set; } = new NullAdaptorSettings();
 
     public IEnumerable<string?> UserSerialPorts
@@ -301,8 +299,8 @@ public class AdaptorSettingsViewModel : ReactiveObject, IActivatableViewModel
     public void SaveSettings()
     {
         ApplySettings();
-        SettingsProvider.SaveSettings("Settings", Settings);
-        Selected.ResetChanged();
+        if (SettingsProvider.SaveSettings(Location, null, "Settings", Settings))
+            Selected.ResetChanged();
     }
 
     public bool CanSave => Selected.ChangedSinceLoad;

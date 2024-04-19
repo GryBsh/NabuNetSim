@@ -1,0 +1,1 @@
+﻿using Nabu.Network;using System;using System.Collections.Generic;using System.Linq;using System.Text;using System.Threading.Tasks;namespace Gry.Settings;public interface ILocationService{    PathSet FromHome { get; }    PathSet FromOrigin { get; }    PathSet Of { get; }    string GetPath(string name, string? suffix = null);}
